@@ -58,11 +58,12 @@ export default function TimelineBar({ release, groupColor, onEdit }: TimelineBar
   const endDate = new Date(release.endDate);
   const duration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
   
-  // Simple positioning calculation (this would be more sophisticated in a real implementation)
-  const baseDate = new Date("2024-01-01");
-  const daysFromBase = Math.ceil((startDate.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 24));
-  const leftPosition = (daysFromBase / 30) * 100; // Approximate month positioning
-  const width = (duration / 30) * 100; // Approximate width
+  // Fixed positioning calculation to ensure bars are visible
+  const currentYear = new Date().getFullYear();
+  const baseDate = new Date(currentYear, 0, 1); // Start of current year
+  const daysFromBase = Math.max(0, Math.ceil((startDate.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 24)));
+  const leftPosition = Math.min(90, (daysFromBase / 365) * 100); // Position within year, max 90%
+  const width = Math.max(5, Math.min(80, (duration / 365) * 100)); // Min 5%, max 80% width
 
   const handleMouseDown = (e: React.MouseEvent, action: 'drag' | 'resize') => {
     e.preventDefault();
@@ -138,14 +139,24 @@ export default function TimelineBar({ release, groupColor, onEdit }: TimelineBar
     }
   }, [isDragging, isResizing, startX, originalDates]);
 
+  // Debug logging for timeline bars
+  console.log(`Timeline bar for ${release.name}:`, {
+    startDate: startDate.toISOString(),
+    endDate: endDate.toISOString(),
+    duration,
+    leftPosition,
+    width,
+    releaseId: release.id
+  });
+
   return (
-    <div className="relative h-12">
+    <div className="relative h-12 w-full">
       <div
         ref={barRef}
-        className="absolute top-0 h-full rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all duration-200"
+        className="absolute top-0 h-full rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all duration-200 z-10"
         style={{
-          left: `${leftPosition}px`,
-          width: `${Math.max(width, 120)}px`,
+          left: `${leftPosition}%`,
+          width: `${Math.max(width, 15)}%`,
           background: `linear-gradient(135deg, ${groupColor}, ${groupColor}dd)`,
         }}
         onClick={onEdit}

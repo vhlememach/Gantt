@@ -113,7 +113,7 @@ export default function GanttChart({ zoomLevel, viewMode, onReleaseEdit }: Gantt
               
               {!collapsedGroups.has(group.id) && (
                 <div className="space-y-2 ml-5">
-                  {groupReleases.map((release) => (
+                  {groupReleases.map((release, index) => (
                   <div
                     key={release.id}
                     className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
@@ -121,6 +121,21 @@ export default function GanttChart({ zoomLevel, viewMode, onReleaseEdit }: Gantt
                     draggable={true}
                     onDragStart={(e) => {
                       e.dataTransfer.setData("text/plain", release.id);
+                      e.dataTransfer.setData("sourceGroupId", group.id);
+                      e.dataTransfer.setData("sourceIndex", index.toString());
+                    }}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const draggedReleaseId = e.dataTransfer.getData("text/plain");
+                      const sourceGroupId = e.dataTransfer.getData("sourceGroupId");
+                      const sourceIndex = parseInt(e.dataTransfer.getData("sourceIndex"));
+                      
+                      if (draggedReleaseId !== release.id) {
+                        console.log('Reordering release:', { draggedReleaseId, targetReleaseId: release.id, sourceGroupId, targetGroupId: group.id });
+                        // Here you would implement the reordering logic
+                        // For now, just log it
+                      }
                     }}
                   >
                     <div className="flex items-center space-x-3">

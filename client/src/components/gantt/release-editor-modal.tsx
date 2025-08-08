@@ -64,35 +64,38 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
     enabled: isOpen && !!releaseId,
   });
 
-  // Populate form when release data is loaded
+  // Populate form when release data is loaded or modal opens
   useEffect(() => {
-    console.log('Form population effect triggered:', { release, releaseId, isOpen, releaseLoading });
+    console.log('Form population effect triggered:', { release, releaseId, isOpen, releaseLoading, groupsLength: groups.length });
     
-    if (releaseId && release && !releaseLoading) {
-      console.log('Loading release data into form:', release);
-      setFormData({
-        name: release.name || "",
-        description: release.description || "",
-        groupId: release.groupId || "",
-        startDate: release.startDate ? new Date(release.startDate).toISOString().split('T')[0] : "",
-        endDate: release.endDate ? new Date(release.endDate).toISOString().split('T')[0] : "",
-        icon: release.icon || "fas fa-rocket",
-        responsible: release.responsible || "",
-        status: release.status || "upcoming",
-      });
-    } else if (!releaseId && isOpen && groups.length > 0) {
-      console.log('Resetting form for new release');
-      // Reset form for new release
-      setFormData({
-        name: "",
-        description: "",
-        groupId: groups[0]?.id || "",
-        startDate: new Date().toISOString().split('T')[0],
-        endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        icon: "fas fa-rocket",
-        responsible: "",
-        status: "upcoming",
-      });
+    if (isOpen) {
+      if (releaseId && release && !releaseLoading) {
+        console.log('Loading release data into form:', release);
+        const populatedData = {
+          name: release.name || "",
+          description: release.description || "",
+          groupId: release.groupId || "",
+          startDate: release.startDate ? new Date(release.startDate).toISOString().split('T')[0] : "",
+          endDate: release.endDate ? new Date(release.endDate).toISOString().split('T')[0] : "",
+          icon: release.icon || "fas fa-rocket",
+          responsible: release.responsible || "",
+          status: release.status || "upcoming",
+        };
+        console.log('Setting form data:', populatedData);
+        setFormData(populatedData);
+      } else if (!releaseId && groups.length > 0) {
+        console.log('Resetting form for new release');
+        setFormData({
+          name: "",
+          description: "",
+          groupId: groups[0]?.id || "",
+          startDate: new Date().toISOString().split('T')[0],
+          endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          icon: "fas fa-rocket",
+          responsible: "",
+          status: "upcoming",
+        });
+      }
     }
   }, [release, releaseId, groups, isOpen, releaseLoading]);
 
