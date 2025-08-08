@@ -264,7 +264,7 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
     <div className={`relative w-full ${viewType === "Condensed" ? "h-10" : "h-14"}`}> {/* Container height matches sidebar items */}
       <div
         ref={barRef}
-        className={`absolute top-0 ${viewType === "Condensed" ? "h-8" : "h-12"} rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all duration-200 z-10 flex items-center`}
+        className={`absolute top-0 ${viewType === "Condensed" ? "h-8" : "h-12"} rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all duration-200 z-10`}
         style={{
           left: `${leftPosition}%`,
           width: `${width}%`,
@@ -324,14 +324,14 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
               {release.name}
             </span>
           </div>
-          <div className="flex items-center space-x-2 flex-shrink-0">
-            <div 
-              className="w-3 h-3 rounded-full border-2 border-white"
-              style={{ backgroundColor: getStatusColor(release.status || 'upcoming') }}
-              title={`Status: ${release.status || 'upcoming'}`}
-            />
-          </div>
         </div>
+        
+        {/* Status Circle - positioned at top-right corner */}
+        <div 
+          className="absolute top-1 right-1 w-3 h-3 rounded-full border-2 border-white z-10"
+          style={{ backgroundColor: getStatusColor(release.status || 'upcoming') }}
+          title={`Status: ${release.status || 'upcoming'}`}
+        />
         
         {/* Resize handle */}
         <div

@@ -251,7 +251,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
   return (
     <div className="flex h-full">
       {/* Left Panel - Release List */}
-      <div className={`${viewType === "Condensed" ? "w-64" : "w-80"} bg-slate-50 border-r border-slate-200 overflow-y-auto`}>
+      <div className={`${viewType === "Condensed" ? "w-72" : "w-80"} bg-slate-50 border-r border-slate-200 overflow-y-auto`}>
         <div className="p-4">
           <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-4">
             Release Groups
@@ -457,7 +457,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
             >
               {/* Current Day Label */}
               <div 
-                className="absolute -top-6 -left-8 bg-slate-800 text-white text-xs px-2 py-1 rounded shadow-sm whitespace-nowrap"
+                className="absolute -bottom-8 -left-8 bg-slate-800 text-white text-xs px-2 py-1 rounded shadow-sm whitespace-nowrap"
                 style={{ fontSize: '10px' }}
               >
                 Current Day
