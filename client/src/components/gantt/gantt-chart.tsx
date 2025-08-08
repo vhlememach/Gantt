@@ -322,7 +322,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                   <div
                     key={release.id}
                     className={`flex items-center justify-between bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer ${viewType === "Condensed" ? "h-10 p-2" : "h-14 p-3"}`}
-                    style={{ marginBottom: '8px' }}
+                    style={{ marginBottom: '8px', height: viewType === "Condensed" ? '40px' : '56px' }}
                     onClick={() => {
                       console.log('Sidebar release clicked:', release.id);
                       onReleaseEdit(release.id);
@@ -443,7 +443,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                 {!collapsedGroups.has(group.id) && (
                   <div className="ml-5">
                     {groupReleases.map((release, releaseIndex) => (
-                      <div key={release.id} className={`${viewType === "Condensed" ? "h-10" : "h-14"}`} style={{ marginBottom: '8px' }}>
+                      <div key={release.id} className={`${viewType === "Condensed" ? "h-10" : "h-14"}`} style={{ marginBottom: '8px', height: viewType === "Condensed" ? '40px' : '56px' }}>
                         <TimelineBar
                           release={release}
                           group={group}
