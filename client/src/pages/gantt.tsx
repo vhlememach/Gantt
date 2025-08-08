@@ -2,8 +2,9 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
-import { Palette, Ungroup, Download, Plus, ExpandIcon } from "lucide-react";
+import { Palette, Ungroup, Download, Plus, ExpandIcon, ChevronDown } from "lucide-react";
 import HeaderCustomizationModal from "@/components/gantt/header-customization-modal";
 import GroupManagementModal from "@/components/gantt/group-management-modal";
 import ReleaseEditorModal from "@/components/gantt/release-editor-modal";
@@ -27,23 +28,70 @@ export default function GanttPage() {
     setIsReleaseModalOpen(true);
   };
 
-  const handleExport = () => {
-    const data = {
-      settings,
-      groups: [], // This would be populated from the groups query
-      releases: [], // This would be populated from the releases query
-      exportDate: new Date().toISOString(),
-    };
-    
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `gantt-chart-export-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const handleExport = (format: 'json' | 'png' | 'pdf' = 'json') => {
+    if (format === 'json') {
+      const data = {
+        settings,
+        groups: [], // This would be populated from the groups query
+        releases: [], // This would be populated from the releases query
+        exportDate: new Date().toISOString(),
+      };
+      
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `gantt-chart-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } else if (format === 'png') {
+      // Export as PNG using html2canvas
+      const element = document.querySelector('.gantt-container');
+      if (element) {
+        import('html2canvas').then(html2canvas => {
+          html2canvas.default(element as HTMLElement).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `gantt-chart-${new Date().toISOString().split('T')[0]}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+          });
+        });
+      }
+    } else if (format === 'pdf') {
+      // Export as PDF using jsPDF
+      const element = document.querySelector('.gantt-container');
+      if (element) {
+        Promise.all([
+          import('html2canvas'),
+          import('jspdf')
+        ]).then(([html2canvas, jsPDF]) => {
+          html2canvas.default(element as HTMLElement).then(canvas => {
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF.jsPDF();
+            const imgWidth = 210;
+            const pageHeight = 295;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            let heightLeft = imgHeight;
+            
+            let position = 0;
+            
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+            
+            while (heightLeft >= 0) {
+              position = heightLeft - imgHeight;
+              pdf.addPage();
+              pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+              heightLeft -= pageHeight;
+            }
+            
+            pdf.save(`gantt-chart-${new Date().toISOString().split('T')[0]}.pdf`);
+          });
+        });
+      }
+    }
   };
 
   const headerStyle = settings ? {
@@ -79,14 +127,29 @@ export default function GanttPage() {
                 <Palette className="mr-2 h-4 w-4" />
                 Customize
               </Button>
-              <Button
-                onClick={handleExport}
-                variant="secondary"
-                className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-0"
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Export
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-0"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Export
+                    <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => handleExport('json')}>
+                    Export as JSON
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport('png')}>
+                    Export as PNG
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport('pdf')}>
+                    Export as PDF
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
@@ -135,7 +198,7 @@ export default function GanttPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden gantt-container">
         <GanttChart 
           zoomLevel={zoomLevel[0]} 
           viewMode={viewMode} 

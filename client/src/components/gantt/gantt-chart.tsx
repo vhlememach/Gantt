@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TimelineBar from "./timeline-bar";
 import type { ReleaseGroup, Release } from "@shared/schema";
@@ -11,6 +12,8 @@ interface GanttChartProps {
 }
 
 export default function GanttChart({ zoomLevel, viewMode, onReleaseEdit }: GanttChartProps) {
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  
   const { data: groups = [] } = useQuery<ReleaseGroup[]>({
     queryKey: ["/api/release-groups"],
   });
@@ -69,13 +72,30 @@ export default function GanttChart({ zoomLevel, viewMode, onReleaseEdit }: Gantt
                     {groupReleases.length}
                   </span>
                 </div>
-                <Button variant="ghost" size="sm">
-                  <ChevronDown className="h-3 w-3" />
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => {
+                    const newCollapsed = new Set(collapsedGroups);
+                    if (newCollapsed.has(group.id)) {
+                      newCollapsed.delete(group.id);
+                    } else {
+                      newCollapsed.add(group.id);
+                    }
+                    setCollapsedGroups(newCollapsed);
+                  }}
+                >
+                  {collapsedGroups.has(group.id) ? (
+                    <ChevronRight className="h-3 w-3" />
+                  ) : (
+                    <ChevronDown className="h-3 w-3" />
+                  )}
                 </Button>
               </div>
               
-              <div className="space-y-2 ml-5">
-                {groupReleases.map((release) => (
+              {!collapsedGroups.has(group.id) && (
+                <div className="space-y-2 ml-5">
+                  {groupReleases.map((release) => (
                   <div
                     key={release.id}
                     className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
@@ -101,9 +121,10 @@ export default function GanttChart({ zoomLevel, viewMode, onReleaseEdit }: Gantt
                     <div className="text-slate-300 hover:text-slate-500">
                       <i className="fas fa-grip-vertical" />
                     </div>
-                  </div>
-                ))}
-              </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -114,7 +135,11 @@ export default function GanttChart({ zoomLevel, viewMode, onReleaseEdit }: Gantt
         <div className="min-w-max" style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top left' }}>
           {/* Timeline Header */}
           <div className="h-16 bg-slate-100 border-b border-slate-200 flex items-center px-4">
-            <div className={`grid gap-4 w-full min-w-max grid-cols-${timelineData.labels.length}`}>
+            <div className="flex gap-4 w-full min-w-max" style={{ 
+              display: 'grid', 
+              gridTemplateColumns: `repeat(${timelineData.labels.length}, 1fr)`,
+              minWidth: '800px'
+            }}>
               {timelineData.labels.map((label, index) => (
                 <div key={label} className="text-center">
                   <div className="text-sm font-semibold text-slate-700">{label}</div>
@@ -154,7 +179,10 @@ export default function GanttChart({ zoomLevel, viewMode, onReleaseEdit }: Gantt
 
           {/* Timeline Grid Lines */}
           <div className="absolute inset-0 pointer-events-none">
-            <div className={`h-full grid gap-4 opacity-20 grid-cols-${timelineData.labels.length}`}>
+            <div className="h-full grid gap-4 opacity-20" style={{ 
+              gridTemplateColumns: `repeat(${timelineData.labels.length}, 1fr)`,
+              minWidth: '800px'
+            }}>
               {timelineData.labels.map((_, index) => (
                 <div key={index} className="border-r border-slate-200" />
               ))}

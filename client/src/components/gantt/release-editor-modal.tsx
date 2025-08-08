@@ -48,6 +48,34 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
     enabled: isOpen && !!releaseId,
   });
 
+  // Populate form when release data is loaded
+  useEffect(() => {
+    if (release) {
+      setFormData({
+        name: release.name || "",
+        description: release.description || "",
+        groupId: release.groupId || "",
+        startDate: release.startDate ? new Date(release.startDate).toISOString().split('T')[0] : "",
+        endDate: release.endDate ? new Date(release.endDate).toISOString().split('T')[0] : "",
+        icon: release.icon || "fas fa-rocket",
+        responsible: release.responsible || "",
+        status: release.status || "upcoming",
+      });
+    } else if (!releaseId) {
+      // Reset form for new release
+      setFormData({
+        name: "",
+        description: "",
+        groupId: groups[0]?.id || "",
+        startDate: "",
+        endDate: "",
+        icon: "fas fa-rocket",
+        responsible: "",
+        status: "upcoming",
+      });
+    }
+  }, [release, releaseId, groups.length]);
+
   const createReleaseMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
       const response = await apiRequest("POST", "/api/releases", {

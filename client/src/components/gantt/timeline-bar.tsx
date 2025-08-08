@@ -85,11 +85,43 @@ export default function TimelineBar({ release, groupColor, onEdit }: TimelineBar
     const deltaX = e.clientX - startX;
     const daysDelta = Math.round(deltaX / 3); // Approximate days per pixel
     
-    // Don't update too frequently - wait until mouse up
-    return;
+    if (isDragging) {
+      // Update position visually (you can add visual feedback here)
+    } else if (isResizing) {
+      // Update width visually (you can add visual feedback here)
+    }
   };
 
-  const handleMouseUp = () => {
+  const handleMouseUp = (e: MouseEvent) => {
+    if (isDragging || isResizing) {
+      const deltaX = e.clientX - startX;
+      const daysDelta = Math.round(deltaX / 3);
+      
+      if (isDragging && daysDelta !== 0) {
+        // Move both dates
+        const newStartDate = new Date(originalDates.startDate);
+        const newEndDate = new Date(originalDates.endDate);
+        newStartDate.setDate(newStartDate.getDate() + daysDelta);
+        newEndDate.setDate(newEndDate.getDate() + daysDelta);
+        
+        updateReleaseMutation.mutate({
+          startDate: newStartDate.toISOString(),
+          endDate: newEndDate.toISOString(),
+        });
+      } else if (isResizing && daysDelta !== 0) {
+        // Only move end date
+        const newEndDate = new Date(originalDates.endDate);
+        newEndDate.setDate(newEndDate.getDate() + daysDelta);
+        
+        if (newEndDate > originalDates.startDate) {
+          updateReleaseMutation.mutate({
+            startDate: originalDates.startDate.toISOString(),
+            endDate: newEndDate.toISOString(),
+          });
+        }
+      }
+    }
+    
     setIsDragging(false);
     setIsResizing(false);
   };
@@ -116,7 +148,7 @@ export default function TimelineBar({ release, groupColor, onEdit }: TimelineBar
           width: `${Math.max(width, 120)}px`,
           background: `linear-gradient(135deg, ${groupColor}, ${groupColor}dd)`,
         }}
-        onDoubleClick={onEdit}
+        onClick={onEdit}
         onMouseDown={(e) => handleMouseDown(e, 'drag')}
       >
         <div className="flex items-center justify-between h-full px-4">
