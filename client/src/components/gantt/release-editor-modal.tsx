@@ -38,20 +38,38 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
     status: "upcoming",
   });
 
+  // Reset form when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setFormData({
+        name: "",
+        description: "",
+        groupId: "",
+        startDate: "",
+        endDate: "",
+        icon: "fas fa-rocket",
+        responsible: "",
+        status: "upcoming",
+      });
+    }
+  }, [isOpen]);
+
   const { data: groups = [] } = useQuery<ReleaseGroup[]>({
     queryKey: ["/api/release-groups"],
     enabled: isOpen,
   });
 
-  const { data: release } = useQuery<Release>({
+  const { data: release, isLoading: releaseLoading } = useQuery<Release>({
     queryKey: ["/api/releases", releaseId],
     enabled: isOpen && !!releaseId,
   });
 
   // Populate form when release data is loaded
   useEffect(() => {
-    if (release && releaseId) {
-      console.log('Loading release data:', release);
+    console.log('Form population effect triggered:', { release, releaseId, isOpen, releaseLoading });
+    
+    if (releaseId && release && !releaseLoading) {
+      console.log('Loading release data into form:', release);
       setFormData({
         name: release.name || "",
         description: release.description || "",
@@ -62,7 +80,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
         responsible: release.responsible || "",
         status: release.status || "upcoming",
       });
-    } else if (!releaseId && isOpen) {
+    } else if (!releaseId && isOpen && groups.length > 0) {
       console.log('Resetting form for new release');
       // Reset form for new release
       setFormData({
@@ -76,7 +94,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
         status: "upcoming",
       });
     }
-  }, [release, releaseId, groups, isOpen]);
+  }, [release, releaseId, groups, isOpen, releaseLoading]);
 
   const createReleaseMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
@@ -94,7 +112,18 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/releases"] });
+      queryClient.refetchQueries({ queryKey: ["/api/releases"] });
       toast({ title: "Release created successfully" });
+      setFormData({
+        name: "",
+        description: "",
+        groupId: groups[0]?.id || "",
+        startDate: new Date().toISOString().split('T')[0],
+        endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        icon: "fas fa-rocket",
+        responsible: "",
+        status: "upcoming",
+      });
       onClose();
     },
     onError: (error) => {
@@ -120,6 +149,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/releases"] });
       queryClient.invalidateQueries({ queryKey: ["/api/releases", releaseId] });
+      queryClient.refetchQueries({ queryKey: ["/api/releases"] });
       toast({ title: "Release updated successfully" });
       onClose();
     },

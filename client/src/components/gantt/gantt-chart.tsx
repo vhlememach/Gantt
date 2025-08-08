@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,15 +18,33 @@ export default function GanttChart({ zoomLevel, viewMode, onReleaseEdit }: Gantt
     queryKey: ["/api/release-groups"],
   });
 
-  const { data: releases = [] } = useQuery<Release[]>({
+  const { data: releases = [], refetch: refetchReleases } = useQuery<Release[]>({
     queryKey: ["/api/releases"],
   });
+
+  // Add effect to ensure fresh data
+  useEffect(() => {
+    refetchReleases();
+  }, [refetchReleases]);
 
   // Group releases by group
   const releasesByGroup = groups.map(group => ({
     group,
     releases: releases.filter(release => release.groupId === group.id),
   }));
+
+  // Debug logging
+  useEffect(() => {
+    console.log('GanttChart data updated:', {
+      groupsCount: groups.length,
+      releasesCount: releases.length,
+      releasesByGroup: releasesByGroup.map(({ group, releases }) => ({
+        groupName: group.name,
+        releaseCount: releases.length,
+        releases: releases.map(r => ({ name: r.name, id: r.id }))
+      }))
+    });
+  }, [groups, releases, releasesByGroup]);
 
   // Generate timeline based on view mode
   const getTimelineData = (mode: string) => {
