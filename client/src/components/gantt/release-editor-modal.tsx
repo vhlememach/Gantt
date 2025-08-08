@@ -38,22 +38,6 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
     status: "upcoming",
   });
 
-  // Reset form when modal closes
-  useEffect(() => {
-    if (!isOpen) {
-      setFormData({
-        name: "",
-        description: "",
-        groupId: "",
-        startDate: "",
-        endDate: "",
-        icon: "fas fa-rocket",
-        responsible: "",
-        status: "upcoming",
-      });
-    }
-  }, [isOpen]);
-
   const { data: groups = [] } = useQuery<ReleaseGroup[]>({
     queryKey: ["/api/release-groups"],
     enabled: isOpen,
@@ -64,21 +48,36 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
     enabled: isOpen && !!releaseId,
   });
 
-  // Populate form when release data is loaded or modal opens
+  // Initialize form data based on editing mode
   useEffect(() => {
-    console.log('Form population effect triggered:', { 
-      release: release ? { id: release.id, name: release.name } : null, 
-      releaseId, 
+    console.log('Form initialization effect:', { 
       isOpen, 
-      releaseLoading, 
-      groupsLength: groups.length,
-      currentFormData: formData
+      releaseId, 
+      hasRelease: !!release, 
+      releaseLoading,
+      groupsCount: groups.length 
     });
-    
-    if (isOpen) {
-      if (releaseId && release && !releaseLoading) {
-        console.log('Loading release data into form:', release);
-        const populatedData = {
+
+    if (!isOpen) {
+      // Reset when modal closes
+      setFormData({
+        name: "",
+        description: "",
+        groupId: "",
+        startDate: "",
+        endDate: "",
+        icon: "fas fa-rocket",
+        responsible: "",
+        status: "upcoming",
+      });
+      return;
+    }
+
+    if (releaseId) {
+      // Editing mode - wait for release data
+      if (release && !releaseLoading) {
+        console.log('Populating form with release data:', release);
+        setFormData({
           name: release.name || "",
           description: release.description || "",
           groupId: release.groupId || "",
@@ -87,15 +86,16 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
           icon: release.icon || "fas fa-rocket",
           responsible: release.responsible || "",
           status: release.status || "upcoming",
-        };
-        console.log('Setting form data to:', populatedData);
-        setFormData(populatedData);
-      } else if (!releaseId && groups.length > 0) {
-        console.log('Resetting form for new release');
+        });
+      }
+    } else {
+      // Creating mode - set defaults when groups are loaded
+      if (groups.length > 0) {
+        console.log('Setting form defaults for new release');
         setFormData({
           name: "",
           description: "",
-          groupId: groups[0]?.id || "",
+          groupId: groups[0].id,
           startDate: new Date().toISOString().split('T')[0],
           endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
           icon: "fas fa-rocket",
@@ -104,7 +104,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
         });
       }
     }
-  }, [release, releaseId, groups, isOpen, releaseLoading]);
+  }, [isOpen, releaseId, release, releaseLoading, groups]);
 
   const createReleaseMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
