@@ -16,6 +16,7 @@ export const releases = pgTable("releases", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   description: text("description").default(""),
+  url: text("url").default(""), // URL for supplemental material
   groupId: varchar("group_id").notNull().references(() => releaseGroups.id, { onDelete: "cascade" }),
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),

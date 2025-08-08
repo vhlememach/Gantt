@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, CalendarDays } from "lucide-react";
 import { IconPicker } from "@/components/ui/icon-picker";
@@ -22,6 +23,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
   const [formData, setFormData] = useState({
     name: "",
     description: "",
+    url: "",
     groupId: "",
     startDate: "",
     endDate: "",
@@ -59,6 +61,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
       setFormData({
         name: "",
         description: "",
+        url: "",
         groupId: "",
         startDate: "",
         endDate: "",
@@ -85,6 +88,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
       setFormData({
         name: release.name || "",
         description: release.description || "",
+        url: release.url || "",
         groupId: release.groupId || "",
         startDate: release.startDate ? new Date(release.startDate).toISOString().split('T')[0] : "",
         endDate: release.endDate ? new Date(release.endDate).toISOString().split('T')[0] : "",
@@ -102,6 +106,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
       setFormData({
         name: "",
         description: "",
+        url: "",
         groupId: groups[0].id,
         startDate: new Date().toISOString().split('T')[0],
         endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -120,6 +125,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
         startDate: new Date(data.startDate).toISOString(),
         endDate: new Date(data.endDate).toISOString(),
         description: data.description || "",
+        url: data.url || "",
         responsible: data.responsible || "",
       };
       console.log('Sending payload:', payload);
@@ -156,6 +162,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
         startDate: new Date(data.startDate).toISOString(),
         endDate: new Date(data.endDate).toISOString(),
         description: data.description || "",
+        url: data.url || "",
         responsible: data.responsible || "",
       };
       console.log('Sending update payload:', payload);
@@ -220,11 +227,24 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
 
           <div>
             <Label htmlFor="description">Description</Label>
-            <Input
+            <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="Brief description of the release"
+              placeholder="Detailed description of the release..."
+              rows={4}
+              className="resize-none"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="url">Project URL (optional)</Label>
+            <Input
+              id="url"
+              type="url"
+              value={formData.url}
+              onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
+              placeholder="https://docs.example.com/project-info"
             />
           </div>
 
