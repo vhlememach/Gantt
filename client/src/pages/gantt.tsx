@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
 import { Palette, Ungroup, Download, Plus, ExpandIcon, ChevronDown, Settings } from "lucide-react";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
+
 import HeaderCustomizationModal from "@/components/gantt/header-customization-modal";
 import GroupManagementModal from "@/components/gantt/group-management-modal";
 import ReleaseEditorModal from "@/components/gantt/release-editor-modal";
@@ -137,7 +137,7 @@ export default function GanttPage() {
   } : {};
 
   return (
-    <div className="min-h-screen bg-background font-inter flex flex-col dark:bg-slate-900">
+    <div className="min-h-screen bg-slate-50 font-inter flex flex-col">
       {/* Header */}
       <header className="text-white shadow-lg" style={headerStyle}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -177,7 +177,7 @@ export default function GanttPage() {
                 <Settings className="mr-2 h-4 w-4" />
                 Status Colors
               </Button>
-              <ThemeToggle />
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button

@@ -138,14 +138,16 @@ export default function GanttChart({ zoomLevel, viewMode, onReleaseEdit }: Gantt
       let currentDate = new Date(minDate);
       currentDate.setDate(currentDate.getDate() - currentDate.getDay()); // Start of week
       
-      for (let i = 0; i < 8 && currentDate <= maxDate; i++) {
+      let weekCounter = 1;
+      while (currentDate <= maxDate && weekCounter <= 24) { // Allow up to 24 weeks for extended timelines
         const weekEnd = new Date(currentDate);
         weekEnd.setDate(weekEnd.getDate() + 6);
         
-        labels.push(`Week ${i + 1}`);
+        labels.push(`Week ${weekCounter}`);
         sublabels.push(`${currentDate.getMonth() + 1}/${currentDate.getDate()}-${weekEnd.getMonth() + 1}/${weekEnd.getDate()}`);
         
         currentDate.setDate(currentDate.getDate() + 7);
+        weekCounter++;
       }
       
       return { labels, sublabels };
