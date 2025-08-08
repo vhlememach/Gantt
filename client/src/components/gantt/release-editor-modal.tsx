@@ -46,7 +46,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
     enabled: isOpen,
   });
 
-  const { data: release, isLoading: releaseLoading } = useQuery<Release>({
+  const { data: release, isLoading: releaseLoading, error: releaseError } = useQuery<Release>({
     queryKey: ["/api/releases", releaseId],
     enabled: isOpen && !!releaseId,
   });
@@ -56,6 +56,8 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
     releaseId, 
     hasRelease: !!release, 
     releaseLoading, 
+    releaseError,
+    release: release ? { id: release.id, name: release.name } : null,
     isQueryEnabled: isOpen && !!releaseId 
   });
 
@@ -77,6 +79,15 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
 
   // Populate form when editing existing release
   useEffect(() => {
+    console.log('Form population effect:', { 
+      isOpen, 
+      releaseId, 
+      hasRelease: !!release, 
+      releaseLoading,
+      releaseError,
+      canPopulate: isOpen && releaseId && release && !releaseLoading
+    });
+    
     if (isOpen && releaseId && release && !releaseLoading) {
       console.log('Populating form with release data:', release);
       setFormData({
@@ -90,7 +101,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
         status: release.status || "upcoming",
       });
     }
-  }, [isOpen, releaseId, release, releaseLoading]);
+  }, [isOpen, releaseId, release, releaseLoading, releaseError]);
 
   // Set defaults for new release
   useEffect(() => {
