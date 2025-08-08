@@ -6,6 +6,13 @@
 @tailwind utilities;
 
 :root {
+  --status-upcoming: #f59e0b;
+  --status-in-progress: #3b82f6;
+  --status-completed: #22c55e;
+  --status-delayed: #ef4444;
+}
+
+:root {
   --background: hsl(0 0% 100%);
   --foreground: hsl(210 25% 7.8431%);
   --card: hsl(180 6.6667% 97.0588%);

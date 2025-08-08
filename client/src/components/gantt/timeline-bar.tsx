@@ -1,21 +1,20 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useMutation } from "@tanstack/react-query";
+import * as Icons from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Release } from "@shared/schema";
 
 const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'completed':
-      return 'bg-green-400';
-    case 'in-progress':
-      return 'bg-blue-400';
-    case 'delayed':
-      return 'bg-red-400';
-    case 'upcoming':
-    default:
-      return 'bg-yellow-400';
-  }
+  // Use CSS custom properties for dynamic status colors
+  const colors = {
+    completed: 'var(--status-completed, #22c55e)',
+    'in-progress': 'var(--status-in-progress, #3b82f6)',
+    delayed: 'var(--status-delayed, #ef4444)',
+    upcoming: 'var(--status-upcoming, #f59e0b)',
+  };
+  
+  return colors[status as keyof typeof colors] || colors.upcoming;
 };
 
 interface TimelineBarProps {
@@ -235,7 +234,7 @@ export default function TimelineBar({ release, groupColor, onEdit, viewMode, tim
         style={{
           left: `${leftPosition}%`,
           width: `${width}%`,
-          background: `linear-gradient(135deg, ${groupColor}, ${groupColor}dd)`,
+          background: `linear-gradient(135deg, ${groupColor}, ${groupColor}80, ${groupColor}40)`,
           minWidth: '120px', // Ensure minimum width for content
         }}
         onClick={(e) => {
@@ -246,14 +245,23 @@ export default function TimelineBar({ release, groupColor, onEdit, viewMode, tim
       >
         <div className="flex items-center justify-between h-full px-3">
           <div className="flex items-center space-x-2 flex-1 min-w-0">
-            <i className={`${release.icon} text-white text-sm flex-shrink-0`} />
+            {release.icon.startsWith('lucide-') ? (
+              (() => {
+                const iconName = release.icon.replace('lucide-', '').replace(/-([a-z])/g, (_, letter) => letter.toUpperCase()).replace(/^[a-z]/, match => match.toUpperCase());
+                const IconComponent = (Icons as any)[iconName] || Icons.Rocket;
+                return <IconComponent className="w-4 h-4 text-white flex-shrink-0" />;
+              })()
+            ) : (
+              <i className={`${release.icon} text-white text-sm flex-shrink-0`} />
+            )}
             <span className="text-white font-medium text-sm truncate">
               {release.name}
             </span>
           </div>
           <div className="flex items-center space-x-2 flex-shrink-0">
             <div 
-              className={`w-3 h-3 rounded-full ${getStatusColor(release.status || 'upcoming')}`}
+              className="w-3 h-3 rounded-full"
+              style={{ backgroundColor: getStatusColor(release.status || 'upcoming') }}
               title={`Status: ${release.status || 'upcoming'}`}
             />
           </div>

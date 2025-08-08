@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, CalendarDays, Database, Rocket, Settings, TrendingUp, Smartphone, Cloud } from "lucide-react";
+import { Calendar, CalendarDays } from "lucide-react";
+import { IconPicker } from "@/components/ui/icon-picker";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Release, ReleaseGroup } from "@shared/schema";
@@ -16,15 +17,6 @@ interface ReleaseEditorModalProps {
   releaseId: string | null;
 }
 
-const iconOptions = [
-  { value: "fas fa-database", icon: Database, label: "Database" },
-  { value: "fas fa-rocket", icon: Rocket, label: "Rocket" },
-  { value: "fas fa-cog", icon: Settings, label: "Settings" },
-  { value: "fas fa-chart-line", icon: TrendingUp, label: "Chart" },
-  { value: "fas fa-mobile-alt", icon: Smartphone, label: "Mobile" },
-  { value: "fas fa-cloud", icon: Cloud, label: "Cloud" },
-];
-
 export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: ReleaseEditorModalProps) {
   const { toast } = useToast();
   const [formData, setFormData] = useState({
@@ -33,7 +25,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
     groupId: "",
     startDate: "",
     endDate: "",
-    icon: "fas fa-rocket",
+    icon: "lucide-rocket",
     responsible: "",
     status: "upcoming",
   });
@@ -70,7 +62,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
         groupId: "",
         startDate: "",
         endDate: "",
-        icon: "fas fa-rocket",
+        icon: "lucide-rocket",
         responsible: "",
         status: "upcoming",
       });
@@ -96,7 +88,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
         groupId: release.groupId || "",
         startDate: release.startDate ? new Date(release.startDate).toISOString().split('T')[0] : "",
         endDate: release.endDate ? new Date(release.endDate).toISOString().split('T')[0] : "",
-        icon: release.icon || "fas fa-rocket",
+        icon: release.icon || "lucide-rocket",
         responsible: release.responsible || "",
         status: release.status || "upcoming",
       });
@@ -113,7 +105,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
         groupId: groups[0].id,
         startDate: new Date().toISOString().split('T')[0],
         endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        icon: "fas fa-rocket",
+        icon: "lucide-rocket",
         responsible: "",
         status: "upcoming",
       });
@@ -144,7 +136,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
         groupId: groups[0]?.id || "",
         startDate: new Date().toISOString().split('T')[0],
         endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        icon: "fas fa-rocket",
+        icon: "lucide-rocket",
         responsible: "",
         status: "upcoming",
       });
@@ -205,7 +197,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
     }
   };
 
-  const IconComponent = iconOptions.find(opt => opt.value === formData.icon)?.icon || Rocket;
+  // No need for IconComponent anymore - handled by IconPicker
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -307,25 +299,11 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
             </div>
           </div>
 
-          <div>
-            <Label>Icon</Label>
-            <div className="grid grid-cols-6 gap-2">
-              {iconOptions.map((option) => {
-                const Icon = option.icon;
-                return (
-                  <Button
-                    key={option.value}
-                    type="button"
-                    variant={formData.icon === option.value ? "default" : "outline"}
-                    className="w-10 h-10 p-0"
-                    onClick={() => setFormData(prev => ({ ...prev, icon: option.value }))}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </Button>
-                );
-              })}
-            </div>
-          </div>
+          <IconPicker
+            label="Icon"
+            value={formData.icon}
+            onChange={(icon) => setFormData(prev => ({ ...prev, icon }))}
+          />
 
           <div className="flex justify-end space-x-3 pt-4">
             <Button type="button" variant="outline" onClick={onClose}>

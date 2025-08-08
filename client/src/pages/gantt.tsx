@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
-import { Palette, Ungroup, Download, Plus, ExpandIcon, ChevronDown } from "lucide-react";
+import { Palette, Ungroup, Download, Plus, ExpandIcon, ChevronDown, Settings } from "lucide-react";
 import HeaderCustomizationModal from "@/components/gantt/header-customization-modal";
 import GroupManagementModal from "@/components/gantt/group-management-modal";
 import ReleaseEditorModal from "@/components/gantt/release-editor-modal";
+import StatusColorSettings from "@/components/gantt/status-color-settings";
 import GanttChart from "@/components/gantt/gantt-chart";
 import type { AppSettings } from "@shared/schema";
 
@@ -18,6 +19,8 @@ export default function GanttPage() {
   const [selectedReleaseId, setSelectedReleaseId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState("Quarters");
   const [zoomLevel, setZoomLevel] = useState([100]);
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const [isStatusColorModalOpen, setIsStatusColorModalOpen] = useState(false);
 
   const { data: settings } = useQuery<AppSettings>({
     queryKey: ["/api/settings"],
@@ -27,6 +30,18 @@ export default function GanttPage() {
     console.log('handleReleaseEdit called with:', releaseId);
     setSelectedReleaseId(releaseId);
     setIsReleaseModalOpen(true);
+  };
+
+  const toggleFullScreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().then(() => {
+        setIsFullScreen(true);
+      });
+    } else {
+      document.exitFullscreen().then(() => {
+        setIsFullScreen(false);
+      });
+    }
   };
 
   const handleExport = (format: 'json' | 'png' | 'pdf' = 'json') => {
@@ -128,6 +143,14 @@ export default function GanttPage() {
                 <Palette className="mr-2 h-4 w-4" />
                 Customize
               </Button>
+              <Button
+                onClick={() => setIsStatusColorModalOpen(true)}
+                variant="secondary"
+                className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-0"
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                Status Colors
+              </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -191,7 +214,7 @@ export default function GanttPage() {
               />
               <span className="text-sm text-slate-500 w-12">{zoomLevel[0]}%</span>
             </div>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" onClick={toggleFullScreen}>
               <ExpandIcon className="h-4 w-4" />
             </Button>
           </div>
@@ -213,7 +236,7 @@ export default function GanttPage() {
           <div className="flex items-center space-x-6 text-sm text-slate-600">
             <span>Total Releases: <strong>5</strong></span>
             <span>Active Groups: <strong>2</strong></span>
-            <span>Timeline: <strong>Jan 2024 - Jul 2024</strong></span>
+            <span>Timeline: <strong>Jan 2025 - Jul 2025</strong></span>
           </div>
           <div className="flex items-center space-x-2 text-sm text-slate-500">
             <span>Click and drag to resize bars • Double-click to edit</span>
@@ -234,6 +257,10 @@ export default function GanttPage() {
         isOpen={isReleaseModalOpen} 
         onClose={() => setIsReleaseModalOpen(false)}
         releaseId={selectedReleaseId}
+      />
+      <StatusColorSettings
+        isOpen={isStatusColorModalOpen}
+        onClose={() => setIsStatusColorModalOpen(false)}
       />
     </div>
   );
