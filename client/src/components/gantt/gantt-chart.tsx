@@ -275,7 +275,7 @@ export default function GanttChart({ zoomLevel, viewMode, onReleaseEdit }: Gantt
                       <div key={release.id} className="h-14 flex items-center">
                         <TimelineBar
                           release={release}
-                          groupColor={group.color}
+                          group={group}
                           onEdit={() => onReleaseEdit(release.id)}
                           viewMode={viewMode}
                           timelineLabels={timelineData.labels}

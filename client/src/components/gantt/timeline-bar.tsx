@@ -19,13 +19,13 @@ const getStatusColor = (status: string) => {
 
 interface TimelineBarProps {
   release: Release;
-  groupColor: string;
+  group: { id: string; name: string; color: string; gradientEnabled?: string; gradientIntensity?: string };
   onEdit: () => void;
   viewMode: string;
   timelineLabels: string[];
 }
 
-export default function TimelineBar({ release, groupColor, onEdit, viewMode, timelineLabels }: TimelineBarProps) {
+export default function TimelineBar({ release, group, onEdit, viewMode, timelineLabels }: TimelineBarProps) {
   const { toast } = useToast();
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
@@ -234,7 +234,9 @@ export default function TimelineBar({ release, groupColor, onEdit, viewMode, tim
         style={{
           left: `${leftPosition}%`,
           width: `${width}%`,
-          background: `linear-gradient(135deg, ${groupColor}, ${groupColor}80, ${groupColor}40)`,
+          background: group.gradientEnabled === "true" 
+            ? `linear-gradient(135deg, ${group.color}, ${group.color}${group.gradientIntensity || '40'})`
+            : group.color,
           minWidth: '120px', // Ensure minimum width for content
         }}
         onClick={(e) => {

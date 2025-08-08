@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Trash2, Plus } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { ReleaseGroup } from "@shared/schema";
@@ -27,8 +29,12 @@ export default function GroupManagementModal({ isOpen, onClose }: GroupManagemen
   });
 
   const createGroupMutation = useMutation({
-    mutationFn: async (data: { name: string; color: string }) => {
-      const response = await apiRequest("POST", "/api/release-groups", data);
+    mutationFn: async (data: { name: string; color: string; gradientEnabled?: string; gradientIntensity?: string }) => {
+      const response = await apiRequest("POST", "/api/release-groups", {
+        ...data,
+        gradientEnabled: data.gradientEnabled || "true",
+        gradientIntensity: data.gradientIntensity || "40"
+      });
       return response.json();
     },
     onSuccess: () => {
@@ -44,7 +50,7 @@ export default function GroupManagementModal({ isOpen, onClose }: GroupManagemen
   });
 
   const updateGroupMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: { color?: string; name?: string } }) => {
+    mutationFn: async ({ id, data }: { id: string; data: { color?: string; name?: string; gradientEnabled?: string; gradientIntensity?: string } }) => {
       const response = await apiRequest("PUT", `/api/release-groups/${id}`, data);
       return response.json();
     },
@@ -91,6 +97,14 @@ export default function GroupManagementModal({ isOpen, onClose }: GroupManagemen
     updateGroupMutation.mutate({ id: groupId, data: { name } });
   };
 
+  const handleGradientToggle = (groupId: string, enabled: boolean) => {
+    updateGroupMutation.mutate({ id: groupId, data: { gradientEnabled: enabled.toString() } });
+  };
+
+  const handleGradientIntensity = (groupId: string, intensity: number) => {
+    updateGroupMutation.mutate({ id: groupId, data: { gradientIntensity: intensity.toString() } });
+  };
+
   const handleDeleteGroup = (groupId: string) => {
     if (confirm("Are you sure you want to delete this group? All releases in this group will also be deleted.")) {
       deleteGroupMutation.mutate(groupId);
@@ -111,38 +125,77 @@ export default function GroupManagementModal({ isOpen, onClose }: GroupManagemen
             <div className="text-center text-slate-500">No groups created yet</div>
           ) : (
             groups.map((group) => (
-              <div key={group.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg group">
-                <div className="flex items-center space-x-3 flex-1">
-                  <div 
-                    className="w-4 h-4 rounded-full" 
-                    style={{ backgroundColor: group.color }}
-                  />
-                  <Input
-                    value={group.name}
-                    onChange={(e) => handleNameChange(group.id, e.target.value)}
-                    className="flex-1 bg-transparent border-none shadow-none p-0 font-medium text-slate-700 focus:bg-white focus:border focus:shadow-sm focus:px-2 focus:py-1"
-                    onBlur={(e) => {
-                      if (e.target.value.trim() !== group.name) {
-                        handleNameChange(group.id, e.target.value.trim() || group.name);
-                      }
-                    }}
-                  />
+              <div key={group.id} className="p-4 bg-slate-50 rounded-lg space-y-3">
+                {/* Group Name and Color */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3 flex-1">
+                    <div 
+                      className="w-4 h-4 rounded-full" 
+                      style={{ 
+                        background: group.gradientEnabled === "true" 
+                          ? `linear-gradient(135deg, ${group.color}, ${group.color}${group.gradientIntensity || '40'})`
+                          : group.color 
+                      }}
+                    />
+                    <Input
+                      value={group.name}
+                      onChange={(e) => handleNameChange(group.id, e.target.value)}
+                      className="flex-1 bg-transparent border-none shadow-none p-0 font-medium text-slate-700 focus:bg-white focus:border focus:shadow-sm focus:px-2 focus:py-1"
+                      onBlur={(e) => {
+                        if (e.target.value.trim() !== group.name) {
+                          handleNameChange(group.id, e.target.value.trim() || group.name);
+                        }
+                      }}
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="color"
+                      value={group.color}
+                      onChange={(e) => handleColorChange(group.id, e.target.value)}
+                      className="w-8 h-8 border border-slate-300 rounded cursor-pointer"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteGroup(group.id)}
+                      className="text-slate-400 hover:text-red-500"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="color"
-                    value={group.color}
-                    onChange={(e) => handleColorChange(group.id, e.target.value)}
-                    className="w-8 h-8 border border-slate-300 rounded cursor-pointer"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteGroup(group.id)}
-                    className="text-slate-400 hover:text-red-500"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+
+                {/* Gradient Controls */}
+                <div className="pl-7 space-y-3 border-l-2 border-slate-200">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm text-slate-600">Gradient Shading</Label>
+                    <Switch
+                      checked={group.gradientEnabled === "true"}
+                      onCheckedChange={(enabled) => handleGradientToggle(group.id, enabled)}
+                    />
+                  </div>
+                  
+                  {group.gradientEnabled === "true" && (
+                    <div className="space-y-2">
+                      <Label className="text-sm text-slate-600">Gradient Intensity: {group.gradientIntensity || '40'}%</Label>
+                      <Slider
+                        value={[parseInt(group.gradientIntensity || '40')]}
+                        onValueChange={(values) => handleGradientIntensity(group.id, values[0])}
+                        max={80}
+                        min={20}
+                        step={10}
+                        className="w-full"
+                      />
+                      <div className="text-xs text-slate-500">Preview:</div>
+                      <div 
+                        className="h-6 rounded border"
+                        style={{ 
+                          background: `linear-gradient(135deg, ${group.color}, ${group.color}${group.gradientIntensity || '40'})`
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             ))

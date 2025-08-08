@@ -50,6 +50,8 @@ export class MemStorage implements IStorage {
       id: randomUUID(),
       name: "Product",
       color: "#8B5CF6",
+      gradientEnabled: "true",
+      gradientIntensity: "40",
       createdAt: new Date(),
     };
 
@@ -57,6 +59,8 @@ export class MemStorage implements IStorage {
       id: randomUUID(),
       name: "Infrastructure",
       color: "#10B981",
+      gradientEnabled: "true",
+      gradientIntensity: "40",
       createdAt: new Date(),
     };
 
@@ -146,6 +150,8 @@ export class MemStorage implements IStorage {
     const newGroup: ReleaseGroup = {
       ...group,
       id,
+      gradientEnabled: group.gradientEnabled || "true",
+      gradientIntensity: group.gradientIntensity || "40",
       createdAt: new Date(),
     };
     this.releaseGroups.set(id, newGroup);
@@ -193,6 +199,7 @@ export class MemStorage implements IStorage {
       status: release.status || "upcoming",
       description: release.description || "",
       responsible: release.responsible || "",
+      icon: release.icon || "lucide-rocket",
     };
     this.releases.set(id, newRelease);
     return newRelease;

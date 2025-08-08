@@ -7,6 +7,8 @@ export const releaseGroups = pgTable("release_groups", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   color: text("color").notNull(),
+  gradientEnabled: text("gradient_enabled").notNull().default("true"),
+  gradientIntensity: text("gradient_intensity").notNull().default("40"), // percentage for opacity
   createdAt: timestamp("created_at").defaultNow(),
 });
 
