@@ -265,10 +265,11 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
       <div
         ref={barRef}
         className={`absolute ${viewType === "Condensed" ? "h-8" : "h-12"} rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all duration-200 z-10`}
-        style={{ top: '50%', transform: 'translateY(-50%)' }}
         style={{
           left: `${leftPosition}%`,
           width: `${width}%`,
+          top: '50%',
+          transform: 'translateY(-50%)',
           background: group.gradientEnabled === "true" 
             ? `linear-gradient(135deg, ${group.color}, ${group.gradientSecondaryColor || '#FFFFFF'})`
             : group.color,
