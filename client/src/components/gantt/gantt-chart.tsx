@@ -457,10 +457,17 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
             >
               {/* Current Day Label */}
               <div 
-                className="absolute -bottom-8 -left-8 bg-slate-800 text-white text-xs px-2 py-1 rounded shadow-sm whitespace-nowrap"
+                className="absolute top-2 -left-12 bg-slate-800 text-white text-xs px-2 py-1 rounded shadow-sm whitespace-nowrap"
                 style={{ fontSize: '10px' }}
               >
-                Current Day
+                <div>Current Day</div>
+                <div className="text-xs opacity-80">
+                  {new Date().toLocaleDateString('en-US', { 
+                    month: '2-digit', 
+                    day: '2-digit', 
+                    year: '2-digit' 
+                  })}
+                </div>
               </div>
             </div>
           )}

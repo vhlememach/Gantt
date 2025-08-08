@@ -69,19 +69,38 @@ export default function GanttPage() {
       const element = document.querySelector('.gantt-container');
       if (element) {
         import('html2canvas').then(html2canvas => {
+          // Add temporary styles for export
+          const style = document.createElement('style');
+          style.innerHTML = `
+            .gantt-container * {
+              line-height: 1.4 !important;
+              padding-top: 4px !important;
+              padding-bottom: 4px !important;
+            }
+            .gantt-container .text-sm {
+              font-size: 14px !important;
+            }
+            .gantt-container .text-xs {
+              font-size: 12px !important;
+            }
+          `;
+          document.head.appendChild(style);
+          
           html2canvas.default(element as HTMLElement, {
-            scale: 2, // Reduced scale for better text rendering
+            scale: 1.5, // Optimal scale for text rendering
             useCORS: true,
             allowTaint: true,
             backgroundColor: '#ffffff',
-            height: element.scrollHeight + 80, // More padding to prevent text cutoff
-            width: element.scrollWidth + 80,
+            height: element.scrollHeight + 100,
+            width: element.scrollWidth + 100,
             scrollX: 0,
             scrollY: 0,
             logging: false,
-            letterRendering: true,
+            foreignObjectRendering: true,
             imageTimeout: 15000
           }).then(canvas => {
+            // Remove temporary styles
+            document.head.removeChild(style);
             const link = document.createElement('a');
             link.download = `gantt-chart-${new Date().toISOString().split('T')[0]}.png`;
             link.href = canvas.toDataURL('image/png', 1.0);
@@ -97,19 +116,38 @@ export default function GanttPage() {
           import('html2canvas'),
           import('jspdf')
         ]).then(([html2canvas, jsPDF]) => {
+          // Add temporary styles for export
+          const style = document.createElement('style');
+          style.innerHTML = `
+            .gantt-container * {
+              line-height: 1.4 !important;
+              padding-top: 4px !important;
+              padding-bottom: 4px !important;
+            }
+            .gantt-container .text-sm {
+              font-size: 14px !important;
+            }
+            .gantt-container .text-xs {
+              font-size: 12px !important;
+            }
+          `;
+          document.head.appendChild(style);
+          
           html2canvas.default(element as HTMLElement, {
-            scale: 2, // Reduced scale for better text rendering
+            scale: 1.5, // Optimal scale for text rendering
             useCORS: true,
             allowTaint: true,
             backgroundColor: '#ffffff',
-            height: element.scrollHeight + 80, // More padding to prevent text cutoff
-            width: element.scrollWidth + 80,
+            height: element.scrollHeight + 100,
+            width: element.scrollWidth + 100,
             scrollX: 0,
             scrollY: 0,
             logging: false,
-            letterRendering: true,
+            foreignObjectRendering: true,
             imageTimeout: 15000
           }).then(canvas => {
+            // Remove temporary styles
+            document.head.removeChild(style);
             const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF.jsPDF();
             const imgWidth = 210;
