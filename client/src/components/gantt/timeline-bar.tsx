@@ -261,15 +261,14 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
   });
 
   return (
-    <div className={`relative w-full flex items-center`} style={{ height: viewType === "Condensed" ? '40px' : '56px' }}> {/* Container height matches sidebar items */}
+    <div className={`relative w-full`} style={{ height: viewType === "Condensed" ? '40px' : '56px' }}> {/* Container height matches sidebar items */}
       <div
         ref={barRef}
         className={`absolute ${viewType === "Condensed" ? "h-8" : "h-12"} rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all duration-200 z-10`}
         style={{
           left: `${leftPosition}%`,
           width: `${width}%`,
-          top: '50%',
-          transform: 'translateY(-50%)',
+          top: '0px',
           background: group.gradientEnabled === "true" 
             ? `linear-gradient(135deg, ${group.color}, ${group.gradientSecondaryColor || '#FFFFFF'})`
             : group.color,
