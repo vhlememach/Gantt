@@ -48,18 +48,9 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
     enabled: isOpen && !!releaseId,
   });
 
-  // Initialize form data based on editing mode
+  // Reset form when modal closes
   useEffect(() => {
-    console.log('Form initialization effect:', { 
-      isOpen, 
-      releaseId, 
-      hasRelease: !!release, 
-      releaseLoading,
-      groupsCount: groups.length 
-    });
-
     if (!isOpen) {
-      // Reset when modal closes
       setFormData({
         name: "",
         description: "",
@@ -70,41 +61,42 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
         responsible: "",
         status: "upcoming",
       });
-      return;
     }
+  }, [isOpen]);
 
-    if (releaseId) {
-      // Editing mode - wait for release data
-      if (release && !releaseLoading) {
-        console.log('Populating form with release data:', release);
-        setFormData({
-          name: release.name || "",
-          description: release.description || "",
-          groupId: release.groupId || "",
-          startDate: release.startDate ? new Date(release.startDate).toISOString().split('T')[0] : "",
-          endDate: release.endDate ? new Date(release.endDate).toISOString().split('T')[0] : "",
-          icon: release.icon || "fas fa-rocket",
-          responsible: release.responsible || "",
-          status: release.status || "upcoming",
-        });
-      }
-    } else {
-      // Creating mode - set defaults when groups are loaded
-      if (groups.length > 0) {
-        console.log('Setting form defaults for new release');
-        setFormData({
-          name: "",
-          description: "",
-          groupId: groups[0].id,
-          startDate: new Date().toISOString().split('T')[0],
-          endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          icon: "fas fa-rocket",
-          responsible: "",
-          status: "upcoming",
-        });
-      }
+  // Populate form when editing existing release
+  useEffect(() => {
+    if (isOpen && releaseId && release && !releaseLoading) {
+      console.log('Populating form with release data:', release);
+      setFormData({
+        name: release.name || "",
+        description: release.description || "",
+        groupId: release.groupId || "",
+        startDate: release.startDate ? new Date(release.startDate).toISOString().split('T')[0] : "",
+        endDate: release.endDate ? new Date(release.endDate).toISOString().split('T')[0] : "",
+        icon: release.icon || "fas fa-rocket",
+        responsible: release.responsible || "",
+        status: release.status || "upcoming",
+      });
     }
-  }, [isOpen, releaseId, release, releaseLoading, groups]);
+  }, [isOpen, releaseId, release, releaseLoading]);
+
+  // Set defaults for new release
+  useEffect(() => {
+    if (isOpen && !releaseId && groups.length > 0) {
+      console.log('Setting form defaults for new release');
+      setFormData({
+        name: "",
+        description: "",
+        groupId: groups[0].id,
+        startDate: new Date().toISOString().split('T')[0],
+        endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        icon: "fas fa-rocket",
+        responsible: "",
+        status: "upcoming",
+      });
+    }
+  }, [isOpen, releaseId, groups]);
 
   const createReleaseMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
