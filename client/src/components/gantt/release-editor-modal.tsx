@@ -66,7 +66,14 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
 
   // Populate form when release data is loaded or modal opens
   useEffect(() => {
-    console.log('Form population effect triggered:', { release, releaseId, isOpen, releaseLoading, groupsLength: groups.length });
+    console.log('Form population effect triggered:', { 
+      release: release ? { id: release.id, name: release.name } : null, 
+      releaseId, 
+      isOpen, 
+      releaseLoading, 
+      groupsLength: groups.length,
+      currentFormData: formData
+    });
     
     if (isOpen) {
       if (releaseId && release && !releaseLoading) {
@@ -81,7 +88,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
           responsible: release.responsible || "",
           status: release.status || "upcoming",
         };
-        console.log('Setting form data:', populatedData);
+        console.log('Setting form data to:', populatedData);
         setFormData(populatedData);
       } else if (!releaseId && groups.length > 0) {
         console.log('Resetting form for new release');
@@ -162,33 +169,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
     },
   });
 
-  // Initialize form data when release is loaded or when creating new
-  useEffect(() => {
-    if (release) {
-      setFormData({
-        name: release.name,
-        description: release.description || "",
-        groupId: release.groupId,
-        startDate: new Date(release.startDate).toISOString().split('T')[0],
-        endDate: new Date(release.endDate).toISOString().split('T')[0],
-        icon: release.icon,
-        responsible: release.responsible || "",
-        status: release.status || "upcoming",
-      });
-    } else if (isOpen && !releaseId) {
-      // Reset form for new release
-      setFormData({
-        name: "",
-        description: "",
-        groupId: groups[0]?.id || "",
-        startDate: "",
-        endDate: "",
-        icon: "fas fa-rocket",
-        responsible: "",
-        status: "upcoming",
-      });
-    }
-  }, [release, isOpen, releaseId, groups]);
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
