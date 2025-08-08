@@ -67,44 +67,78 @@ export default function TimelineBar({ release, groupColor, onEdit, viewMode, tim
   
     if (viewMode === "Quarters") {
       // Quarters view: Q1 = 0-25%, Q2 = 25-50%, Q3 = 50-75%, Q4 = 75-100%
-      const month = startDate.getMonth(); // 0-11
-      const quarter = Math.floor(month / 3); // 0-3
-      const monthInQuarter = month % 3; // 0-2
-      const quarterStart = quarter * (100 / timelineLabels.length); // Divide by number of quarters shown
-      const monthOffset = (monthInQuarter / 3) * (100 / timelineLabels.length);
+      const startMonth = startDate.getMonth(); // 0-11
+      const endMonth = endDate.getMonth(); // 0-11
+      const startQuarter = Math.floor(startMonth / 3); // 0-3
+      const endQuarter = Math.floor(endMonth / 3); // 0-3
+      
+      // Calculate position based on start quarter and month within quarter
+      const monthInQuarter = startMonth % 3; // 0-2
+      const quarterWidth = 100 / timelineLabels.length; // Width per quarter
+      const quarterStart = startQuarter * quarterWidth;
+      const monthOffset = (monthInQuarter / 3) * quarterWidth;
       position = quarterStart + monthOffset;
-      barWidth = Math.max(8, Math.min(20, (duration / 30) * 5));
+      
+      // Calculate width to span from start to end position
+      const endQuarterStart = endQuarter * quarterWidth;
+      const endMonthInQuarter = endMonth % 3;
+      const endMonthOffset = ((endMonthInQuarter + 1) / 3) * quarterWidth; // +1 to include the end month
+      const endPosition = endQuarterStart + endMonthOffset;
+      
+      barWidth = Math.max(8, endPosition - position);
     } else if (viewMode === "Months") {
       // Months view: each month gets equal space
-      const month = startDate.getMonth(); // 0-11
-      const year = startDate.getFullYear();
+      const startMonth = startDate.getMonth(); // 0-11
+      const endMonth = endDate.getMonth(); // 0-11
+      const startYear = startDate.getFullYear();
+      const endYear = endDate.getFullYear();
       
-      const monthIndex = timelineLabels.findIndex(label => {
-        // Parse labels like "Jan 2025", "Feb 2025", etc.
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+                         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      
+      const startMonthIndex = timelineLabels.findIndex(label => {
         const parts = label.split(" ");
         if (parts.length === 2) {
-          const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", 
-                             "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
           const labelMonth = monthNames.indexOf(parts[0]);
           const labelYear = parseInt(parts[1]);
-          return labelMonth === month && labelYear === year;
+          return labelMonth === startMonth && labelYear === startYear;
         }
         return false;
       });
       
-      if (monthIndex >= 0) {
-        position = (monthIndex / timelineLabels.length) * 100;
+      const endMonthIndex = timelineLabels.findIndex(label => {
+        const parts = label.split(" ");
+        if (parts.length === 2) {
+          const labelMonth = monthNames.indexOf(parts[0]);
+          const labelYear = parseInt(parts[1]);
+          return labelMonth === endMonth && labelYear === endYear;
+        }
+        return false;
+      });
+      
+      if (startMonthIndex >= 0) {
+        const monthWidth = 100 / timelineLabels.length;
+        position = (startMonthIndex / timelineLabels.length) * 100;
         const dayOfMonth = startDate.getDate() - 1; // 0-based
-        const monthOffset = (dayOfMonth / 31) * (100 / timelineLabels.length); // Approximate position within month
+        const monthOffset = (dayOfMonth / 31) * monthWidth; // Position within start month
         position += monthOffset;
+        
+        if (endMonthIndex >= 0) {
+          const endPosition = ((endMonthIndex + 1) / timelineLabels.length) * 100; // +1 to include end month
+          barWidth = Math.max(6, endPosition - position);
+        } else {
+          barWidth = Math.max(6, monthWidth);
+        }
       }
-      barWidth = Math.max(6, Math.min(15, (duration / 31) * (100 / timelineLabels.length)));
     } else if (viewMode === "Weeks") {
       // Weeks view: position based on week of year
       const startOfYear = new Date(startDate.getFullYear(), 0, 1);
-      const weekOfYear = Math.floor((startDate.getTime() - startOfYear.getTime()) / (7 * 24 * 60 * 60 * 1000));
-      position = Math.min(95, (weekOfYear / 52) * 100); // Max 95% to prevent overflow
-      barWidth = Math.max(4, Math.min(10, (duration / 7) * (100 / timelineLabels.length)));
+      const startWeek = Math.floor((startDate.getTime() - startOfYear.getTime()) / (7 * 24 * 60 * 60 * 1000));
+      const endWeek = Math.floor((endDate.getTime() - startOfYear.getTime()) / (7 * 24 * 60 * 60 * 1000));
+      
+      position = Math.min(95, (startWeek / 52) * 100); // Max 95% to prevent overflow
+      const endPosition = Math.min(100, (endWeek / 52) * 100);
+      barWidth = Math.max(4, endPosition - position);
     }
     
     return { leftPosition: position, width: barWidth };
