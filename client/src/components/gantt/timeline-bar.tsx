@@ -262,7 +262,7 @@ export default function TimelineBar({ release, group, onEdit, viewMode, timeline
           </div>
           <div className="flex items-center space-x-2 flex-shrink-0">
             <div 
-              className="w-3 h-3 rounded-full"
+              className="w-3 h-3 rounded-full border-2 border-white"
               style={{ backgroundColor: getStatusColor(release.status || 'upcoming') }}
               title={`Status: ${release.status || 'upcoming'}`}
             />

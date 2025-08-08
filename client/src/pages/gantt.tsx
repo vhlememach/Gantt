@@ -122,7 +122,12 @@ export default function GanttPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
-              <h1 className="text-xl font-bold">
+              <h1 
+                className="text-xl font-bold"
+                style={{
+                  color: settings?.headerTitleColor || '#FFFFFF'
+                }}
+              >
                 {settings?.headerTitle || "Release Gantt Chart"}
               </h1>
             </div>

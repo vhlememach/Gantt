@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ColorPicker } from "@/components/ui/color-picker";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { AppSettings } from "@shared/schema";
@@ -19,6 +20,7 @@ export default function HeaderCustomizationModal({ isOpen, onClose }: HeaderCust
   const [formData, setFormData] = useState({
     headerTitle: "",
     headerBackgroundColor: "",
+    headerTitleColor: "",
     fontFamily: "",
     buttonColor: "",
     buttonStyle: "",
@@ -50,6 +52,7 @@ export default function HeaderCustomizationModal({ isOpen, onClose }: HeaderCust
       setFormData({
         headerTitle: settings.headerTitle,
         headerBackgroundColor: settings.headerBackgroundColor,
+        headerTitleColor: settings.headerTitleColor,
         fontFamily: settings.fontFamily,
         buttonColor: settings.buttonColor,
         buttonStyle: settings.buttonStyle,
@@ -91,6 +94,23 @@ export default function HeaderCustomizationModal({ isOpen, onClose }: HeaderCust
               <Input
                 value={formData.headerBackgroundColor}
                 onChange={(e) => setFormData(prev => ({ ...prev, headerBackgroundColor: e.target.value }))}
+                className="flex-1"
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="headerTitleColor">Title Color</Label>
+            <div className="flex space-x-2">
+              <input
+                type="color"
+                value={formData.headerTitleColor}
+                onChange={(e) => setFormData(prev => ({ ...prev, headerTitleColor: e.target.value }))}
+                className="w-12 h-10 border border-slate-300 rounded cursor-pointer"
+              />
+              <Input
+                value={formData.headerTitleColor}
+                onChange={(e) => setFormData(prev => ({ ...prev, headerTitleColor: e.target.value }))}
                 className="flex-1"
               />
             </div>

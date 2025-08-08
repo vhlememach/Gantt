@@ -34,6 +34,7 @@ export class MemStorage implements IStorage {
       id: randomUUID(),
       headerTitle: "Release Gantt Chart",
       headerBackgroundColor: "#3B82F6",
+      headerTitleColor: "#FFFFFF",
       fontFamily: "Inter",
       buttonColor: "#8B5CF6",
       buttonStyle: "rounded",

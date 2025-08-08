@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, ChevronDown, ChevronRight } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -22,6 +22,7 @@ export default function GroupManagementModal({ isOpen, onClose }: GroupManagemen
   const { toast } = useToast();
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupColor, setNewGroupColor] = useState("#3B82F6");
+  const [expandedGradients, setExpandedGradients] = useState<Set<string>>(new Set());
 
   const { data: groups = [], isLoading } = useQuery<ReleaseGroup[]>({
     queryKey: ["/api/release-groups"],
@@ -111,6 +112,16 @@ export default function GroupManagementModal({ isOpen, onClose }: GroupManagemen
     }
   };
 
+  const toggleGradientExpanded = (groupId: string) => {
+    const newExpanded = new Set(expandedGradients);
+    if (newExpanded.has(groupId)) {
+      newExpanded.delete(groupId);
+    } else {
+      newExpanded.add(groupId);
+    }
+    setExpandedGradients(newExpanded);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-lg">
@@ -167,17 +178,29 @@ export default function GroupManagementModal({ isOpen, onClose }: GroupManagemen
                 </div>
 
                 {/* Gradient Controls */}
-                <div className="pl-7 space-y-3 border-l-2 border-slate-200">
+                <div className="pl-7 border-l-2 border-slate-200">
                   <div className="flex items-center justify-between">
-                    <Label className="text-sm text-slate-600">Gradient Shading</Label>
+                    <div className="flex items-center space-x-2">
+                      <Label className="text-sm text-slate-600">Gradient Shading</Label>
+                      <button
+                        onClick={() => toggleGradientExpanded(group.id)}
+                        className="text-slate-400 hover:text-slate-600"
+                      >
+                        {expandedGradients.has(group.id) ? (
+                          <ChevronDown className="h-3 w-3" />
+                        ) : (
+                          <ChevronRight className="h-3 w-3" />
+                        )}
+                      </button>
+                    </div>
                     <Switch
                       checked={group.gradientEnabled === "true"}
                       onCheckedChange={(enabled) => handleGradientToggle(group.id, enabled)}
                     />
                   </div>
                   
-                  {group.gradientEnabled === "true" && (
-                    <div className="space-y-3">
+                  {group.gradientEnabled === "true" && expandedGradients.has(group.id) && (
+                    <div className="mt-3 space-y-3">
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-2">
                           <Label className="text-sm text-slate-600">Primary Color</Label>
