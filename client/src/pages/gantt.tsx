@@ -69,36 +69,52 @@ export default function GanttPage() {
       const element = document.querySelector('.gantt-container');
       if (element) {
         import('html2canvas').then(html2canvas => {
-          // Ensure all content is visible and properly sized
-          const originalOverflow = element.style.overflow;
-          element.style.overflow = 'visible';
+          // Force visible content and remove scrollbars
+          const htmlElement = element as HTMLElement;
+          const originalStyles = {
+            overflow: htmlElement.style.overflow,
+            maxHeight: htmlElement.style.maxHeight,
+            height: htmlElement.style.height
+          };
           
-          // Wait a moment for any dynamic content to render
+          // Make everything visible for export
+          htmlElement.style.overflow = 'visible';
+          htmlElement.style.maxHeight = 'none';
+          htmlElement.style.height = 'auto';
+          
+          // Force layout recalculation
+          htmlElement.offsetHeight;
+          
           setTimeout(() => {
-            html2canvas.default(element as HTMLElement, {
-              scale: 2,
+            html2canvas.default(htmlElement, {
+              scale: 1.5,
               useCORS: true,
-              allowTaint: true,
+              allowTaint: false,
               backgroundColor: '#ffffff',
-              height: element.scrollHeight,
-              width: element.scrollWidth,
+              width: htmlElement.scrollWidth,
+              height: htmlElement.scrollHeight,
+              x: 0,
+              y: 0,
               scrollX: 0,
               scrollY: 0,
-              logging: true,
-              removeContainer: false,
-              imageTimeout: 30000
+              logging: false,
+              ignoreElements: (element) => {
+                return element.classList?.contains('no-export') || false;
+              }
             }).then(canvas => {
-              // Restore original overflow
-              element.style.overflow = originalOverflow;
-            const link = document.createElement('a');
-            link.download = `gantt-chart-${new Date().toISOString().split('T')[0]}.png`;
-            link.href = canvas.toDataURL('image/png', 1.0);
-            link.click();
-          }).catch(error => {
-            console.error('PNG Export failed:', error);
-            alert('Export failed. Please try again.');
-          });
-          }, 500);
+              // Restore original styles
+              Object.assign(htmlElement.style, originalStyles);
+              
+              const link = document.createElement('a');
+              link.download = `gantt-chart-${new Date().toISOString().split('T')[0]}.png`;
+              link.href = canvas.toDataURL('image/png', 0.95);
+              link.click();
+            }).catch(error => {
+              console.error('PNG Export failed:', error);
+              Object.assign(htmlElement.style, originalStyles);
+              alert('Export failed. Please try again.');
+            });
+          }, 1000);
         }).catch(error => {
           console.error('HTML2Canvas load failed:', error);
           alert('Export library failed to load.');
@@ -112,27 +128,41 @@ export default function GanttPage() {
           import('html2canvas'),
           import('jspdf')
         ]).then(([html2canvas, jsPDF]) => {
-          // Ensure all content is visible and properly sized
-          const originalOverflow = element.style.overflow;
-          element.style.overflow = 'visible';
+          // Force visible content and remove scrollbars
+          const htmlElement = element as HTMLElement;
+          const originalStyles = {
+            overflow: htmlElement.style.overflow,
+            maxHeight: htmlElement.style.maxHeight,
+            height: htmlElement.style.height
+          };
           
-          // Wait a moment for any dynamic content to render
+          // Make everything visible for export
+          htmlElement.style.overflow = 'visible';
+          htmlElement.style.maxHeight = 'none';
+          htmlElement.style.height = 'auto';
+          
+          // Force layout recalculation
+          htmlElement.offsetHeight;
+          
           setTimeout(() => {
-            html2canvas.default(element as HTMLElement, {
-              scale: 2,
+            html2canvas.default(htmlElement, {
+              scale: 1.5,
               useCORS: true,
-              allowTaint: true,
+              allowTaint: false,
               backgroundColor: '#ffffff',
-              height: element.scrollHeight,
-              width: element.scrollWidth,
+              width: htmlElement.scrollWidth,
+              height: htmlElement.scrollHeight,
+              x: 0,
+              y: 0,
               scrollX: 0,
               scrollY: 0,
-              logging: true,
-              removeContainer: false,
-              imageTimeout: 30000
+              logging: false,
+              ignoreElements: (element) => {
+                return element.classList?.contains('no-export') || false;
+              }
             }).then(canvas => {
-              // Restore original overflow
-              element.style.overflow = originalOverflow;
+              // Restore original styles
+              Object.assign(htmlElement.style, originalStyles);
             const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF.jsPDF();
             const imgWidth = 210;
@@ -155,9 +185,10 @@ export default function GanttPage() {
             pdf.save(`gantt-chart-${new Date().toISOString().split('T')[0]}.pdf`);
           }).catch(error => {
             console.error('PDF Export failed:', error);
+            Object.assign(htmlElement.style, originalStyles);
             alert('Export failed. Please try again.');
           });
-          }, 500);
+          }, 1000);
         }).catch(error => {
           console.error('Libraries load failed:', error);
           alert('Export libraries failed to load.');

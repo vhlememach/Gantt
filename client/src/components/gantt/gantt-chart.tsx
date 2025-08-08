@@ -208,7 +208,8 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
       const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", 
                          "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
       
-      const currentMonthIndex = timelineData.labels.findIndex(label => {
+      // Find current month in timeline or calculate relative position
+      let currentMonthIndex = timelineData.labels.findIndex(label => {
         const parts = label.split(" ");
         if (parts.length === 2) {
           const labelMonth = monthNames.indexOf(parts[0]);
@@ -218,7 +219,30 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
         return false;
       });
       
-      if (currentMonthIndex >= 0) {
+      // If current month not found but timeline has months, calculate relative position
+      if (currentMonthIndex === -1 && timelineData.labels.length > 0) {
+        const firstLabel = timelineData.labels[0].split(" ");
+        const lastLabel = timelineData.labels[timelineData.labels.length - 1].split(" ");
+        
+        if (firstLabel.length === 2 && lastLabel.length === 2) {
+          const firstMonth = monthNames.indexOf(firstLabel[0]);
+          const firstYear = parseInt(firstLabel[1]);
+          const lastMonth = monthNames.indexOf(lastLabel[0]);
+          const lastYear = parseInt(lastLabel[1]);
+          
+          const firstDate = new Date(firstYear, firstMonth, 1);
+          const lastDate = new Date(lastYear, lastMonth + 1, 0);
+          
+          if (today >= firstDate && today <= lastDate) {
+            const totalMonths = (lastYear - firstYear) * 12 + (lastMonth - firstMonth) + 1;
+            const currentMonthFromFirst = (currentYear - firstYear) * 12 + (currentMonth - firstMonth);
+            const position = (currentMonthFromFirst / totalMonths) * 100;
+            const dayOffset = ((currentDay - 1) / 31) * (100 / totalMonths);
+            
+            return Math.min(98, position + dayOffset);
+          }
+        }
+      } else if (currentMonthIndex >= 0) {
         const monthWidth = 100 / timelineData.labels.length;
         const position = (currentMonthIndex / timelineData.labels.length) * 100;
         const dayOffset = ((currentDay - 1) / 31) * monthWidth;
@@ -229,15 +253,32 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
       // For weeks view, calculate position based on current week
       const currentYear = today.getFullYear();
       
-      // Calculate current week of year (1-52/53)
-      const startOfYear = new Date(currentYear, 0, 1);
-      const dayOfYear = Math.floor((today.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000)) + 1;
-      const currentWeek = Math.ceil(dayOfYear / 7);
+      // Calculate current week of year using ISO week standard
+      function getWeekOfYear(date: Date) {
+        const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+        const pastDaysOfYear = (date.getTime() - firstDayOfYear.getTime()) / 86400000;
+        return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+      }
       
-      // Check if current week is within the visible timeline
-      if (currentWeek >= 1 && currentWeek <= timelineData.labels.length) {
+      const currentWeek = getWeekOfYear(today);
+      
+      // Try to find matching week in timeline labels
+      let weekIndex = -1;
+      for (let i = 0; i < timelineData.labels.length; i++) {
+        const label = timelineData.labels[i];
+        const weekMatch = label.match(/Week (\d+)/);
+        if (weekMatch && parseInt(weekMatch[1]) === currentWeek) {
+          weekIndex = i;
+          break;
+        }
+      }
+      
+      // If found or calculate relative position
+      if (weekIndex >= 0 || (currentWeek >= 1 && currentWeek <= 52)) {
         const weekWidth = 100 / timelineData.labels.length;
-        const position = ((currentWeek - 1) / timelineData.labels.length) * 100;
+        const position = weekIndex >= 0 
+          ? (weekIndex / timelineData.labels.length) * 100
+          : ((currentWeek - 1) / Math.min(timelineData.labels.length, 52)) * 100;
         
         // Add offset within week
         const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
