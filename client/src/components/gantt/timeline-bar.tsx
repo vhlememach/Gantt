@@ -95,9 +95,9 @@ export default function TimelineBar({ release, groupColor, onEdit }: TimelineBar
   const handleMouseUp = (e: MouseEvent) => {
     if (isDragging || isResizing) {
       const deltaX = e.clientX - startX;
-      const daysDelta = Math.round(deltaX / 3);
+      const daysDelta = Math.round(deltaX / 30); // Adjusted for better sensitivity
       
-      if (isDragging && daysDelta !== 0) {
+      if (isDragging && Math.abs(daysDelta) > 0) {
         // Move both dates
         const newStartDate = new Date(originalDates.startDate);
         const newEndDate = new Date(originalDates.endDate);
@@ -105,18 +105,18 @@ export default function TimelineBar({ release, groupColor, onEdit }: TimelineBar
         newEndDate.setDate(newEndDate.getDate() + daysDelta);
         
         updateReleaseMutation.mutate({
-          startDate: newStartDate.toISOString(),
-          endDate: newEndDate.toISOString(),
+          startDate: newStartDate.toISOString().split('T')[0],
+          endDate: newEndDate.toISOString().split('T')[0],
         });
-      } else if (isResizing && daysDelta !== 0) {
+      } else if (isResizing && Math.abs(daysDelta) > 0) {
         // Only move end date
         const newEndDate = new Date(originalDates.endDate);
         newEndDate.setDate(newEndDate.getDate() + daysDelta);
         
         if (newEndDate > originalDates.startDate) {
           updateReleaseMutation.mutate({
-            startDate: originalDates.startDate.toISOString(),
-            endDate: newEndDate.toISOString(),
+            startDate: originalDates.startDate.toISOString().split('T')[0],
+            endDate: newEndDate.toISOString().split('T')[0],
           });
         }
       }

@@ -80,7 +80,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(release);
     } catch (error) {
       console.error('Release creation error:', error);
-      res.status(400).json({ message: "Invalid release data", error: error.message });
+      if (error.name === 'ZodError') {
+        res.status(400).json({ message: "Validation failed", errors: error.errors });
+      } else {
+        res.status(400).json({ message: "Invalid release data", error: error.message });
+      }
     }
   });
 
@@ -97,7 +101,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(release);
     } catch (error) {
       console.error('Release update error:', error);
-      res.status(400).json({ message: "Invalid release data", error: error.message });
+      if (error.name === 'ZodError') {
+        res.status(400).json({ message: "Validation failed", errors: error.errors });
+      } else {
+        res.status(400).json({ message: "Invalid release data", error: error.message });
+      }
     }
   });
 
