@@ -443,7 +443,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                 {!collapsedGroups.has(group.id) && (
                   <div className="ml-5">
                     {groupReleases.map((release, releaseIndex) => (
-                      <div key={release.id} className={`${viewType === "Condensed" ? "h-10" : "h-14"} flex items-center`} style={{ marginBottom: '8px' }}>
+                      <div key={release.id} className={`${viewType === "Condensed" ? "h-10" : "h-14"}`} style={{ marginBottom: '8px' }}>
                         <TimelineBar
                           release={release}
                           group={group}
