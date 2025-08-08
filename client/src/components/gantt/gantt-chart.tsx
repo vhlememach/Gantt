@@ -229,17 +229,42 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
       // For weeks view, calculate position based on current week
       const currentYear = today.getFullYear();
       const startOfYear = new Date(currentYear, 0, 1);
+      
+      // Calculate weeks more accurately
+      let currentWeekIndex = -1;
       const currentWeek = Math.floor((today.getTime() - startOfYear.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
       
-      if (currentWeek >= 1 && currentWeek <= timelineData.labels.length) {
+      // Find the matching week in timeline labels
+      for (let i = 0; i < timelineData.labels.length; i++) {
+        const label = timelineData.labels[i];
+        if (label === `Week ${currentWeek}`) {
+          currentWeekIndex = i;
+          break;
+        }
+      }
+      
+      if (currentWeekIndex >= 0) {
         const weekWidth = 100 / timelineData.labels.length;
-        const position = ((currentWeek - 1) / timelineData.labels.length) * 100;
+        const position = (currentWeekIndex / timelineData.labels.length) * 100;
         
         // Add offset within week
         const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
         const dayOffset = (dayOfWeek / 7) * weekWidth;
         
         return Math.min(98, position + dayOffset);
+      }
+    }
+    
+    // Fallback: Calculate based on releases date range for any view mode
+    if (releases.length > 0) {
+      const allDates = releases.flatMap(r => [new Date(r.startDate), new Date(r.endDate)]);
+      const minDate = new Date(Math.min(...allDates.map(d => d.getTime())));
+      const maxDate = new Date(Math.max(...allDates.map(d => d.getTime())));
+      
+      if (today >= minDate && today <= maxDate) {
+        const totalDuration = maxDate.getTime() - minDate.getTime();
+        const currentPosition = (today.getTime() - minDate.getTime()) / totalDuration;
+        return currentPosition * 100;
       }
     }
     
@@ -297,6 +322,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                   <div
                     key={release.id}
                     className={`flex items-center justify-between p-3 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer ${viewType === "Condensed" ? "h-10" : "h-14"}`}
+                    style={{ marginTop: index === 0 ? '0' : '8px' }}
                     onClick={() => {
                       console.log('Sidebar release clicked:', release.id);
                       onReleaseEdit(release.id);
@@ -416,8 +442,8 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                 
                 {!collapsedGroups.has(group.id) && (
                   <div className="space-y-2 ml-5">
-                    {groupReleases.map((release) => (
-                      <div key={release.id} className={`${viewType === "Condensed" ? "h-10" : "h-14"} flex items-center`}>
+                    {groupReleases.map((release, releaseIndex) => (
+                      <div key={release.id} className={`${viewType === "Condensed" ? "h-10" : "h-14"} flex items-center`} style={{ marginTop: releaseIndex === 0 ? '0' : '8px' }}>
                         <TimelineBar
                           release={release}
                           group={group}

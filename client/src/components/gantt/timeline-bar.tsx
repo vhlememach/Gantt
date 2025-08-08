@@ -261,10 +261,11 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
   });
 
   return (
-    <div className={`relative w-full ${viewType === "Condensed" ? "h-10" : "h-14"}`}> {/* Container height matches sidebar items */}
+    <div className={`relative w-full ${viewType === "Condensed" ? "h-10" : "h-14"} flex items-center`}> {/* Container height matches sidebar items */}
       <div
         ref={barRef}
-        className={`absolute top-0 ${viewType === "Condensed" ? "h-8" : "h-12"} rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all duration-200 z-10`}
+        className={`absolute ${viewType === "Condensed" ? "h-8" : "h-12"} rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all duration-200 z-10`}
+        style={{ top: '50%', transform: 'translateY(-50%)' }}
         style={{
           left: `${leftPosition}%`,
           width: `${width}%`,
