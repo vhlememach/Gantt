@@ -42,10 +42,11 @@ interface TimelineBarProps {
   group: { id: string; name: string; color: string; gradientEnabled?: string; gradientSecondaryColor?: string };
   onEdit: () => void;
   viewMode: string;
+  viewType: "Normal" | "Condensed";
   timelineLabels: string[];
 }
 
-export default function TimelineBar({ release, group, onEdit, viewMode, timelineLabels }: TimelineBarProps) {
+export default function TimelineBar({ release, group, onEdit, viewMode, viewType, timelineLabels }: TimelineBarProps) {
   const { toast } = useToast();
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
@@ -260,10 +261,10 @@ export default function TimelineBar({ release, group, onEdit, viewMode, timeline
   });
 
   return (
-    <div className="relative w-full h-14"> {/* Container height matches sidebar items */}
+    <div className={`relative w-full ${viewType === "Condensed" ? "h-8" : "h-14"}`}> {/* Container height matches sidebar items */}
       <div
         ref={barRef}
-        className="absolute top-0 h-14 rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all duration-200 z-10"
+        className={`absolute top-0 ${viewType === "Condensed" ? "h-6" : "h-12"} rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all duration-200 z-10`}
         style={{
           left: `${leftPosition}%`,
           width: `${width}%`,
@@ -271,6 +272,8 @@ export default function TimelineBar({ release, group, onEdit, viewMode, timeline
             ? `linear-gradient(135deg, ${group.color}, ${group.gradientSecondaryColor || '#FFFFFF'})`
             : group.color,
           minWidth: '120px', // Ensure minimum width for content
+          height: viewType === "Condensed" ? '24px' : '48px',
+          border: release.highPriority ? `3px solid ${group.color}` : 'none'
         }}
         onClick={(e) => {
           console.log('Timeline bar clicked:', release.id);

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Calendar, CalendarDays } from "lucide-react";
 import { IconPicker } from "@/components/ui/icon-picker";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -30,6 +31,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
     icon: "lucide-rocket",
     responsible: "",
     status: "upcoming",
+    highPriority: false
   });
 
   // Debug logging for modal props
@@ -68,6 +70,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
         icon: "lucide-rocket",
         responsible: "",
         status: "upcoming",
+        highPriority: false
       });
     }
   }, [isOpen]);
@@ -95,6 +98,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
         icon: release.icon || "lucide-rocket",
         responsible: release.responsible || "",
         status: release.status || "upcoming",
+        highPriority: release.highPriority || false
       });
     }
   }, [isOpen, releaseId, release, releaseLoading, releaseError]);
@@ -113,6 +117,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
         icon: "lucide-rocket",
         responsible: "",
         status: "upcoming",
+        highPriority: false
       });
     }
   }, [isOpen, releaseId, groups]);
@@ -318,6 +323,19 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
                 required
               />
             </div>
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
+            <div className="space-y-0.5">
+              <Label>High Priority</Label>
+              <div className="text-sm text-muted-foreground">
+                Add outline using group color
+              </div>
+            </div>
+            <Switch
+              checked={formData.highPriority}
+              onCheckedChange={(checked: boolean) => setFormData(prev => ({ ...prev, highPriority: checked }))}
+            />
           </div>
 
           <IconPicker

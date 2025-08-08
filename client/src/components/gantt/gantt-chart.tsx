@@ -29,10 +29,11 @@ import type { ReleaseGroup, Release } from "@shared/schema";
 interface GanttChartProps {
   zoomLevel: number;
   viewMode: string;
+  viewType: "Normal" | "Condensed";
   onReleaseEdit: (releaseId: string) => void;
 }
 
-export default function GanttChart({ zoomLevel, viewMode, onReleaseEdit }: GanttChartProps) {
+export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdit }: GanttChartProps) {
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   
   const { data: groups = [] } = useQuery<ReleaseGroup[]>({
@@ -41,6 +42,10 @@ export default function GanttChart({ zoomLevel, viewMode, onReleaseEdit }: Gantt
 
   const { data: releases = [], refetch: refetchReleases } = useQuery<Release[]>({
     queryKey: ["/api/releases"],
+  });
+
+  const { data: settings } = useQuery({
+    queryKey: ["/api/settings"],
   });
 
   // Add effect to ensure fresh data
@@ -139,7 +144,7 @@ export default function GanttChart({ zoomLevel, viewMode, onReleaseEdit }: Gantt
       currentDate.setDate(currentDate.getDate() - currentDate.getDay()); // Start of week
       
       let weekCounter = 1;
-      while (currentDate <= maxDate && weekCounter <= 24) { // Allow up to 24 weeks for extended timelines
+      while (currentDate <= maxDate && weekCounter <= 52) { // Allow up to 52 weeks for full year coverage
         const weekEnd = new Date(currentDate);
         weekEnd.setDate(weekEnd.getDate() + 6);
         
@@ -156,10 +161,31 @@ export default function GanttChart({ zoomLevel, viewMode, onReleaseEdit }: Gantt
 
   const timelineData = getTimelineData(viewMode);
 
+  // Calculate current day position for the vertical line
+  const getCurrentDayPosition = () => {
+    if (releases.length === 0) return 0;
+    
+    const today = new Date();
+    const allDates = releases.flatMap(release => [
+      new Date(release.startDate),
+      new Date(release.endDate)
+    ]);
+    const minDate = new Date(Math.min(...allDates.map(d => d.getTime())));
+    const maxDate = new Date(Math.max(...allDates.map(d => d.getTime())));
+    
+    if (today < minDate || today > maxDate) return -1; // Outside visible range
+    
+    const totalDuration = maxDate.getTime() - minDate.getTime();
+    const currentPosition = (today.getTime() - minDate.getTime()) / totalDuration;
+    return currentPosition * 100; // Return as percentage
+  };
+
+  const currentDayPosition = getCurrentDayPosition();
+
   return (
     <div className="flex h-full">
       {/* Left Panel - Release List */}
-      <div className="w-80 bg-slate-50 border-r border-slate-200 overflow-y-auto">
+      <div className={`${viewType === "Condensed" ? "w-60" : "w-80"} bg-slate-50 border-r border-slate-200 overflow-y-auto`}>
         <div className="p-4">
           <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-4">
             Release Groups
@@ -323,12 +349,13 @@ export default function GanttChart({ zoomLevel, viewMode, onReleaseEdit }: Gantt
                 {!collapsedGroups.has(group.id) && (
                   <div className="space-y-2 ml-5">
                     {groupReleases.map((release) => (
-                      <div key={release.id} className="h-14 flex items-center">
+                      <div key={release.id} className={`${viewType === "Condensed" ? "h-8" : "h-14"} flex items-center`}>
                         <TimelineBar
                           release={release}
                           group={group}
                           onEdit={() => onReleaseEdit(release.id)}
                           viewMode={viewMode}
+                          viewType={viewType}
                           timelineLabels={timelineData.labels}
                         />
                       </div>
@@ -350,6 +377,17 @@ export default function GanttChart({ zoomLevel, viewMode, onReleaseEdit }: Gantt
               ))}
             </div>
           </div>
+
+          {/* Current Day Line */}
+          {currentDayPosition >= 0 && settings && (
+            <div 
+              className="absolute top-0 bottom-0 z-20 pointer-events-none"
+              style={{
+                left: `${currentDayPosition}%`,
+                borderLeft: `${settings.currentDayLineThickness || 2}px dotted ${settings.currentDayLineColor || '#000000'}`
+              }}
+            />
+          )}
         </div>
       </div>
     </div>

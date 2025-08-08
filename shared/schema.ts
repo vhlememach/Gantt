@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, jsonb, boolean, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -23,6 +23,7 @@ export const releases = pgTable("releases", {
   icon: text("icon").notNull().default("fas fa-rocket"),
   responsible: text("responsible").default(""),
   status: text("status").notNull().default("upcoming"), // upcoming, in-progress, completed, delayed
+  highPriority: boolean("high_priority").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -34,6 +35,8 @@ export const appSettings = pgTable("app_settings", {
   fontFamily: text("font_family").notNull().default("Inter"),
   buttonColor: text("button_color").notNull().default("#8B5CF6"),
   buttonStyle: text("button_style").notNull().default("rounded"),
+  currentDayLineColor: text("current_day_line_color").notNull().default("#000000"),
+  currentDayLineThickness: integer("current_day_line_thickness").notNull().default(2),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
@@ -45,6 +48,7 @@ export const insertReleaseGroupSchema = createInsertSchema(releaseGroups).omit({
 export const insertReleaseSchema = createInsertSchema(releases).omit({
   id: true,
   createdAt: true,
+  highPriority: true,
 }).extend({
   startDate: z.string().or(z.date()).transform((val) => new Date(val)),
   endDate: z.string().or(z.date()).transform((val) => new Date(val)),
@@ -53,6 +57,8 @@ export const insertReleaseSchema = createInsertSchema(releases).omit({
 export const insertAppSettingsSchema = createInsertSchema(appSettings).omit({
   id: true,
   updatedAt: true,
+  currentDayLineColor: true,
+  currentDayLineThickness: true,
 });
 
 export type InsertReleaseGroup = z.infer<typeof insertReleaseGroupSchema>;

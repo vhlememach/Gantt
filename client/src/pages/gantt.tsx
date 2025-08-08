@@ -19,6 +19,7 @@ export default function GanttPage() {
   const [isReleaseModalOpen, setIsReleaseModalOpen] = useState(false);
   const [selectedReleaseId, setSelectedReleaseId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState("Quarters");
+  const [viewType, setViewType] = useState<"Normal" | "Condensed">("Normal");
   const [zoomLevel, setZoomLevel] = useState([100]);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [isStatusColorModalOpen, setIsStatusColorModalOpen] = useState(false);
@@ -227,6 +228,19 @@ export default function GanttPage() {
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="flex items-center space-x-2">
+              <label className="text-sm font-medium text-slate-700">Type:</label>
+              <Select value={viewType} onValueChange={(value: "Normal" | "Condensed") => setViewType(value)}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Normal">Normal</SelectItem>
+                  <SelectItem value="Condensed">Condensed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
@@ -253,6 +267,7 @@ export default function GanttPage() {
         <GanttChart 
           zoomLevel={zoomLevel[0]} 
           viewMode={viewMode} 
+          viewType={viewType}
           onReleaseEdit={handleReleaseEdit}
         />
       </div>

@@ -24,6 +24,8 @@ export default function HeaderCustomizationModal({ isOpen, onClose }: HeaderCust
     fontFamily: "",
     buttonColor: "",
     buttonStyle: "",
+    currentDayLineColor: "",
+    currentDayLineThickness: 2,
   });
 
   const { data: settings } = useQuery<AppSettings>({
@@ -56,6 +58,8 @@ export default function HeaderCustomizationModal({ isOpen, onClose }: HeaderCust
         fontFamily: settings.fontFamily,
         buttonColor: settings.buttonColor,
         buttonStyle: settings.buttonStyle,
+        currentDayLineColor: settings.currentDayLineColor || "#000000",
+        currentDayLineThickness: settings.currentDayLineThickness || 2,
       });
     }
   }, [settings]);
@@ -150,6 +154,37 @@ export default function HeaderCustomizationModal({ isOpen, onClose }: HeaderCust
                   <SelectItem value="pill">Pill</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="currentDayLineColor">Current Day Line Color</Label>
+              <div className="flex space-x-2">
+                <input
+                  type="color"
+                  value={formData.currentDayLineColor}
+                  onChange={(e) => setFormData(prev => ({ ...prev, currentDayLineColor: e.target.value }))}
+                  className="w-12 h-10 border border-slate-300 rounded cursor-pointer"
+                />
+                <Input
+                  value={formData.currentDayLineColor}
+                  onChange={(e) => setFormData(prev => ({ ...prev, currentDayLineColor: e.target.value }))}
+                  className="flex-1"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="currentDayLineThickness">Line Thickness</Label>
+              <Input
+                id="currentDayLineThickness"
+                type="number"
+                min="1"
+                max="10"
+                value={formData.currentDayLineThickness}
+                onChange={(e) => setFormData(prev => ({ ...prev, currentDayLineThickness: Number(e.target.value) }))}
+              />
             </div>
           </div>
 
