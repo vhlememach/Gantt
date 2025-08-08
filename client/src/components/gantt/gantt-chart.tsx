@@ -112,7 +112,7 @@ export default function GanttChart({ zoomLevel, viewMode, onReleaseEdit }: Gantt
               </div>
               
               {!collapsedGroups.has(group.id) && (
-                <div className="space-y-4 ml-5">
+                <div className="space-y-2 ml-5">
                   {groupReleases.map((release, index) => (
                   <div
                     key={release.id}
@@ -186,32 +186,34 @@ export default function GanttChart({ zoomLevel, viewMode, onReleaseEdit }: Gantt
             </div>
           </div>
 
-          {/* Timeline Body */}
-          <div className="p-4">
-            <div className="space-y-8">
-              {releasesByGroup.map(({ group, releases: groupReleases }) => (
-                <div key={group.id}>
-                  <div className="flex items-center mb-4">
-                    <div 
-                      className="w-3 h-3 rounded-full mr-2" 
-                      style={{ backgroundColor: group.color }}
-                    />
-                    <h4 className="font-semibold text-slate-700">{group.name}</h4>
-                  </div>
-                  
-                  <div className="space-y-4 ml-5">
+          {/* Timeline Body - perfectly aligned with sidebar */}
+          <div className="pt-4 px-0">
+            {releasesByGroup.map(({ group, releases: groupReleases }) => (
+              <div key={group.id} className="mb-4">
+                {/* Group header - exactly matching sidebar height and spacing */}
+                <div className="h-12 flex items-center mb-4 px-4">
+                  <div 
+                    className="w-3 h-3 rounded-full mr-2" 
+                    style={{ backgroundColor: group.color }}
+                  />
+                  <h4 className="font-semibold text-slate-700">{group.name}</h4>
+                </div>
+                
+                {!collapsedGroups.has(group.id) && (
+                  <div className="space-y-2 ml-5 px-4">
                     {groupReleases.map((release) => (
-                      <TimelineBar
-                        key={release.id}
-                        release={release}
-                        groupColor={group.color}
-                        onEdit={() => onReleaseEdit(release.id)}
-                      />
+                      <div key={release.id} className="h-14 flex items-center">
+                        <TimelineBar
+                          release={release}
+                          groupColor={group.color}
+                          onEdit={() => onReleaseEdit(release.id)}
+                        />
+                      </div>
                     ))}
                   </div>
-                </div>
-              ))}
-            </div>
+                )}
+              </div>
+            ))}
           </div>
 
           {/* Timeline Grid Lines */}
