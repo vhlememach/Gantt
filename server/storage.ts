@@ -174,7 +174,6 @@ export class MemStorage implements IStorage {
         const taskCount = Math.floor(Math.random() * 2) + 2;
         for (let i = 0; i < taskCount; i++) {
           const taskId = randomUUID();
-          const isPriority = Math.random() > 0.6; // 40% priority tasks
           const isCompleted = Math.random() > 0.7; // 30% completed randomly
           const task: ChecklistTask = {
             id: taskId,
@@ -183,7 +182,7 @@ export class MemStorage implements IStorage {
             taskTitle: `${sampleTasks[Math.floor(Math.random() * sampleTasks.length)]} - ${release.name}`,
             taskDescription: `${member}'s task for ${release.name}`,
             taskUrl: Math.random() > 0.5 ? `https://docs.example.com/${taskId}` : null,
-            priority: isPriority,
+            priority: false, // Priority is determined by release.highPriority
             completed: isCompleted,
             createdAt: new Date(),
             completedAt: isCompleted ? new Date() : null,

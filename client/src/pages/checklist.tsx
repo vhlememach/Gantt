@@ -19,7 +19,6 @@ export default function ChecklistPage() {
   const [selectedMember, setSelectedMember] = useState(teamMembers[0]);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskUrl, setNewTaskUrl] = useState("");
-  const [newTaskPriority, setNewTaskPriority] = useState(false);
   const [selectedReleaseId, setSelectedReleaseId] = useState("");
   const [sortBy, setSortBy] = useState<Record<string, SortOption>>({});
   
@@ -69,14 +68,13 @@ export default function ChecklistPage() {
 
   // Create new task
   const createTaskMutation = useMutation({
-    mutationFn: async (taskData: { releaseId: string, assignedTo: string, taskTitle: string, taskUrl?: string, priority?: boolean }) => {
+    mutationFn: async (taskData: { releaseId: string, assignedTo: string, taskTitle: string, taskUrl?: string }) => {
       return apiRequest('POST', '/api/checklist-tasks', taskData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
       setNewTaskTitle("");
       setNewTaskUrl("");
-      setNewTaskPriority(false);
       setSelectedReleaseId("");
     }
   });
@@ -91,10 +89,15 @@ export default function ChecklistPage() {
         releaseId: selectedReleaseId,
         assignedTo: selectedMember,
         taskTitle: newTaskTitle,
-        taskUrl: newTaskUrl || undefined,
-        priority: newTaskPriority
+        taskUrl: newTaskUrl || undefined
       });
     }
+  };
+
+  // Helper function to check if a task is high priority (based on release)
+  const isTaskHighPriority = (task: ChecklistTask) => {
+    const release = releases.find(r => r.id === task.releaseId);
+    return release?.highPriority || false;
   };
 
   // Sorting function
@@ -106,7 +109,7 @@ export default function ChecklistPage() {
         case "to-complete":
           return (a.completed ? 1 : 0) - (b.completed ? 1 : 0);
         case "priority":
-          return (b.priority ? 1 : 0) - (a.priority ? 1 : 0);
+          return (isTaskHighPriority(b) ? 1 : 0) - (isTaskHighPriority(a) ? 1 : 0);
         default:
           return 0;
       }
@@ -123,7 +126,7 @@ export default function ChecklistPage() {
         title: task.taskTitle,
         description: task.taskDescription,
         url: task.taskUrl,
-        priority: task.priority,
+        priority: isTaskHighPriority(task),
         completed: task.completed,
         release: releases.find(r => r.id === task.releaseId)?.name || 'Unknown',
         createdAt: task.createdAt,
@@ -178,7 +181,7 @@ export default function ChecklistPage() {
           {teamMembers.map(member => {
             const memberTasksCount = allTasks.filter(task => task.assignedTo === member);
             const completedCount = memberTasksCount.filter(task => task.completed).length;
-            const priorityCount = memberTasksCount.filter(task => task.priority).length;
+            const priorityCount = memberTasksCount.filter(task => isTaskHighPriority(task)).length;
             
             return (
               <TabsTrigger key={member} value={member} className="flex items-center space-x-2">
@@ -243,13 +246,6 @@ export default function ChecklistPage() {
                           value={newTaskUrl}
                           onChange={(e) => setNewTaskUrl(e.target.value)}
                         />
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          checked={newTaskPriority}
-                          onCheckedChange={(checked) => setNewTaskPriority(!!checked)}
-                        />
-                        <label className="text-sm font-medium">High Priority</label>
                       </div>
                       <Button 
                         onClick={handleCreateTask}
@@ -332,7 +328,7 @@ export default function ChecklistPage() {
                                 task.completed ? 'line-through text-gray-500' : 'text-gray-900 dark:text-white'
                               }`}>
                                 <span>{task.taskTitle}</span>
-                                {task.priority && (
+                                {isTaskHighPriority(task) && (
                                   <Star className="w-4 h-4 text-yellow-500 fill-current" />
                                 )}
                               </div>

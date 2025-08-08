@@ -71,10 +71,7 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
     return Math.round((completedTasks / checklistTasks.length) * 100);
   }, [checklistTasks]);
 
-  // Check if release has priority tasks
-  const hasPriorityTasks = useMemo(() => {
-    return checklistTasks.some(task => task.priority);
-  }, [checklistTasks]);
+  // Priority is determined by the release itself, not individual tasks
 
   const updateReleaseMutation = useMutation({
     mutationFn: async (data: { startDate: string; endDate: string }) => {
