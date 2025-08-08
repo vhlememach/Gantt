@@ -22,9 +22,11 @@ interface TimelineBarProps {
   release: Release;
   groupColor: string;
   onEdit: () => void;
+  viewMode: string;
+  timelineLabels: string[];
 }
 
-export default function TimelineBar({ release, groupColor, onEdit }: TimelineBarProps) {
+export default function TimelineBar({ release, groupColor, onEdit, viewMode, timelineLabels }: TimelineBarProps) {
   const { toast } = useToast();
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
@@ -53,24 +55,55 @@ export default function TimelineBar({ release, groupColor, onEdit }: TimelineBar
     },
   });
 
-  // Calculate bar position and width based on dates
+  // Calculate bar position and width based on dates and view mode
   const startDate = new Date(release.startDate);
   const endDate = new Date(release.endDate);
   const duration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
   
-  // Simple positioning calculation that maps to timeline quarters
-  // For 2025: Q1 = 0-25%, Q2 = 25-50%, Q3 = 50-75%, Q4 = 75-100%
-  const releaseYear = startDate.getFullYear();
-  const month = startDate.getMonth(); // 0-11
-  const quarter = Math.floor(month / 3); // 0-3
+  let leftPosition = 0;
+  let width = 8;
   
-  // Position within the quarter based on the month
-  const monthInQuarter = month % 3; // 0-2
-  const quarterStart = quarter * 25; // 0, 25, 50, or 75
-  const monthOffset = (monthInQuarter / 3) * 25; // 0-8.33% within quarter
-  
-  const leftPosition = quarterStart + monthOffset;
-  const width = Math.max(8, Math.min(20, (duration / 30) * 5)); // Width based on duration
+  if (viewMode === "Quarters") {
+    // Quarters view: Q1 = 0-25%, Q2 = 25-50%, Q3 = 50-75%, Q4 = 75-100%
+    const month = startDate.getMonth(); // 0-11
+    const quarter = Math.floor(month / 3); // 0-3
+    const monthInQuarter = month % 3; // 0-2
+    const quarterStart = quarter * (100 / timelineLabels.length); // Divide by number of quarters shown
+    const monthOffset = (monthInQuarter / 3) * (100 / timelineLabels.length);
+    leftPosition = quarterStart + monthOffset;
+    width = Math.max(8, Math.min(20, (duration / 30) * 5));
+  } else if (viewMode === "Months") {
+    // Months view: each month gets equal space
+    const month = startDate.getMonth(); // 0-11
+    const year = startDate.getFullYear();
+    
+    const monthIndex = timelineLabels.findIndex(label => {
+      // Parse labels like "Jan 2025", "Feb 2025", etc.
+      const parts = label.split(" ");
+      if (parts.length === 2) {
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+                           "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const labelMonth = monthNames.indexOf(parts[0]);
+        const labelYear = parseInt(parts[1]);
+        return labelMonth === month && labelYear === year;
+      }
+      return false;
+    });
+    
+    if (monthIndex >= 0) {
+      leftPosition = (monthIndex / timelineLabels.length) * 100;
+      const dayOfMonth = startDate.getDate() - 1; // 0-based
+      const monthOffset = (dayOfMonth / 31) * (100 / timelineLabels.length); // Approximate position within month
+      leftPosition += monthOffset;
+    }
+    width = Math.max(6, Math.min(15, (duration / 31) * (100 / timelineLabels.length)));
+  } else if (viewMode === "Weeks") {
+    // Weeks view: position based on week of year
+    const startOfYear = new Date(startDate.getFullYear(), 0, 1);
+    const weekOfYear = Math.floor((startDate.getTime() - startOfYear.getTime()) / (7 * 24 * 60 * 60 * 1000));
+    leftPosition = Math.min(95, (weekOfYear / 52) * 100); // Max 95% to prevent overflow
+    width = Math.max(4, Math.min(10, (duration / 7) * (100 / timelineLabels.length)));
+  }
 
   const handleMouseDown = (e: React.MouseEvent, action: 'drag' | 'resize') => {
     e.preventDefault();

@@ -277,6 +277,8 @@ export default function GanttChart({ zoomLevel, viewMode, onReleaseEdit }: Gantt
                           release={release}
                           groupColor={group.color}
                           onEdit={() => onReleaseEdit(release.id)}
+                          viewMode={viewMode}
+                          timelineLabels={timelineData.labels}
                         />
                       </div>
                     ))}
