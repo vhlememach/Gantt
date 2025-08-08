@@ -1,6 +1,27 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { 
+  ChevronDown, ChevronRight,
+  Rocket, Box,
+  Briefcase, Building, Calculator, Calendar, BarChart3, LineChart, 
+  Clipboard, Database, File, Folder, Globe, TrendingUp, Users, 
+  Settings, Shield, Target, PieChart, FileText, FolderOpen, Archive,
+  Code, Cpu, HardDrive, Laptop, Monitor, Mouse, Phone, Router, 
+  Server, Smartphone, Tablet, Wifi, Battery, Bluetooth, Camera, 
+  Headphones, Keyboard, Zap, Power, Usb,
+  Edit, Hammer, Key, Lock, Wand2, RefreshCw, Save, 
+  Wrench, Trash, Unlock, Paintbrush, Scissors, Ruler, 
+  Navigation, Flashlight, Cog,
+  Mail, MessageCircle, MessageSquare, PhoneCall, Send, Share2, 
+  Video, Mic, Megaphone, Bell, Radio, Satellite, Rss,
+  Volume2, Headset, Speaker, MessageSquareMore, AtSign, Hash,
+  Car, Truck, Plane, Train, Ship, Bike, Bus, 
+  PlaneTakeoff, PlaneLanding, MapPin, Map, Compass, 
+  Route, Navigation2, Move, ArrowRight, ArrowUp, ArrowDown,
+  TreePine, Leaf, Flower, Sun, Moon, Star, Cloud, 
+  Snowflake, Droplets, Flame, Atom, Dna, Microscope, Telescope, 
+  TestTube, Magnet, Thermometer, Wind
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TimelineBar from "./timeline-bar.tsx";
 import type { ReleaseGroup, Release } from "@shared/schema";
@@ -211,10 +232,38 @@ export default function GanttChart({ zoomLevel, viewMode, onReleaseEdit }: Gantt
                         className="w-8 h-8 rounded-lg flex items-center justify-center"
                         style={{ backgroundColor: `${group.color}20` }}
                       >
-                        <i 
-                          className={`${release.icon} text-sm`}
-                          style={{ color: group.color }}
-                        />
+                        {release.icon.startsWith('lucide-') ? (
+                          (() => {
+                            const iconName = release.icon.replace('lucide-', '');
+                            const iconMap: Record<string, React.ComponentType<any>> = {
+                              Box, Briefcase, Building, Calculator, Calendar, BarChart3, LineChart, 
+                              Clipboard, Database, File, Folder, Globe, TrendingUp, Users, 
+                              Settings, Shield, Target, PieChart, FileText, FolderOpen, Archive,
+                              Code, Cpu, HardDrive, Laptop, Monitor, Mouse, Phone, Router, 
+                              Server, Smartphone, Tablet, Wifi, Battery, Bluetooth, Camera, 
+                              Headphones, Keyboard, Zap, Power, Usb,
+                              Edit, Hammer, Key, Lock, Wand2, RefreshCw, Save, 
+                              Wrench, Trash, Unlock, Paintbrush, Scissors, Ruler, 
+                              Navigation, Flashlight, Cog,
+                              Mail, MessageCircle, MessageSquare, PhoneCall, Send, Share2, 
+                              Video, Mic, Megaphone, Bell, Radio, Satellite, Rss,
+                              Volume2, Headset, Speaker, MessageSquareMore, AtSign, Hash,
+                              Car, Truck, Plane, Train, Ship, Bike, Bus, 
+                              PlaneTakeoff, PlaneLanding, MapPin, Map, Compass, 
+                              Route, Navigation2, Move, ArrowRight, ArrowUp, ArrowDown,
+                              TreePine, Leaf, Flower, Sun, Moon, Star, Cloud, 
+                              Snowflake, Droplets, Flame, Atom, Dna, Microscope, Telescope, 
+                              TestTube, Magnet, Thermometer, Wind
+                            };
+                            const IconComponent = iconMap[iconName] || Rocket;
+                            return <IconComponent className="w-4 h-4" style={{ color: group.color }} />;
+                          })()
+                        ) : (
+                          <i 
+                            className={`${release.icon} text-sm`}
+                            style={{ color: group.color }}
+                          />
+                        )}
                       </div>
                       <div>
                         <div className="font-medium text-slate-800">{release.name}</div>
