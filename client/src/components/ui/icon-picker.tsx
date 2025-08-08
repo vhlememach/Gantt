@@ -3,8 +3,27 @@ import { Button } from "./button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./dialog";
 import { ScrollArea } from "./scroll-area";
 import { Input } from "./input";
-import { Search } from "lucide-react";
-import * as Icons from "lucide-react";
+import { 
+  Search, Box,
+  Briefcase, Building, Calculator, Calendar, BarChart3, LineChart, 
+  Clipboard, Database, File, Folder, Globe, TrendingUp, Users, 
+  Settings, Shield, Target, PieChart, FileText, FolderOpen, Archive,
+  Code, Cpu, HardDrive, Laptop, Monitor, Mouse, Phone, Router, 
+  Server, Smartphone, Tablet, Wifi, Battery, Bluetooth, Camera, 
+  Headphones, Keyboard, Zap, Power, Usb,
+  Edit, Hammer, Key, Lock, Wand2, RefreshCw, Save, 
+  Wrench, Trash, Unlock, Paintbrush, Scissors, Ruler, 
+  Navigation, Flashlight, Cog,
+  Mail, MessageCircle, MessageSquare, PhoneCall, Send, Share2, 
+  Video, Mic, Megaphone, Bell, Radio, Satellite, Rss,
+  Volume2, Headset, Speaker, MessageSquareMore, AtSign, Hash,
+  Car, Truck, Plane, Train, Ship, Bike, Bus, Rocket, 
+  PlaneTakeoff, PlaneLanding, MapPin, Map, Compass, 
+  Route, Navigation2, Move, ArrowRight, ArrowUp, ArrowDown,
+  TreePine, Leaf, Flower, Sun, Moon, Star, Cloud, 
+  Snowflake, Droplets, Flame, Atom, Dna, Microscope, Telescope, 
+  TestTube, Magnet, Thermometer, Wind
+} from "lucide-react";
 
 interface IconPickerProps {
   value: string;
@@ -12,38 +31,60 @@ interface IconPickerProps {
   label?: string;
 }
 
-// Common icon categories for better organization
+// Common icon categories using actual Lucide icon names
 const iconCategories = {
   "Business & Office": [
-    "briefcase", "building", "calculator", "calendar", "chart-bar", "chart-line", 
-    "clipboard", "database", "file", "folder", "globe", "graph", "pie-chart", 
-    "presentation", "printer", "settings", "shield", "target", "trending-up", "users"
+    "Briefcase", "Building", "Calculator", "Calendar", "BarChart3", "LineChart", 
+    "Clipboard", "Database", "File", "Folder", "Globe", "TrendingUp", "Users", 
+    "Settings", "Shield", "Target", "PieChart", "FileText", "FolderOpen", "Archive"
   ],
   "Technology": [
-    "code", "cpu", "hard-drive", "laptop", "monitor", "mouse", "phone", "router", 
-    "server", "smartphone", "tablet", "wifi", "battery", "bluetooth", "camera", 
-    "headphones", "keyboard", "microchip", "power", "usb"
+    "Code", "Cpu", "HardDrive", "Laptop", "Monitor", "Mouse", "Phone", "Router", 
+    "Server", "Smartphone", "Tablet", "Wifi", "Battery", "Bluetooth", "Camera", 
+    "Headphones", "Keyboard", "Zap", "Power", "Usb"
   ],
   "Tools & Actions": [
-    "cog", "edit", "hammer", "key", "lock", "magic-wand", "refresh", "save", 
-    "search", "tool", "trash", "unlock", "wrench", "gear", "screwdriver", 
-    "paintbrush", "scissors", "ruler", "compass", "flashlight"
+    "Settings", "Edit", "Hammer", "Key", "Lock", "Wand2", "RefreshCw", "Save", 
+    "Search", "Wrench", "Trash", "Unlock", "Paintbrush", "Scissors", "Ruler", 
+    "Navigation", "Flashlight", "Cog"
   ],
   "Communication": [
-    "mail", "message-circle", "message-square", "phone-call", "send", "share", 
-    "video", "voice", "megaphone", "bell", "radio", "satellite", "antenna", 
-    "broadcast", "podcast", "volume-2", "headset", "microphone", "speaker", "rss"
+    "Mail", "MessageCircle", "MessageSquare", "PhoneCall", "Send", "Share2", 
+    "Video", "Mic", "Megaphone", "Bell", "Radio", "Satellite", "Rss",
+    "Volume2", "Headset", "Speaker", "MessageSquareMore", "AtSign", "Hash"
   ],
   "Transportation": [
-    "car", "truck", "plane", "train", "ship", "bicycle", "bus", "rocket", 
-    "helicopter", "motorcycle", "scooter", "taxi", "ambulance", "fire-truck", 
-    "police-car", "tractor", "subway", "ferry", "hot-air-balloon", "parachute"
+    "Car", "Truck", "Plane", "Train", "Ship", "Bike", "Bus", "Rocket", 
+    "PlaneTakeoff", "PlaneLanding", "MapPin", "Map", "Compass", 
+    "Route", "Navigation2", "Move", "ArrowRight", "ArrowUp", "ArrowDown"
   ],
   "Nature & Science": [
-    "tree", "leaf", "flower", "sun", "moon", "star", "cloud", "lightning", 
-    "snowflake", "droplets", "flame", "atom", "dna", "microscope", "telescope", 
-    "beaker", "flask", "test-tube", "magnet", "thermometer"
+    "TreePine", "Leaf", "Flower", "Sun", "Moon", "Star", "Cloud", 
+    "Snowflake", "Droplets", "Flame", "Atom", "Dna", "Microscope", "Telescope", 
+    "TestTube", "Magnet", "Thermometer", "Wind"
   ]
+};
+
+// Create icon map for easier access
+const iconMap: Record<string, React.ComponentType<any>> = {
+  Box, Briefcase, Building, Calculator, Calendar, BarChart3, LineChart, 
+  Clipboard, Database, File, Folder, Globe, TrendingUp, Users, 
+  Settings, Shield, Target, PieChart, FileText, FolderOpen, Archive,
+  Code, Cpu, HardDrive, Laptop, Monitor, Mouse, Phone, Router, 
+  Server, Smartphone, Tablet, Wifi, Battery, Bluetooth, Camera, 
+  Headphones, Keyboard, Zap, Power, Usb,
+  Edit, Hammer, Key, Lock, Wand2, RefreshCw, Save, 
+  Wrench, Trash, Unlock, Paintbrush, Scissors, Ruler, 
+  Navigation, Flashlight, Cog,
+  Mail, MessageCircle, MessageSquare, PhoneCall, Send, Share2, 
+  Video, Mic, Megaphone, Bell, Radio, Satellite, Rss,
+  Volume2, Headset, Speaker, MessageSquareMore, AtSign, Hash,
+  Car, Truck, Plane, Train, Ship, Bike, Bus, Rocket, 
+  PlaneTakeoff, PlaneLanding, MapPin, Map, Compass, 
+  Route, Navigation2, Move, ArrowRight, ArrowUp, ArrowDown,
+  TreePine, Leaf, Flower, Sun, Moon, Star, Cloud, 
+  Snowflake, Droplets, Flame, Atom, Dna, Microscope, Telescope, 
+  TestTube, Magnet, Thermometer, Wind
 };
 
 export function IconPicker({ value, onChange, label = "Icon" }: IconPickerProps) {
@@ -51,15 +92,12 @@ export function IconPicker({ value, onChange, label = "Icon" }: IconPickerProps)
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Business & Office");
 
-  // Get all available Lucide icons
-  const allIcons = Object.keys(Icons).filter(name => 
-    name !== "default" && 
-    typeof Icons[name as keyof typeof Icons] === "function"
-  );
+  // Get all available icon names
+  const allIconNames = Object.keys(iconMap);
 
   // Filter icons based on search term and category
   const filteredIcons = searchTerm 
-    ? allIcons.filter(icon => 
+    ? allIconNames.filter(icon => 
         icon.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : iconCategories[selectedCategory as keyof typeof iconCategories] || [];
@@ -70,8 +108,8 @@ export function IconPicker({ value, onChange, label = "Icon" }: IconPickerProps)
   };
 
   // Convert value back to icon name for display
-  const currentIconName = value?.replace("lucide-", "") || "box";
-  const IconComponent = Icons[currentIconName as keyof typeof Icons] as React.ComponentType<any>;
+  const currentIconName = value?.replace("lucide-", "") || "Box";
+  const IconComponent = iconMap[currentIconName] || Box;
 
   return (
     <>
@@ -83,7 +121,7 @@ export function IconPicker({ value, onChange, label = "Icon" }: IconPickerProps)
           className="w-full justify-start"
           onClick={() => setIsOpen(true)}
         >
-          {IconComponent && <IconComponent className="mr-2 h-4 w-4" />}
+          <IconComponent className="mr-2 h-4 w-4" />
           {currentIconName}
         </Button>
       </div>
@@ -125,8 +163,13 @@ export function IconPicker({ value, onChange, label = "Icon" }: IconPickerProps)
             {/* Icon grid */}
             <ScrollArea className="h-96">
               <div className="grid grid-cols-8 gap-2 p-2">
+                {filteredIcons.length === 0 && (
+                  <div className="col-span-8 text-center text-gray-500 py-8">
+                    No icons found. Try a different search or category.
+                  </div>
+                )}
                 {filteredIcons.slice(0, 64).map((iconName) => {
-                  const IconComp = Icons[iconName as keyof typeof Icons] as React.ComponentType<any>;
+                  const IconComp = iconMap[iconName];
                   const isSelected = currentIconName === iconName;
                   return IconComp ? (
                     <Button
