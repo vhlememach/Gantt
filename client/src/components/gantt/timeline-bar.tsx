@@ -273,7 +273,8 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
             : group.color,
           minWidth: '120px', // Ensure minimum width for content
           height: viewType === "Condensed" ? '24px' : '48px',
-          border: release.highPriority ? `3px solid ${group.color}` : 'none'
+          border: release.highPriority ? `3px solid ${group.color}` : 'none',
+          boxShadow: release.highPriority ? `0 0 0 1px ${group.color}` : undefined
         }}
         onClick={(e) => {
           console.log('Timeline bar clicked:', release.id);

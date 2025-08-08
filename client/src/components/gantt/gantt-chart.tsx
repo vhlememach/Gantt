@@ -230,7 +230,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                   {groupReleases.map((release, index) => (
                   <div
                     key={release.id}
-                    className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer h-14"
+                    className={`flex items-center justify-between p-3 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer ${viewType === "Condensed" ? "h-8" : "h-14"}`}
                     onClick={() => {
                       console.log('Sidebar release clicked:', release.id);
                       onReleaseEdit(release.id);
@@ -257,7 +257,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                   >
                     <div className="flex items-center space-x-3">
                       <div 
-                        className="w-8 h-8 rounded-lg flex items-center justify-center"
+                        className={`${viewType === "Condensed" ? "w-6 h-6" : "w-8 h-8"} rounded-lg flex items-center justify-center`}
                         style={{ backgroundColor: `${group.color}20` }}
                       >
                         {release.icon.startsWith('lucide-') ? (
@@ -294,8 +294,8 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                         )}
                       </div>
                       <div>
-                        <div className="font-medium text-slate-800">{release.name}</div>
-                        <div className="text-xs text-slate-500">
+                        <div className={`font-medium text-slate-800 ${viewType === "Condensed" ? "text-sm" : ""}`}>{release.name}</div>
+                        <div className={`text-xs text-slate-500 ${viewType === "Condensed" ? "text-xs" : ""}`}>
                           {new Date(release.startDate).toLocaleDateString()} - {new Date(release.endDate).toLocaleDateString()}
                         </div>
                       </div>
@@ -381,7 +381,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
           {/* Current Day Line */}
           {currentDayPosition >= 0 && settings && (
             <div 
-              className="absolute top-0 bottom-0 z-20 pointer-events-none"
+              className="absolute top-16 bottom-0 z-20 pointer-events-none"
               style={{
                 left: `${currentDayPosition}%`,
                 borderLeft: `${settings.currentDayLineThickness || 2}px dotted ${settings.currentDayLineColor || '#000000'}`

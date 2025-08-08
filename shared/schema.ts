@@ -48,7 +48,6 @@ export const insertReleaseGroupSchema = createInsertSchema(releaseGroups).omit({
 export const insertReleaseSchema = createInsertSchema(releases).omit({
   id: true,
   createdAt: true,
-  highPriority: true,
 }).extend({
   startDate: z.string().or(z.date()).transform((val) => new Date(val)),
   endDate: z.string().or(z.date()).transform((val) => new Date(val)),
@@ -57,8 +56,6 @@ export const insertReleaseSchema = createInsertSchema(releases).omit({
 export const insertAppSettingsSchema = createInsertSchema(appSettings).omit({
   id: true,
   updatedAt: true,
-  currentDayLineColor: true,
-  currentDayLineThickness: true,
 });
 
 export type InsertReleaseGroup = z.infer<typeof insertReleaseGroupSchema>;
