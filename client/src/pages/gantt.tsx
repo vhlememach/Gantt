@@ -27,6 +27,25 @@ export default function GanttPage() {
     setIsReleaseModalOpen(true);
   };
 
+  const handleExport = () => {
+    const data = {
+      settings,
+      groups: [], // This would be populated from the groups query
+      releases: [], // This would be populated from the releases query
+      exportDate: new Date().toISOString(),
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `gantt-chart-export-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const headerStyle = settings ? {
     background: `linear-gradient(135deg, ${settings.headerBackgroundColor}, ${settings.buttonColor})`,
     fontFamily: settings.fontFamily,
@@ -61,6 +80,7 @@ export default function GanttPage() {
                 Customize
               </Button>
               <Button
+                onClick={handleExport}
                 variant="secondary"
                 className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-0"
               >

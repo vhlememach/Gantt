@@ -29,10 +29,13 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: "",
+    description: "",
     groupId: "",
     startDate: "",
     endDate: "",
     icon: "fas fa-rocket",
+    responsible: "",
+    status: "upcoming",
   });
 
   const { data: groups = [] } = useQuery<ReleaseGroup[]>({
@@ -88,19 +91,25 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
     if (release) {
       setFormData({
         name: release.name,
+        description: release.description || "",
         groupId: release.groupId,
         startDate: new Date(release.startDate).toISOString().split('T')[0],
         endDate: new Date(release.endDate).toISOString().split('T')[0],
         icon: release.icon,
+        responsible: release.responsible || "",
+        status: release.status || "upcoming",
       });
     } else if (isOpen && !releaseId) {
       // Reset form for new release
       setFormData({
         name: "",
+        description: "",
         groupId: groups[0]?.id || "",
         startDate: "",
         endDate: "",
         icon: "fas fa-rocket",
+        responsible: "",
+        status: "upcoming",
       });
     }
   }, [release, isOpen, releaseId, groups]);
@@ -147,25 +156,61 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
           </div>
 
           <div>
-            <Label htmlFor="groupId">Group</Label>
-            <Select value={formData.groupId} onValueChange={(value) => setFormData(prev => ({ ...prev, groupId: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a group" />
-              </SelectTrigger>
-              <SelectContent>
-                {groups.map((group) => (
-                  <SelectItem key={group.id} value={group.id}>
-                    <div className="flex items-center space-x-2">
-                      <div 
-                        className="w-3 h-3 rounded-full" 
-                        style={{ backgroundColor: group.color }}
-                      />
-                      <span>{group.name}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="description">Description</Label>
+            <Input
+              id="description"
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              placeholder="Brief description of the release"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="responsible">Responsible Person</Label>
+            <Input
+              id="responsible"
+              value={formData.responsible}
+              onChange={(e) => setFormData(prev => ({ ...prev, responsible: e.target.value }))}
+              placeholder="e.g., Sarah Johnson"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="groupId">Group</Label>
+              <Select value={formData.groupId} onValueChange={(value) => setFormData(prev => ({ ...prev, groupId: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a group" />
+                </SelectTrigger>
+                <SelectContent>
+                  {groups.map((group) => (
+                    <SelectItem key={group.id} value={group.id}>
+                      <div className="flex items-center space-x-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: group.color }}
+                        />
+                        <span>{group.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="status">Status</Label>
+              <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="upcoming">Upcoming</SelectItem>
+                  <SelectItem value="in-progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="delayed">Delayed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

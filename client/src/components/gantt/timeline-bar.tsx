@@ -4,6 +4,20 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Release } from "@shared/schema";
 
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'completed':
+      return 'bg-green-400';
+    case 'in-progress':
+      return 'bg-blue-400';
+    case 'delayed':
+      return 'bg-red-400';
+    case 'upcoming':
+    default:
+      return 'bg-yellow-400';
+  }
+};
+
 interface TimelineBarProps {
   release: Release;
   groupColor: string;
@@ -24,13 +38,17 @@ export default function TimelineBar({ release, groupColor, onEdit }: TimelineBar
   const updateReleaseMutation = useMutation({
     mutationFn: async (data: { startDate: string; endDate: string }) => {
       const response = await apiRequest("PUT", `/api/releases/${release.id}`, data);
+      if (!response.ok) {
+        throw new Error('Failed to update release');
+      }
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/releases"] });
       toast({ title: "Release updated successfully" });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Update error:', error);
       toast({ title: "Failed to update release", variant: "destructive" });
     },
   });
@@ -67,29 +85,8 @@ export default function TimelineBar({ release, groupColor, onEdit }: TimelineBar
     const deltaX = e.clientX - startX;
     const daysDelta = Math.round(deltaX / 3); // Approximate days per pixel
     
-    if (isDragging) {
-      // Move both start and end dates
-      const newStartDate = new Date(originalDates.startDate);
-      const newEndDate = new Date(originalDates.endDate);
-      newStartDate.setDate(newStartDate.getDate() + daysDelta);
-      newEndDate.setDate(newEndDate.getDate() + daysDelta);
-      
-      updateReleaseMutation.mutate({
-        startDate: newStartDate.toISOString(),
-        endDate: newEndDate.toISOString(),
-      });
-    } else if (isResizing) {
-      // Only move end date
-      const newEndDate = new Date(originalDates.endDate);
-      newEndDate.setDate(newEndDate.getDate() + daysDelta);
-      
-      if (newEndDate > originalDates.startDate) {
-        updateReleaseMutation.mutate({
-          startDate: originalDates.startDate.toISOString(),
-          endDate: newEndDate.toISOString(),
-        });
-      }
-    }
+    // Don't update too frequently - wait until mouse up
+    return;
   };
 
   const handleMouseUp = () => {
@@ -129,10 +126,16 @@ export default function TimelineBar({ release, groupColor, onEdit }: TimelineBar
               {release.name}
             </span>
           </div>
-          <div className="flex space-x-1">
-            <div className="w-2 h-2 bg-white bg-opacity-30 rounded-full" />
-            <div className="w-2 h-2 bg-white bg-opacity-30 rounded-full" />
-            <div className="w-2 h-2 bg-white bg-opacity-30 rounded-full" />
+          <div className="flex items-center space-x-2">
+            <div 
+              className={`w-3 h-3 rounded-full ${getStatusColor(release.status || 'upcoming')}`}
+              title={`Status: ${release.status || 'upcoming'}`}
+            />
+            <div className="flex space-x-1">
+              <div className="w-2 h-2 bg-white bg-opacity-30 rounded-full" />
+              <div className="w-2 h-2 bg-white bg-opacity-30 rounded-full" />
+              <div className="w-2 h-2 bg-white bg-opacity-30 rounded-full" />
+            </div>
           </div>
         </div>
         

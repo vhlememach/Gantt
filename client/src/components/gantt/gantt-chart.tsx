@@ -25,13 +25,27 @@ export default function GanttChart({ zoomLevel, viewMode, onReleaseEdit }: Gantt
     releases: releases.filter(release => release.groupId === group.id),
   }));
 
-  // Generate timeline months (simplified for demo)
-  const months = [
-    "Jan 2024", "Feb 2024", "Mar 2024", "Apr 2024", 
-    "May 2024", "Jun 2024", "Jul 2024", "Aug 2024"
-  ];
+  // Generate timeline based on view mode
+  const getTimelineData = (mode: string) => {
+    if (mode === "Quarters") {
+      return {
+        labels: ["Q1 2024", "Q2 2024", "Q3 2024", "Q4 2024"],
+        sublabels: ["Jan-Mar", "Apr-Jun", "Jul-Sep", "Oct-Dec"]
+      };
+    } else if (mode === "Months") {
+      return {
+        labels: ["Jan 2024", "Feb 2024", "Mar 2024", "Apr 2024", "May 2024", "Jun 2024", "Jul 2024", "Aug 2024"],
+        sublabels: ["Week 1-4", "Week 1-4", "Week 1-4", "Week 1-4", "Week 1-4", "Week 1-4", "Week 1-4", "Week 1-4"]
+      };
+    } else { // Weeks
+      return {
+        labels: ["Week 1", "Week 2", "Week 3", "Week 4", "Week 5", "Week 6", "Week 7", "Week 8"],
+        sublabels: ["Jan 1-7", "Jan 8-14", "Jan 15-21", "Jan 22-28", "Feb 1-7", "Feb 8-14", "Feb 15-21", "Feb 22-28"]
+      };
+    }
+  };
 
-  const quarters = ["Q1", "Q1", "Q1", "Q2", "Q2", "Q2", "Q3", "Q3"];
+  const timelineData = getTimelineData(viewMode);
 
   return (
     <div className="flex h-full">
@@ -100,11 +114,11 @@ export default function GanttChart({ zoomLevel, viewMode, onReleaseEdit }: Gantt
         <div className="min-w-max" style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top left' }}>
           {/* Timeline Header */}
           <div className="h-16 bg-slate-100 border-b border-slate-200 flex items-center px-4">
-            <div className="grid grid-cols-8 gap-4 w-full min-w-max">
-              {months.map((month, index) => (
-                <div key={month} className="text-center">
-                  <div className="text-sm font-semibold text-slate-700">{month}</div>
-                  <div className="text-xs text-slate-500">{quarters[index]}</div>
+            <div className={`grid gap-4 w-full min-w-max grid-cols-${timelineData.labels.length}`}>
+              {timelineData.labels.map((label, index) => (
+                <div key={label} className="text-center">
+                  <div className="text-sm font-semibold text-slate-700">{label}</div>
+                  <div className="text-xs text-slate-500">{timelineData.sublabels[index]}</div>
                 </div>
               ))}
             </div>
@@ -140,8 +154,8 @@ export default function GanttChart({ zoomLevel, viewMode, onReleaseEdit }: Gantt
 
           {/* Timeline Grid Lines */}
           <div className="absolute inset-0 pointer-events-none">
-            <div className="h-full grid grid-cols-8 gap-4 opacity-20">
-              {months.map((_, index) => (
+            <div className={`h-full grid gap-4 opacity-20 grid-cols-${timelineData.labels.length}`}>
+              {timelineData.labels.map((_, index) => (
                 <div key={index} className="border-r border-slate-200" />
               ))}
             </div>

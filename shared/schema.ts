@@ -13,10 +13,13 @@ export const releaseGroups = pgTable("release_groups", {
 export const releases = pgTable("releases", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
+  description: text("description").default(""),
   groupId: varchar("group_id").notNull().references(() => releaseGroups.id, { onDelete: "cascade" }),
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),
   icon: text("icon").notNull().default("fas fa-rocket"),
+  responsible: text("responsible").default(""),
+  status: text("status").notNull().default("upcoming"), // upcoming, in-progress, completed, delayed
   createdAt: timestamp("created_at").defaultNow(),
 });
 
