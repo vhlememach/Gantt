@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
 import { Palette, Ungroup, Download, Plus, ExpandIcon, ChevronDown, Settings } from "lucide-react";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import HeaderCustomizationModal from "@/components/gantt/header-customization-modal";
 import GroupManagementModal from "@/components/gantt/group-management-modal";
 import ReleaseEditorModal from "@/components/gantt/release-editor-modal";
@@ -68,15 +69,14 @@ export default function GanttPage() {
       if (element) {
         import('html2canvas').then(html2canvas => {
           html2canvas.default(element as HTMLElement, {
-            scale: 2, // Higher resolution for better text quality
+            scale: 3, // Higher resolution for better text quality
             useCORS: true,
             allowTaint: true,
             backgroundColor: '#ffffff',
-            height: element.scrollHeight,
-            width: element.scrollWidth,
+            height: element.scrollHeight + 40, // Add padding to prevent text cutoff
+            width: element.scrollWidth + 40,
             scrollX: 0,
             scrollY: 0,
-            letterRendering: true, // Better text rendering
             logging: false
           }).then(canvas => {
             const link = document.createElement('a');
@@ -95,15 +95,14 @@ export default function GanttPage() {
           import('jspdf')
         ]).then(([html2canvas, jsPDF]) => {
           html2canvas.default(element as HTMLElement, {
-            scale: 2,
+            scale: 3, // Higher resolution for better text quality
             useCORS: true,
             allowTaint: true,
             backgroundColor: '#ffffff',
-            height: element.scrollHeight,
-            width: element.scrollWidth,
+            height: element.scrollHeight + 40, // Add padding to prevent text cutoff
+            width: element.scrollWidth + 40,
             scrollX: 0,
             scrollY: 0,
-            letterRendering: true,
             logging: false
           }).then(canvas => {
             const imgData = canvas.toDataURL('image/png');
@@ -138,7 +137,7 @@ export default function GanttPage() {
   } : {};
 
   return (
-    <div className="min-h-screen bg-slate-50 font-inter flex flex-col">
+    <div className="min-h-screen bg-background font-inter flex flex-col dark:bg-slate-900">
       {/* Header */}
       <header className="text-white shadow-lg" style={headerStyle}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -178,6 +177,7 @@ export default function GanttPage() {
                 <Settings className="mr-2 h-4 w-4" />
                 Status Colors
               </Button>
+              <ThemeToggle />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button

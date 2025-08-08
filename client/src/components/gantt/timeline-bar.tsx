@@ -85,26 +85,39 @@ export default function TimelineBar({ release, group, onEdit, viewMode, timeline
     let barWidth = 8;
   
     if (viewMode === "Quarters") {
-      // Quarters view: Q1 = 0-25%, Q2 = 25-50%, Q3 = 50-75%, Q4 = 75-100%
-      const startMonth = startDate.getMonth(); // 0-11
-      const endMonth = endDate.getMonth(); // 0-11
-      const startQuarter = Math.floor(startMonth / 3); // 0-3
-      const endQuarter = Math.floor(endMonth / 3); // 0-3
+      // Find the start and end quarters in the timeline labels
+      const startYear = startDate.getFullYear();
+      const endYear = endDate.getFullYear();
+      const startQuarter = Math.floor(startDate.getMonth() / 3) + 1; // 1-4
+      const endQuarter = Math.floor(endDate.getMonth() / 3) + 1; // 1-4
       
-      // Calculate position based on start quarter and month within quarter
-      const monthInQuarter = startMonth % 3; // 0-2
-      const quarterWidth = 100 / timelineLabels.length; // Width per quarter
-      const quarterStart = startQuarter * quarterWidth;
-      const monthOffset = (monthInQuarter / 3) * quarterWidth;
-      position = quarterStart + monthOffset;
+      const startLabel = `Q${startQuarter} ${startYear}`;
+      const endLabel = `Q${endQuarter} ${endYear}`;
       
-      // Calculate width to span from start to end position
-      const endQuarterStart = endQuarter * quarterWidth;
-      const endMonthInQuarter = endMonth % 3;
-      const endMonthOffset = ((endMonthInQuarter + 1) / 3) * quarterWidth; // +1 to include the end month
-      const endPosition = endQuarterStart + endMonthOffset;
+      const startQuarterIndex = timelineLabels.findIndex(label => label === startLabel);
+      const endQuarterIndex = timelineLabels.findIndex(label => label === endLabel);
       
-      barWidth = Math.max(8, endPosition - position);
+      if (startQuarterIndex >= 0) {
+        const quarterWidth = 100 / timelineLabels.length;
+        position = (startQuarterIndex / timelineLabels.length) * 100;
+        
+        // Add offset within the start quarter based on month
+        const monthInQuarter = startDate.getMonth() % 3; // 0-2
+        const monthOffset = (monthInQuarter / 3) * quarterWidth;
+        position += monthOffset;
+        
+        if (endQuarterIndex >= 0) {
+          // Calculate end position
+          const endQuarterPosition = ((endQuarterIndex + 1) / timelineLabels.length) * 100; // +1 to include end quarter
+          const endMonthInQuarter = endDate.getMonth() % 3; // 0-2
+          const endMonthOffset = ((endMonthInQuarter + 1) / 3) * quarterWidth;
+          const endPosition = endQuarterPosition - quarterWidth + endMonthOffset;
+          
+          barWidth = Math.max(8, endPosition - position);
+        } else {
+          barWidth = Math.max(8, quarterWidth);
+        }
+      }
     } else if (viewMode === "Months") {
       // Months view: each month gets equal space
       const startMonth = startDate.getMonth(); // 0-11
@@ -296,7 +309,7 @@ export default function TimelineBar({ release, group, onEdit, viewMode, timeline
             ) : (
               <i className={`${release.icon} text-white text-sm flex-shrink-0`} />
             )}
-            <span className="text-white font-medium text-sm truncate">
+            <span className="text-white font-medium text-sm truncate leading-relaxed px-1 py-1">
               {release.name}
             </span>
           </div>
