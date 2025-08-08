@@ -282,7 +282,7 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
         }}
         onMouseDown={(e) => handleMouseDown(e, 'drag')}
       >
-        <div className="flex items-center justify-between h-full px-3">
+        <div className="flex items-center justify-between h-full px-3" style={{ lineHeight: '1' }}>
           <div className="flex items-center space-x-2 flex-1 min-w-0">
             {release.icon.startsWith('lucide-') ? (
               (() => {
@@ -313,7 +313,7 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
             ) : (
               <i className={`${release.icon} text-white text-sm flex-shrink-0`} />
             )}
-            <span className="text-white font-medium text-sm truncate leading-relaxed px-1 py-1">
+            <span className="text-white font-medium text-sm truncate" style={{ lineHeight: '1', display: 'flex', alignItems: 'center' }}>
               {release.name}
             </span>
           </div>

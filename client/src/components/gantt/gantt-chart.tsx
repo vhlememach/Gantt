@@ -163,21 +163,87 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
 
   // Calculate current day position for the vertical line
   const getCurrentDayPosition = () => {
-    if (releases.length === 0) return 0;
-    
     const today = new Date();
-    const allDates = releases.flatMap(release => [
-      new Date(release.startDate),
-      new Date(release.endDate)
-    ]);
-    const minDate = new Date(Math.min(...allDates.map(d => d.getTime())));
-    const maxDate = new Date(Math.max(...allDates.map(d => d.getTime())));
     
-    if (today < minDate || today > maxDate) return -1; // Outside visible range
+    if (viewMode === "Quarters") {
+      // For quarters view, calculate position based on the current quarter and month
+      const currentYear = today.getFullYear();
+      const currentMonth = today.getMonth(); // 0-11
+      const currentDay = today.getDate();
+      
+      // Find current quarter position in timeline labels
+      const quarterLabels = timelineData.labels;
+      let currentQuarterIndex = -1;
+      
+      for (let i = 0; i < quarterLabels.length; i++) {
+        const label = quarterLabels[i];
+        if (label.includes(`${currentYear}`)) {
+          if ((label.includes('Q1') && currentMonth >= 0 && currentMonth <= 2) ||
+              (label.includes('Q2') && currentMonth >= 3 && currentMonth <= 5) ||
+              (label.includes('Q3') && currentMonth >= 6 && currentMonth <= 8) ||
+              (label.includes('Q4') && currentMonth >= 9 && currentMonth <= 11)) {
+            currentQuarterIndex = i;
+            break;
+          }
+        }
+      }
+      
+      if (currentQuarterIndex >= 0) {
+        const quarterWidth = 100 / quarterLabels.length;
+        const position = (currentQuarterIndex / quarterLabels.length) * 100;
+        
+        // Add offset within quarter based on month and day
+        const monthInQuarter = currentMonth % 3;
+        const monthOffset = (monthInQuarter / 3) * quarterWidth;
+        const dayOffset = ((currentDay - 1) / 30) * (quarterWidth / 3);
+        
+        return Math.min(98, position + monthOffset + dayOffset);
+      }
+    } else if (viewMode === "Months") {
+      // For months view, calculate position based on current month
+      const currentYear = today.getFullYear();
+      const currentMonth = today.getMonth(); // 0-11
+      const currentDay = today.getDate();
+      
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+                         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      
+      const currentMonthIndex = timelineData.labels.findIndex(label => {
+        const parts = label.split(" ");
+        if (parts.length === 2) {
+          const labelMonth = monthNames.indexOf(parts[0]);
+          const labelYear = parseInt(parts[1]);
+          return labelMonth === currentMonth && labelYear === currentYear;
+        }
+        return false;
+      });
+      
+      if (currentMonthIndex >= 0) {
+        const monthWidth = 100 / timelineData.labels.length;
+        const position = (currentMonthIndex / timelineData.labels.length) * 100;
+        const dayOffset = ((currentDay - 1) / 31) * monthWidth;
+        
+        return Math.min(98, position + dayOffset);
+      }
+    } else if (viewMode === "Weeks") {
+      // For weeks view, calculate position based on current week
+      const currentYear = today.getFullYear();
+      const startOfYear = new Date(currentYear, 0, 1);
+      const currentWeek = Math.floor((today.getTime() - startOfYear.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
+      
+      if (currentWeek >= 1 && currentWeek <= timelineData.labels.length) {
+        const weekWidth = 100 / timelineData.labels.length;
+        const position = ((currentWeek - 1) / timelineData.labels.length) * 100;
+        
+        // Add offset within week
+        const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+        const dayOffset = (dayOfWeek / 7) * weekWidth;
+        
+        return Math.min(98, position + dayOffset);
+      }
+    }
     
-    const totalDuration = maxDate.getTime() - minDate.getTime();
-    const currentPosition = (today.getTime() - minDate.getTime()) / totalDuration;
-    return currentPosition * 100; // Return as percentage
+    return -1; // Not visible in current view
   };
 
   const currentDayPosition = getCurrentDayPosition();
@@ -185,7 +251,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
   return (
     <div className="flex h-full">
       {/* Left Panel - Release List */}
-      <div className={`${viewType === "Condensed" ? "w-60" : "w-80"} bg-slate-50 border-r border-slate-200 overflow-y-auto`}>
+      <div className={`${viewType === "Condensed" ? "w-48" : "w-80"} bg-slate-50 border-r border-slate-200 overflow-y-auto`}>
         <div className="p-4">
           <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-4">
             Release Groups
@@ -200,7 +266,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                     style={{ backgroundColor: group.color }}
                   />
                   <h4 className="font-semibold text-slate-700">{group.name}</h4>
-                  <span className="text-xs text-slate-500 bg-slate-200 px-2 py-1 rounded-full">
+                  <span className="text-xs text-slate-500 bg-slate-200 px-2 py-1 rounded-full flex items-center justify-center min-w-[20px] h-5" style={{ lineHeight: '1' }}>
                     {groupReleases.length}
                   </span>
                 </div>
@@ -294,10 +360,12 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                         )}
                       </div>
                       <div>
-                        <div className={`font-medium text-slate-800 ${viewType === "Condensed" ? "text-sm" : ""}`}>{release.name}</div>
-                        <div className={`text-xs text-slate-500 ${viewType === "Condensed" ? "text-xs" : ""}`}>
-                          {new Date(release.startDate).toLocaleDateString()} - {new Date(release.endDate).toLocaleDateString()}
-                        </div>
+                        <div className={`font-medium text-slate-800 ${viewType === "Condensed" ? "text-sm truncate" : ""}`}>{release.name}</div>
+                        {viewType !== "Condensed" && (
+                          <div className="text-xs text-slate-500">
+                            {new Date(release.startDate).toLocaleDateString()} - {new Date(release.endDate).toLocaleDateString()}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="text-slate-300 hover:text-slate-500">
@@ -379,12 +447,12 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
           </div>
 
           {/* Current Day Line */}
-          {currentDayPosition >= 0 && settings && (
+          {currentDayPosition >= 0 && (
             <div 
               className="absolute top-16 bottom-0 z-20 pointer-events-none"
               style={{
-                left: `${currentDayPosition}%`,
-                borderLeft: `${settings.currentDayLineThickness || 2}px dotted ${settings.currentDayLineColor || '#000000'}`
+                left: `calc(${currentDayPosition}% + 16px)`,
+                borderLeft: `${(settings as any)?.currentDayLineThickness || 2}px dotted ${(settings as any)?.currentDayLineColor || '#000000'}`
               }}
             />
           )}
