@@ -19,7 +19,7 @@ const getStatusColor = (status: string) => {
 
 interface TimelineBarProps {
   release: Release;
-  group: { id: string; name: string; color: string; gradientEnabled?: string; gradientIntensity?: string };
+  group: { id: string; name: string; color: string; gradientEnabled?: string; gradientSecondaryColor?: string };
   onEdit: () => void;
   viewMode: string;
   timelineLabels: string[];
@@ -235,7 +235,7 @@ export default function TimelineBar({ release, group, onEdit, viewMode, timeline
           left: `${leftPosition}%`,
           width: `${width}%`,
           background: group.gradientEnabled === "true" 
-            ? `linear-gradient(135deg, ${group.color}, ${group.color}${group.gradientIntensity || '40'})`
+            ? `linear-gradient(135deg, ${group.color}, ${group.gradientSecondaryColor || '#FFFFFF'})`
             : group.color,
           minWidth: '120px', // Ensure minimum width for content
         }}

@@ -8,7 +8,7 @@ export const releaseGroups = pgTable("release_groups", {
   name: text("name").notNull(),
   color: text("color").notNull(),
   gradientEnabled: text("gradient_enabled").notNull().default("true"),
-  gradientIntensity: text("gradient_intensity").notNull().default("40"), // percentage for opacity
+  gradientSecondaryColor: text("gradient_secondary_color").notNull().default("#FFFFFF"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

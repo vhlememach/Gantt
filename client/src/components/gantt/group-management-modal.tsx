@@ -29,11 +29,11 @@ export default function GroupManagementModal({ isOpen, onClose }: GroupManagemen
   });
 
   const createGroupMutation = useMutation({
-    mutationFn: async (data: { name: string; color: string; gradientEnabled?: string; gradientIntensity?: string }) => {
+    mutationFn: async (data: { name: string; color: string; gradientEnabled?: string; gradientSecondaryColor?: string }) => {
       const response = await apiRequest("POST", "/api/release-groups", {
         ...data,
         gradientEnabled: data.gradientEnabled || "true",
-        gradientIntensity: data.gradientIntensity || "40"
+        gradientSecondaryColor: data.gradientSecondaryColor || "#FFFFFF"
       });
       return response.json();
     },
@@ -50,7 +50,7 @@ export default function GroupManagementModal({ isOpen, onClose }: GroupManagemen
   });
 
   const updateGroupMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: { color?: string; name?: string; gradientEnabled?: string; gradientIntensity?: string } }) => {
+    mutationFn: async ({ id, data }: { id: string; data: { color?: string; name?: string; gradientEnabled?: string; gradientSecondaryColor?: string } }) => {
       const response = await apiRequest("PUT", `/api/release-groups/${id}`, data);
       return response.json();
     },
@@ -101,8 +101,8 @@ export default function GroupManagementModal({ isOpen, onClose }: GroupManagemen
     updateGroupMutation.mutate({ id: groupId, data: { gradientEnabled: enabled.toString() } });
   };
 
-  const handleGradientIntensity = (groupId: string, intensity: number) => {
-    updateGroupMutation.mutate({ id: groupId, data: { gradientIntensity: intensity.toString() } });
+  const handleGradientSecondaryColor = (groupId: string, color: string) => {
+    updateGroupMutation.mutate({ id: groupId, data: { gradientSecondaryColor: color } });
   };
 
   const handleDeleteGroup = (groupId: string) => {
@@ -133,7 +133,7 @@ export default function GroupManagementModal({ isOpen, onClose }: GroupManagemen
                       className="w-4 h-4 rounded-full" 
                       style={{ 
                         background: group.gradientEnabled === "true" 
-                          ? `linear-gradient(135deg, ${group.color}, ${group.color}${group.gradientIntensity || '40'})`
+                          ? `linear-gradient(135deg, ${group.color}, ${group.gradientSecondaryColor || '#FFFFFF'})`
                           : group.color 
                       }}
                     />
@@ -177,23 +177,36 @@ export default function GroupManagementModal({ isOpen, onClose }: GroupManagemen
                   </div>
                   
                   {group.gradientEnabled === "true" && (
-                    <div className="space-y-2">
-                      <Label className="text-sm text-slate-600">Gradient Intensity: {group.gradientIntensity || '40'}%</Label>
-                      <Slider
-                        value={[parseInt(group.gradientIntensity || '40')]}
-                        onValueChange={(values) => handleGradientIntensity(group.id, values[0])}
-                        max={80}
-                        min={20}
-                        step={10}
-                        className="w-full"
-                      />
-                      <div className="text-xs text-slate-500">Preview:</div>
-                      <div 
-                        className="h-6 rounded border"
-                        style={{ 
-                          background: `linear-gradient(135deg, ${group.color}, ${group.color}${group.gradientIntensity || '40'})`
-                        }}
-                      />
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label className="text-sm text-slate-600">Primary Color</Label>
+                          <input
+                            type="color"
+                            value={group.color}
+                            onChange={(e) => handleColorChange(group.id, e.target.value)}
+                            className="w-full h-8 border border-slate-300 rounded cursor-pointer"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm text-slate-600">Secondary Color</Label>
+                          <input
+                            type="color"
+                            value={group.gradientSecondaryColor || '#FFFFFF'}
+                            onChange={(e) => handleGradientSecondaryColor(group.id, e.target.value)}
+                            className="w-full h-8 border border-slate-300 rounded cursor-pointer"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-xs text-slate-500">Preview:</div>
+                        <div 
+                          className="h-6 rounded border"
+                          style={{ 
+                            background: `linear-gradient(135deg, ${group.color}, ${group.gradientSecondaryColor || '#FFFFFF'})`
+                          }}
+                        />
+                      </div>
                     </div>
                   )}
                 </div>

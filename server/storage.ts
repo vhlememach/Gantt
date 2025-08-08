@@ -51,7 +51,7 @@ export class MemStorage implements IStorage {
       name: "Product",
       color: "#8B5CF6",
       gradientEnabled: "true",
-      gradientIntensity: "40",
+      gradientSecondaryColor: "#DDD6FE",
       createdAt: new Date(),
     };
 
@@ -60,7 +60,7 @@ export class MemStorage implements IStorage {
       name: "Infrastructure",
       color: "#10B981",
       gradientEnabled: "true",
-      gradientIntensity: "40",
+      gradientSecondaryColor: "#D1FAE5",
       createdAt: new Date(),
     };
 
@@ -151,7 +151,7 @@ export class MemStorage implements IStorage {
       ...group,
       id,
       gradientEnabled: group.gradientEnabled || "true",
-      gradientIntensity: group.gradientIntensity || "40",
+      gradientSecondaryColor: group.gradientSecondaryColor || "#FFFFFF",
       createdAt: new Date(),
     };
     this.releaseGroups.set(id, newGroup);
