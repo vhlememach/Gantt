@@ -321,7 +321,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                   {groupReleases.map((release, index) => (
                   <div
                     key={release.id}
-                    className={`flex items-center justify-between p-3 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer ${viewType === "Condensed" ? "h-10" : "h-14"}`}
+                    className={`flex items-center justify-between bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer ${viewType === "Condensed" ? "h-10 p-2" : "h-14 p-3"}`}
                     style={{ marginBottom: '8px' }}
                     onClick={() => {
                       console.log('Sidebar release clicked:', release.id);
