@@ -163,7 +163,10 @@ export default function TimelineBar({ release, groupColor, onEdit }: TimelineBar
           background: `linear-gradient(135deg, ${groupColor}, ${groupColor}dd)`,
           minWidth: '120px', // Ensure minimum width for content
         }}
-        onClick={onEdit}
+        onClick={(e) => {
+          console.log('Timeline bar clicked:', release.id);
+          onEdit();
+        }}
         onMouseDown={(e) => handleMouseDown(e, 'drag')}
       >
         <div className="flex items-center justify-between h-full px-3">

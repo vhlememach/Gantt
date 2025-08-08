@@ -117,7 +117,10 @@ export default function GanttChart({ zoomLevel, viewMode, onReleaseEdit }: Gantt
                   <div
                     key={release.id}
                     className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer h-14"
-                    onClick={() => onReleaseEdit(release.id)}
+                    onClick={() => {
+                      console.log('Sidebar release clicked:', release.id);
+                      onReleaseEdit(release.id);
+                    }}
                     draggable={true}
                     onDragStart={(e) => {
                       e.dataTransfer.setData("text/plain", release.id);
