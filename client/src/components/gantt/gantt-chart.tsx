@@ -254,11 +254,11 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
       const currentYear = today.getFullYear();
       
       // Calculate current week of year using ISO week standard
-      function getWeekOfYear(date: Date) {
+      const getWeekOfYear = (date: Date) => {
         const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
         const pastDaysOfYear = (date.getTime() - firstDayOfYear.getTime()) / 86400000;
         return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
-      }
+      };
       
       const currentWeek = getWeekOfYear(today);
       

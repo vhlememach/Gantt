@@ -77,6 +77,38 @@ export default function GanttPage() {
             height: htmlElement.style.height
           };
           
+          // Add temporary export styles to improve text rendering
+          const exportStyle = document.createElement('style');
+          exportStyle.id = 'export-styles';
+          exportStyle.innerHTML = `
+            .gantt-container * {
+              line-height: 1.6 !important;
+              letter-spacing: 0.5px !important;
+            }
+            .gantt-container .text-sm {
+              font-size: 16px !important;
+              padding: 4px 8px !important;
+            }
+            .gantt-container .text-xs {
+              font-size: 14px !important;
+              padding: 2px 4px !important;
+            }
+            .gantt-container .font-medium,
+            .gantt-container .font-semibold {
+              font-weight: 600 !important;
+            }
+            .gantt-container .rounded-lg {
+              border-radius: 8px !important;
+            }
+            .gantt-container .timeline-bar-content {
+              padding: 8px 12px !important;
+              display: flex !important;
+              align-items: center !important;
+              min-height: 40px !important;
+            }
+          `;
+          document.head.appendChild(exportStyle);
+          
           // Make everything visible for export
           htmlElement.style.overflow = 'visible';
           htmlElement.style.maxHeight = 'none';
@@ -87,7 +119,7 @@ export default function GanttPage() {
           
           setTimeout(() => {
             html2canvas.default(htmlElement, {
-              scale: 1.5,
+              scale: 2,
               useCORS: true,
               allowTaint: false,
               backgroundColor: '#ffffff',
@@ -98,23 +130,35 @@ export default function GanttPage() {
               scrollX: 0,
               scrollY: 0,
               logging: false,
-              ignoreElements: (element) => {
-                return element.classList?.contains('no-export') || false;
+              letterRendering: true,
+              onclone: (clonedDoc) => {
+                // Ensure proper text rendering in cloned document
+                const clonedStyle = clonedDoc.createElement('style');
+                clonedStyle.innerHTML = exportStyle.innerHTML;
+                clonedDoc.head.appendChild(clonedStyle);
               }
             }).then(canvas => {
-              // Restore original styles
+              // Restore original styles and remove export styles
               Object.assign(htmlElement.style, originalStyles);
+              const styleElement = document.getElementById('export-styles');
+              if (styleElement) {
+                styleElement.remove();
+              }
               
               const link = document.createElement('a');
               link.download = `gantt-chart-${new Date().toISOString().split('T')[0]}.png`;
-              link.href = canvas.toDataURL('image/png', 0.95);
+              link.href = canvas.toDataURL('image/png', 1.0);
               link.click();
             }).catch(error => {
               console.error('PNG Export failed:', error);
               Object.assign(htmlElement.style, originalStyles);
+              const styleElement = document.getElementById('export-styles');
+              if (styleElement) {
+                styleElement.remove();
+              }
               alert('Export failed. Please try again.');
             });
-          }, 1000);
+          }, 1500);
         }).catch(error => {
           console.error('HTML2Canvas load failed:', error);
           alert('Export library failed to load.');
@@ -136,6 +180,38 @@ export default function GanttPage() {
             height: htmlElement.style.height
           };
           
+          // Add temporary export styles to improve text rendering
+          const exportStyle = document.createElement('style');
+          exportStyle.id = 'export-styles-pdf';
+          exportStyle.innerHTML = `
+            .gantt-container * {
+              line-height: 1.6 !important;
+              letter-spacing: 0.5px !important;
+            }
+            .gantt-container .text-sm {
+              font-size: 16px !important;
+              padding: 4px 8px !important;
+            }
+            .gantt-container .text-xs {
+              font-size: 14px !important;
+              padding: 2px 4px !important;
+            }
+            .gantt-container .font-medium,
+            .gantt-container .font-semibold {
+              font-weight: 600 !important;
+            }
+            .gantt-container .rounded-lg {
+              border-radius: 8px !important;
+            }
+            .gantt-container .timeline-bar-content {
+              padding: 8px 12px !important;
+              display: flex !important;
+              align-items: center !important;
+              min-height: 40px !important;
+            }
+          `;
+          document.head.appendChild(exportStyle);
+          
           // Make everything visible for export
           htmlElement.style.overflow = 'visible';
           htmlElement.style.maxHeight = 'none';
@@ -146,7 +222,7 @@ export default function GanttPage() {
           
           setTimeout(() => {
             html2canvas.default(htmlElement, {
-              scale: 1.5,
+              scale: 2,
               useCORS: true,
               allowTaint: false,
               backgroundColor: '#ffffff',
@@ -157,12 +233,20 @@ export default function GanttPage() {
               scrollX: 0,
               scrollY: 0,
               logging: false,
-              ignoreElements: (element) => {
-                return element.classList?.contains('no-export') || false;
+              letterRendering: true,
+              onclone: (clonedDoc) => {
+                // Ensure proper text rendering in cloned document
+                const clonedStyle = clonedDoc.createElement('style');
+                clonedStyle.innerHTML = exportStyle.innerHTML;
+                clonedDoc.head.appendChild(clonedStyle);
               }
             }).then(canvas => {
-              // Restore original styles
+              // Restore original styles and remove export styles
               Object.assign(htmlElement.style, originalStyles);
+              const styleElement = document.getElementById('export-styles-pdf');
+              if (styleElement) {
+                styleElement.remove();
+              }
             const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF.jsPDF();
             const imgWidth = 210;
@@ -186,9 +270,13 @@ export default function GanttPage() {
           }).catch(error => {
             console.error('PDF Export failed:', error);
             Object.assign(htmlElement.style, originalStyles);
+            const styleElement = document.getElementById('export-styles-pdf');
+            if (styleElement) {
+              styleElement.remove();
+            }
             alert('Export failed. Please try again.');
           });
-          }, 1000);
+          }, 1500);
         }).catch(error => {
           console.error('Libraries load failed:', error);
           alert('Export libraries failed to load.');
