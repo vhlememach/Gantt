@@ -127,12 +127,13 @@ export function IconPicker({ value, onChange, label = "Icon" }: IconPickerProps)
               <div className="grid grid-cols-8 gap-2 p-2">
                 {filteredIcons.slice(0, 64).map((iconName) => {
                   const IconComp = Icons[iconName as keyof typeof Icons] as React.ComponentType<any>;
+                  const isSelected = currentIconName === iconName;
                   return IconComp ? (
                     <Button
                       key={iconName}
-                      variant="ghost"
+                      variant={isSelected ? "default" : "ghost"}
                       size="sm"
-                      className="h-12 w-12 p-0"
+                      className={`h-12 w-12 p-0 ${isSelected ? 'ring-2 ring-primary' : ''}`}
                       onClick={() => handleIconSelect(iconName)}
                       title={iconName}
                     >

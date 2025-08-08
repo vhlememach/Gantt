@@ -139,6 +139,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
       setFormData({
         name: "",
         description: "",
+        url: "",
         groupId: groups[0]?.id || "",
         startDate: new Date().toISOString().split('T')[0],
         endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
