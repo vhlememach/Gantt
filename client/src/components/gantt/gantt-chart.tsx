@@ -46,23 +46,88 @@ export default function GanttChart({ zoomLevel, viewMode, onReleaseEdit }: Gantt
     });
   }, [groups, releases, releasesByGroup]);
 
-  // Generate timeline based on view mode
+  // Generate timeline based on view mode and actual release dates
   const getTimelineData = (mode: string) => {
+    // Find the date range from all releases
+    const allDates = releases.flatMap(release => [
+      new Date(release.startDate),
+      new Date(release.endDate)
+    ]);
+
+    if (allDates.length === 0) {
+      // Default to current year if no releases
+      const currentYear = new Date().getFullYear();
+      if (mode === "Quarters") {
+        return {
+          labels: [`Q1 ${currentYear}`, `Q2 ${currentYear}`, `Q3 ${currentYear}`, `Q4 ${currentYear}`],
+          sublabels: ["Jan-Mar", "Apr-Jun", "Jul-Sep", "Oct-Dec"]
+        };
+      } else if (mode === "Months") {
+        return {
+          labels: [`Jan ${currentYear}`, `Feb ${currentYear}`, `Mar ${currentYear}`, `Apr ${currentYear}`, `May ${currentYear}`, `Jun ${currentYear}`],
+          sublabels: ["Week 1-4", "Week 1-4", "Week 1-4", "Week 1-4", "Week 1-4", "Week 1-4"]
+        };
+      } else {
+        return {
+          labels: ["Week 1", "Week 2", "Week 3", "Week 4", "Week 5", "Week 6"],
+          sublabels: ["Days 1-7", "Days 8-14", "Days 15-21", "Days 22-28", "Days 29-35", "Days 36-42"]
+        };
+      }
+    }
+
+    const minDate = new Date(Math.min(...allDates.map(d => d.getTime())));
+    const maxDate = new Date(Math.max(...allDates.map(d => d.getTime())));
+    
     if (mode === "Quarters") {
+      const startYear = minDate.getFullYear();
+      const endYear = maxDate.getFullYear();
+      const labels = [];
+      const sublabels = ["Jan-Mar", "Apr-Jun", "Jul-Sep", "Oct-Dec"];
+      
+      for (let year = startYear; year <= endYear; year++) {
+        for (let quarter = 1; quarter <= 4; quarter++) {
+          labels.push(`Q${quarter} ${year}`);
+        }
+      }
+      
       return {
-        labels: ["Q1 2024", "Q2 2024", "Q3 2024", "Q4 2024"],
-        sublabels: ["Jan-Mar", "Apr-Jun", "Jul-Sep", "Oct-Dec"]
+        labels: labels.slice(0, 8), // Limit to reasonable number
+        sublabels: Array(labels.slice(0, 8).length).fill(0).map((_, i) => sublabels[i % 4])
       };
     } else if (mode === "Months") {
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const labels = [];
+      
+      let currentDate = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+      const endDate = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0);
+      
+      while (currentDate <= endDate && labels.length < 12) {
+        labels.push(`${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`);
+        currentDate.setMonth(currentDate.getMonth() + 1);
+      }
+      
       return {
-        labels: ["Jan 2024", "Feb 2024", "Mar 2024", "Apr 2024", "May 2024", "Jun 2024", "Jul 2024", "Aug 2024"],
-        sublabels: ["Week 1-4", "Week 1-4", "Week 1-4", "Week 1-4", "Week 1-4", "Week 1-4", "Week 1-4", "Week 1-4"]
+        labels,
+        sublabels: Array(labels.length).fill("Week 1-4")
       };
     } else { // Weeks
-      return {
-        labels: ["Week 1", "Week 2", "Week 3", "Week 4", "Week 5", "Week 6", "Week 7", "Week 8"],
-        sublabels: ["Jan 1-7", "Jan 8-14", "Jan 15-21", "Jan 22-28", "Feb 1-7", "Feb 8-14", "Feb 15-21", "Feb 22-28"]
-      };
+      const labels = [];
+      const sublabels = [];
+      
+      let currentDate = new Date(minDate);
+      currentDate.setDate(currentDate.getDate() - currentDate.getDay()); // Start of week
+      
+      for (let i = 0; i < 8 && currentDate <= maxDate; i++) {
+        const weekEnd = new Date(currentDate);
+        weekEnd.setDate(weekEnd.getDate() + 6);
+        
+        labels.push(`Week ${i + 1}`);
+        sublabels.push(`${currentDate.getMonth() + 1}/${currentDate.getDate()}-${weekEnd.getMonth() + 1}/${weekEnd.getDate()}`);
+        
+        currentDate.setDate(currentDate.getDate() + 7);
+      }
+      
+      return { labels, sublabels };
     }
   };
 
