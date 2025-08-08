@@ -204,7 +204,7 @@ export default function GanttChart({ zoomLevel, viewMode, onReleaseEdit }: Gantt
                 {!collapsedGroups.has(group.id) && (
                   <div className="space-y-2 ml-5">
                     {groupReleases.map((release) => (
-                      <div key={release.id} className="h-14 flex items-center p-3">
+                      <div key={release.id} className="h-14 flex items-center bg-white rounded-lg shadow-sm p-3">
                         <TimelineBar
                           release={release}
                           groupColor={group.color}

@@ -153,7 +153,7 @@ export default function TimelineBar({ release, groupColor, onEdit }: TimelineBar
   });
 
   return (
-    <div className="relative w-full h-8"> {/* Match the container height */}
+    <div className="relative w-full h-8"> {/* Container height stays h-8 within h-14 parent */}
       <div
         ref={barRef}
         className="absolute top-0 h-8 rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all duration-200 z-10"
