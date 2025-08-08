@@ -54,10 +54,7 @@ export default function ChecklistPage() {
   // Update task completion
   const updateTaskMutation = useMutation({
     mutationFn: async ({ id, completed }: { id: string, completed: boolean }) => {
-      return apiRequest(`/api/checklist-tasks/${id}`, {
-        method: 'PUT',
-        body: { completed }
-      });
+      return apiRequest('PUT', `/api/checklist-tasks/${id}`, { completed });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
@@ -68,10 +65,7 @@ export default function ChecklistPage() {
   // Create new task
   const createTaskMutation = useMutation({
     mutationFn: async (taskData: { releaseId: string, assignedTo: string, taskTitle: string }) => {
-      return apiRequest('/api/checklist-tasks', {
-        method: 'POST',
-        body: taskData
-      });
+      return apiRequest('POST', '/api/checklist-tasks', taskData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
@@ -222,7 +216,7 @@ export default function ChecklistPage() {
                             <Checkbox
                               checked={task.completed}
                               onCheckedChange={(checked) => 
-                                handleTaskToggle(task.id, checked as boolean)
+                                handleTaskToggle(task.id, !!checked)
                               }
                             />
                             <div className="flex-1">
