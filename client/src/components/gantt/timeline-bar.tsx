@@ -58,15 +58,12 @@ export default function TimelineBar({ release, groupColor, onEdit }: TimelineBar
   const endDate = new Date(release.endDate);
   const duration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
   
-  // Simple positioning calculation that works across years
-  const releaseYear = startDate.getFullYear();
-  const yearStart = new Date(releaseYear, 0, 1);
-  const yearEnd = new Date(releaseYear, 11, 31);
-  const totalYearDays = (yearEnd.getTime() - yearStart.getTime()) / (1000 * 60 * 60 * 24);
-  
-  const daysFromYearStart = (startDate.getTime() - yearStart.getTime()) / (1000 * 60 * 60 * 24);
-  const leftPosition = Math.max(0, (daysFromYearStart / totalYearDays) * 85); // Use 85% of available space
-  const width = Math.max(10, Math.min(30, (duration / totalYearDays) * 85)); // 10-30% width range
+  // Fixed positioning calculation to ensure bars are visible
+  const currentYear = new Date().getFullYear();
+  const baseDate = new Date(currentYear, 0, 1); // Start of current year
+  const daysFromBase = Math.max(0, Math.ceil((startDate.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 24)));
+  const leftPosition = Math.min(90, (daysFromBase / 365) * 100); // Position within year, max 90%
+  const width = Math.max(5, Math.min(80, (duration / 365) * 100)); // Min 5%, max 80% width
 
   const handleMouseDown = (e: React.MouseEvent, action: 'drag' | 'resize') => {
     e.preventDefault();
@@ -153,31 +150,35 @@ export default function TimelineBar({ release, groupColor, onEdit }: TimelineBar
   });
 
   return (
-    <div className="relative h-14 w-full"> {/* Increased height for better content fit */}
+    <div className="relative h-12 w-full">
       <div
         ref={barRef}
-        className="absolute top-1 h-12 rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all duration-200 z-10"
+        className="absolute top-0 h-full rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all duration-200 z-10"
         style={{
           left: `${leftPosition}%`,
-          width: `${width}%`,
+          width: `${Math.max(width, 15)}%`,
           background: `linear-gradient(135deg, ${groupColor}, ${groupColor}dd)`,
-          minWidth: '120px', // Ensure minimum width for content
         }}
         onClick={onEdit}
         onMouseDown={(e) => handleMouseDown(e, 'drag')}
       >
-        <div className="flex items-center justify-between h-full px-3">
-          <div className="flex items-center space-x-2 flex-1 min-w-0">
-            <i className={`${release.icon} text-white text-sm flex-shrink-0`} />
+        <div className="flex items-center justify-between h-full px-4">
+          <div className="flex items-center space-x-2">
+            <i className={`${release.icon} text-white text-sm`} />
             <span className="text-white font-medium text-sm truncate">
               {release.name}
             </span>
           </div>
-          <div className="flex items-center space-x-2 flex-shrink-0">
+          <div className="flex items-center space-x-2">
             <div 
               className={`w-3 h-3 rounded-full ${getStatusColor(release.status || 'upcoming')}`}
               title={`Status: ${release.status || 'upcoming'}`}
             />
+            <div className="flex space-x-1">
+              <div className="w-2 h-2 bg-white bg-opacity-30 rounded-full" />
+              <div className="w-2 h-2 bg-white bg-opacity-30 rounded-full" />
+              <div className="w-2 h-2 bg-white bg-opacity-30 rounded-full" />
+            </div>
           </div>
         </div>
         

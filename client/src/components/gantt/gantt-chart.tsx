@@ -112,11 +112,11 @@ export default function GanttChart({ zoomLevel, viewMode, onReleaseEdit }: Gantt
               </div>
               
               {!collapsedGroups.has(group.id) && (
-                <div className="space-y-4 ml-5">
+                <div className="space-y-2 ml-5">
                   {groupReleases.map((release, index) => (
                   <div
                     key={release.id}
-                    className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer h-14"
+                    className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
                     onClick={() => onReleaseEdit(release.id)}
                     draggable={true}
                     onDragStart={(e) => {
@@ -199,7 +199,7 @@ export default function GanttChart({ zoomLevel, viewMode, onReleaseEdit }: Gantt
                     <h4 className="font-semibold text-slate-700">{group.name}</h4>
                   </div>
                   
-                  <div className="space-y-4 ml-5">
+                  <div className="space-y-3 ml-5">
                     {groupReleases.map((release) => (
                       <TimelineBar
                         key={release.id}
