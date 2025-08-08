@@ -47,6 +47,8 @@ export const checklistTasks = pgTable("checklist_tasks", {
   assignedTo: text("assigned_to").notNull(), // Brian, Alex, Lucas, Victor
   taskTitle: text("task_title").notNull(),
   taskDescription: text("task_description"),
+  taskUrl: text("task_url"), // URL/Links field
+  priority: boolean("priority").default(false), // High priority tasks
   completed: boolean("completed").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   completedAt: timestamp("completed_at"),

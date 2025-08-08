@@ -8,15 +8,20 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, User, CheckCircle, Clock, Users, BarChart3 } from "lucide-react";
+import { Plus, User, CheckCircle, Clock, Users, BarChart3, Download, ArrowUpDown, Star, AlertTriangle, ExternalLink } from "lucide-react";
 import { Link } from "wouter";
 
 const teamMembers = ["Brian", "Alex", "Lucas", "Victor"];
 
+type SortOption = "completed" | "to-complete" | "priority";
+
 export default function ChecklistPage() {
   const [selectedMember, setSelectedMember] = useState(teamMembers[0]);
   const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [newTaskUrl, setNewTaskUrl] = useState("");
+  const [newTaskPriority, setNewTaskPriority] = useState(false);
   const [selectedReleaseId, setSelectedReleaseId] = useState("");
+  const [sortBy, setSortBy] = useState<Record<string, SortOption>>({});
   
   const queryClient = useQueryClient();
 
@@ -64,12 +69,14 @@ export default function ChecklistPage() {
 
   // Create new task
   const createTaskMutation = useMutation({
-    mutationFn: async (taskData: { releaseId: string, assignedTo: string, taskTitle: string }) => {
+    mutationFn: async (taskData: { releaseId: string, assignedTo: string, taskTitle: string, taskUrl?: string, priority?: boolean }) => {
       return apiRequest('POST', '/api/checklist-tasks', taskData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
       setNewTaskTitle("");
+      setNewTaskUrl("");
+      setNewTaskPriority(false);
       setSelectedReleaseId("");
     }
   });
@@ -83,9 +90,56 @@ export default function ChecklistPage() {
       createTaskMutation.mutate({
         releaseId: selectedReleaseId,
         assignedTo: selectedMember,
-        taskTitle: newTaskTitle
+        taskTitle: newTaskTitle,
+        taskUrl: newTaskUrl || undefined,
+        priority: newTaskPriority
       });
     }
+  };
+
+  // Sorting function
+  const getSortedTasks = (tasks: ChecklistTask[], sortOption: SortOption) => {
+    return [...tasks].sort((a, b) => {
+      switch (sortOption) {
+        case "completed":
+          return (b.completed ? 1 : 0) - (a.completed ? 1 : 0);
+        case "to-complete":
+          return (a.completed ? 1 : 0) - (b.completed ? 1 : 0);
+        case "priority":
+          return (b.priority ? 1 : 0) - (a.priority ? 1 : 0);
+        default:
+          return 0;
+      }
+    });
+  };
+
+  // Export functionality
+  const exportChecklist = (member: string) => {
+    const memberTasks = allTasks.filter(task => task.assignedTo === member);
+    const exportData = {
+      member,
+      exportDate: new Date().toISOString(),
+      tasks: memberTasks.map(task => ({
+        title: task.taskTitle,
+        description: task.taskDescription,
+        url: task.taskUrl,
+        priority: task.priority,
+        completed: task.completed,
+        release: releases.find(r => r.id === task.releaseId)?.name || 'Unknown',
+        createdAt: task.createdAt,
+        completedAt: task.completedAt
+      }))
+    };
+    
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${member}-checklist-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   if (tasksLoading) {
@@ -124,14 +178,23 @@ export default function ChecklistPage() {
           {teamMembers.map(member => {
             const memberTasksCount = allTasks.filter(task => task.assignedTo === member);
             const completedCount = memberTasksCount.filter(task => task.completed).length;
+            const priorityCount = memberTasksCount.filter(task => task.priority).length;
             
             return (
               <TabsTrigger key={member} value={member} className="flex items-center space-x-2">
                 <User className="w-4 h-4" />
                 <span>{member}</span>
-                <Badge variant="outline" className="ml-2">
-                  {completedCount}/{memberTasksCount.length}
-                </Badge>
+                <div className="flex items-center space-x-1 ml-2">
+                  <Badge variant="outline">
+                    {completedCount}/{memberTasksCount.length}
+                  </Badge>
+                  {priorityCount > 0 && (
+                    <Badge variant="destructive" className="text-xs">
+                      <Star className="w-3 h-3 mr-1" />
+                      {priorityCount}
+                    </Badge>
+                  )}
+                </div>
               </TabsTrigger>
             );
           })}
@@ -149,34 +212,52 @@ export default function ChecklistPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex space-x-4">
-                    <div className="flex-1">
-                      <Input
-                        placeholder="Task title..."
-                        value={newTaskTitle}
-                        onChange={(e) => setNewTaskTitle(e.target.value)}
-                      />
+                  <div className="space-y-4">
+                    <div className="flex space-x-4">
+                      <div className="flex-1">
+                        <Input
+                          placeholder="Task title..."
+                          value={newTaskTitle}
+                          onChange={(e) => setNewTaskTitle(e.target.value)}
+                        />
+                      </div>
+                      <div className="w-64">
+                        <select 
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                          value={selectedReleaseId}
+                          onChange={(e) => setSelectedReleaseId(e.target.value)}
+                        >
+                          <option value="">Select Release...</option>
+                          {releases.map(release => (
+                            <option key={release.id} value={release.id}>
+                              {release.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
-                    <div className="w-64">
-                      <select 
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                        value={selectedReleaseId}
-                        onChange={(e) => setSelectedReleaseId(e.target.value)}
+                    <div className="flex space-x-4">
+                      <div className="flex-1">
+                        <Input
+                          placeholder="URL/Links (optional)..."
+                          value={newTaskUrl}
+                          onChange={(e) => setNewTaskUrl(e.target.value)}
+                        />
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={newTaskPriority}
+                          onCheckedChange={(checked) => setNewTaskPriority(!!checked)}
+                        />
+                        <label className="text-sm font-medium">High Priority</label>
+                      </div>
+                      <Button 
+                        onClick={handleCreateTask}
+                        disabled={!newTaskTitle || !selectedReleaseId || createTaskMutation.isPending}
                       >
-                        <option value="">Select Release...</option>
-                        {releases.map(release => (
-                          <option key={release.id} value={release.id}>
-                            {release.name}
-                          </option>
-                        ))}
-                      </select>
+                        Add Task
+                      </Button>
                     </div>
-                    <Button 
-                      onClick={handleCreateTask}
-                      disabled={!newTaskTitle || !selectedReleaseId || createTaskMutation.isPending}
-                    >
-                      Add Task
-                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -185,6 +266,8 @@ export default function ChecklistPage() {
               {Object.entries(tasksByRelease).map(([releaseId, tasks]) => {
                 const release = releases.find(r => r.id === releaseId);
                 const releaseProgress = getReleaseProgress(releaseId);
+                const memberSortOption = sortBy[member] || "priority";
+                const sortedTasks = getSortedTasks(tasks, memberSortOption);
                 
                 return (
                   <Card key={releaseId}>
@@ -196,15 +279,40 @@ export default function ChecklistPage() {
                             {releaseProgress}% Complete
                           </Badge>
                         </div>
-                        <div className="flex items-center space-x-2 text-sm text-gray-500">
-                          <CheckCircle className="w-4 h-4" />
-                          <span>{tasks.filter(t => t.completed).length}/{tasks.length} completed</span>
+                        <div className="flex items-center space-x-4">
+                          <div className="flex items-center space-x-2">
+                            <ArrowUpDown className="w-4 h-4 text-gray-500" />
+                            <select 
+                              className="text-sm border border-gray-300 rounded px-2 py-1"
+                              value={memberSortOption}
+                              onChange={(e) => setSortBy(prev => ({ 
+                                ...prev, 
+                                [member]: e.target.value as SortOption 
+                              }))}
+                            >
+                              <option value="priority">Priority</option>
+                              <option value="completed">Completed</option>
+                              <option value="to-complete">To Complete</option>
+                            </select>
+                          </div>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => exportChecklist(member)}
+                          >
+                            <Download className="w-4 h-4 mr-2" />
+                            Export
+                          </Button>
+                          <div className="flex items-center space-x-2 text-sm text-gray-500">
+                            <CheckCircle className="w-4 h-4" />
+                            <span>{tasks.filter(t => t.completed).length}/{tasks.length} completed</span>
+                          </div>
                         </div>
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-3">
-                        {tasks.map(task => (
+                        {sortedTasks.map(task => (
                           <div
                             key={task.id}
                             className={`flex items-center space-x-3 p-3 rounded-lg border ${
@@ -220,14 +328,30 @@ export default function ChecklistPage() {
                               }
                             />
                             <div className="flex-1">
-                              <div className={`font-medium ${
+                              <div className={`font-medium flex items-center space-x-2 ${
                                 task.completed ? 'line-through text-gray-500' : 'text-gray-900 dark:text-white'
                               }`}>
-                                {task.taskTitle}
+                                <span>{task.taskTitle}</span>
+                                {task.priority && (
+                                  <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                                )}
                               </div>
                               {task.taskDescription && (
                                 <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                                   {task.taskDescription}
+                                </div>
+                              )}
+                              {task.taskUrl && (
+                                <div className="mt-2">
+                                  <a 
+                                    href={task.taskUrl} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:text-blue-800 text-sm flex items-center space-x-1"
+                                  >
+                                    <ExternalLink className="w-3 h-3" />
+                                    <span>View Link</span>
+                                  </a>
                                 </div>
                               )}
                             </div>
