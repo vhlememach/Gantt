@@ -261,10 +261,10 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
   });
 
   return (
-    <div className={`relative w-full ${viewType === "Condensed" ? "h-8" : "h-14"}`}> {/* Container height matches sidebar items */}
+    <div className={`relative w-full ${viewType === "Condensed" ? "h-10" : "h-14"}`}> {/* Container height matches sidebar items */}
       <div
         ref={barRef}
-        className={`absolute top-0 ${viewType === "Condensed" ? "h-6" : "h-12"} rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all duration-200 z-10`}
+        className={`absolute top-0 ${viewType === "Condensed" ? "h-8" : "h-12"} rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all duration-200 z-10 flex items-center`}
         style={{
           left: `${leftPosition}%`,
           width: `${width}%`,
@@ -272,7 +272,7 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
             ? `linear-gradient(135deg, ${group.color}, ${group.gradientSecondaryColor || '#FFFFFF'})`
             : group.color,
           minWidth: '120px', // Ensure minimum width for content
-          height: viewType === "Condensed" ? '24px' : '48px',
+          height: viewType === "Condensed" ? '32px' : '48px',
           border: release.highPriority ? `3px solid ${group.color}` : 'none',
           boxShadow: release.highPriority ? `0 0 0 1px ${group.color}` : undefined
         }}
@@ -282,7 +282,7 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
         }}
         onMouseDown={(e) => handleMouseDown(e, 'drag')}
       >
-        <div className="flex items-center justify-between h-full px-3" style={{ lineHeight: '1' }}>
+        <div className="flex items-center justify-between h-full px-3">
           <div className="flex items-center space-x-2 flex-1 min-w-0">
             {release.icon.startsWith('lucide-') ? (
               (() => {
@@ -313,7 +313,14 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
             ) : (
               <i className={`${release.icon} text-white text-sm flex-shrink-0`} />
             )}
-            <span className="text-white font-medium text-sm truncate" style={{ lineHeight: '1', display: 'flex', alignItems: 'center' }}>
+            <span 
+              className="text-white font-medium text-sm truncate flex items-center"
+              style={{ 
+                lineHeight: '1.2',
+                paddingTop: '2px',
+                paddingBottom: '2px'
+              }}
+            >
               {release.name}
             </span>
           </div>

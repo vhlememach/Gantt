@@ -251,7 +251,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
   return (
     <div className="flex h-full">
       {/* Left Panel - Release List */}
-      <div className={`${viewType === "Condensed" ? "w-48" : "w-80"} bg-slate-50 border-r border-slate-200 overflow-y-auto`}>
+      <div className={`${viewType === "Condensed" ? "w-64" : "w-80"} bg-slate-50 border-r border-slate-200 overflow-y-auto`}>
         <div className="p-4">
           <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-4">
             Release Groups
@@ -296,7 +296,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                   {groupReleases.map((release, index) => (
                   <div
                     key={release.id}
-                    className={`flex items-center justify-between p-3 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer ${viewType === "Condensed" ? "h-8" : "h-14"}`}
+                    className={`flex items-center justify-between p-3 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer ${viewType === "Condensed" ? "h-10" : "h-14"}`}
                     onClick={() => {
                       console.log('Sidebar release clicked:', release.id);
                       onReleaseEdit(release.id);
@@ -417,7 +417,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                 {!collapsedGroups.has(group.id) && (
                   <div className="space-y-2 ml-5">
                     {groupReleases.map((release) => (
-                      <div key={release.id} className={`${viewType === "Condensed" ? "h-8" : "h-14"} flex items-center`}>
+                      <div key={release.id} className={`${viewType === "Condensed" ? "h-10" : "h-14"} flex items-center`}>
                         <TimelineBar
                           release={release}
                           group={group}
@@ -454,7 +454,15 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                 left: `calc(${currentDayPosition}% + 16px)`,
                 borderLeft: `${(settings as any)?.currentDayLineThickness || 2}px dotted ${(settings as any)?.currentDayLineColor || '#000000'}`
               }}
-            />
+            >
+              {/* Current Day Label */}
+              <div 
+                className="absolute -top-6 -left-8 bg-slate-800 text-white text-xs px-2 py-1 rounded shadow-sm whitespace-nowrap"
+                style={{ fontSize: '10px' }}
+              >
+                Current Day
+              </div>
+            </div>
           )}
         </div>
       </div>

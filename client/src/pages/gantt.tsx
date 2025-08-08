@@ -70,15 +70,17 @@ export default function GanttPage() {
       if (element) {
         import('html2canvas').then(html2canvas => {
           html2canvas.default(element as HTMLElement, {
-            scale: 3, // Higher resolution for better text quality
+            scale: 2, // Reduced scale for better text rendering
             useCORS: true,
             allowTaint: true,
             backgroundColor: '#ffffff',
-            height: element.scrollHeight + 40, // Add padding to prevent text cutoff
-            width: element.scrollWidth + 40,
+            height: element.scrollHeight + 80, // More padding to prevent text cutoff
+            width: element.scrollWidth + 80,
             scrollX: 0,
             scrollY: 0,
-            logging: false
+            logging: false,
+            letterRendering: true,
+            imageTimeout: 15000
           }).then(canvas => {
             const link = document.createElement('a');
             link.download = `gantt-chart-${new Date().toISOString().split('T')[0]}.png`;
@@ -96,15 +98,17 @@ export default function GanttPage() {
           import('jspdf')
         ]).then(([html2canvas, jsPDF]) => {
           html2canvas.default(element as HTMLElement, {
-            scale: 3, // Higher resolution for better text quality
+            scale: 2, // Reduced scale for better text rendering
             useCORS: true,
             allowTaint: true,
             backgroundColor: '#ffffff',
-            height: element.scrollHeight + 40, // Add padding to prevent text cutoff
-            width: element.scrollWidth + 40,
+            height: element.scrollHeight + 80, // More padding to prevent text cutoff
+            width: element.scrollWidth + 80,
             scrollX: 0,
             scrollY: 0,
-            logging: false
+            logging: false,
+            letterRendering: true,
+            imageTimeout: 15000
           }).then(canvas => {
             const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF.jsPDF();
