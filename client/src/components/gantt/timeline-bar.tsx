@@ -1,6 +1,26 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useMutation } from "@tanstack/react-query";
-import * as Icons from "lucide-react";
+import { 
+  Rocket, Box,
+  Briefcase, Building, Calculator, Calendar, BarChart3, LineChart, 
+  Clipboard, Database, File, Folder, Globe, TrendingUp, Users, 
+  Settings, Shield, Target, PieChart, FileText, FolderOpen, Archive,
+  Code, Cpu, HardDrive, Laptop, Monitor, Mouse, Phone, Router, 
+  Server, Smartphone, Tablet, Wifi, Battery, Bluetooth, Camera, 
+  Headphones, Keyboard, Zap, Power, Usb,
+  Edit, Hammer, Key, Lock, Wand2, RefreshCw, Save, 
+  Wrench, Trash, Unlock, Paintbrush, Scissors, Ruler, 
+  Navigation, Flashlight, Cog,
+  Mail, MessageCircle, MessageSquare, PhoneCall, Send, Share2, 
+  Video, Mic, Megaphone, Bell, Radio, Satellite, Rss,
+  Volume2, Headset, Speaker, MessageSquareMore, AtSign, Hash,
+  Car, Truck, Plane, Train, Ship, Bike, Bus, 
+  PlaneTakeoff, PlaneLanding, MapPin, Map, Compass, 
+  Route, Navigation2, Move, ArrowRight, ArrowUp, ArrowDown,
+  TreePine, Leaf, Flower, Sun, Moon, Star, Cloud, 
+  Snowflake, Droplets, Flame, Atom, Dna, Microscope, Telescope, 
+  TestTube, Magnet, Thermometer, Wind
+} from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Release } from "@shared/schema";
@@ -250,7 +270,27 @@ export default function TimelineBar({ release, group, onEdit, viewMode, timeline
             {release.icon.startsWith('lucide-') ? (
               (() => {
                 const iconName = release.icon.replace('lucide-', '');
-                const IconComponent = (Icons as any)[iconName] || Icons.Rocket;
+                const iconMap: Record<string, React.ComponentType<any>> = {
+                  Box, Briefcase, Building, Calculator, Calendar, BarChart3, LineChart, 
+                  Clipboard, Database, File, Folder, Globe, TrendingUp, Users, 
+                  Settings, Shield, Target, PieChart, FileText, FolderOpen, Archive,
+                  Code, Cpu, HardDrive, Laptop, Monitor, Mouse, Phone, Router, 
+                  Server, Smartphone, Tablet, Wifi, Battery, Bluetooth, Camera, 
+                  Headphones, Keyboard, Zap, Power, Usb,
+                  Edit, Hammer, Key, Lock, Wand2, RefreshCw, Save, 
+                  Wrench, Trash, Unlock, Paintbrush, Scissors, Ruler, 
+                  Navigation, Flashlight, Cog,
+                  Mail, MessageCircle, MessageSquare, PhoneCall, Send, Share2, 
+                  Video, Mic, Megaphone, Bell, Radio, Satellite, Rss,
+                  Volume2, Headset, Speaker, MessageSquareMore, AtSign, Hash,
+                  Car, Truck, Plane, Train, Ship, Bike, Bus, 
+                  PlaneTakeoff, PlaneLanding, MapPin, Map, Compass, 
+                  Route, Navigation2, Move, ArrowRight, ArrowUp, ArrowDown,
+                  TreePine, Leaf, Flower, Sun, Moon, Star, Cloud, 
+                  Snowflake, Droplets, Flame, Atom, Dna, Microscope, Telescope, 
+                  TestTube, Magnet, Thermometer, Wind
+                };
+                const IconComponent = iconMap[iconName] || Rocket;
                 return <IconComponent className="w-4 h-4 text-white flex-shrink-0" />;
               })()
             ) : (
