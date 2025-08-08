@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertReleaseGroupSchema, insertReleaseSchema, insertAppSettingsSchema } from "@shared/schema";
+import { insertReleaseGroupSchema, insertReleaseSchema, insertAppSettingsSchema, insertChecklistTaskSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Release Groups
@@ -156,6 +156,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(settings);
     } catch (error) {
       res.status(400).json({ message: "Invalid settings data" });
+    }
+  });
+
+  // Checklist Tasks endpoints
+  app.get("/api/checklist-tasks", async (req, res) => {
+    try {
+      const tasks = await storage.getChecklistTasks();
+      res.json(tasks);
+    } catch (error) {
+      console.error("Error fetching checklist tasks:", error);
+      res.status(500).json({ error: "Failed to fetch checklist tasks" });
+    }
+  });
+
+  app.get("/api/checklist-tasks/release/:releaseId", async (req, res) => {
+    try {
+      const tasks = await storage.getChecklistTasksByRelease(req.params.releaseId);
+      res.json(tasks);
+    } catch (error) {
+      console.error("Error fetching checklist tasks by release:", error);
+      res.status(500).json({ error: "Failed to fetch checklist tasks" });
+    }
+  });
+
+  app.get("/api/checklist-tasks/member/:member", async (req, res) => {
+    try {
+      const tasks = await storage.getChecklistTasksByMember(req.params.member);
+      res.json(tasks);
+    } catch (error) {
+      console.error("Error fetching checklist tasks by member:", error);
+      res.status(500).json({ error: "Failed to fetch checklist tasks" });
+    }
+  });
+
+  app.post("/api/checklist-tasks", async (req, res) => {
+    try {
+      const validatedData = insertChecklistTaskSchema.parse(req.body);
+      const newTask = await storage.createChecklistTask(validatedData);
+      res.status(201).json(newTask);
+    } catch (error) {
+      console.error("Error creating checklist task:", error);
+      res.status(400).json({ error: "Invalid task data" });
+    }
+  });
+
+  app.put("/api/checklist-tasks/:id", async (req, res) => {
+    try {
+      const validatedData = insertChecklistTaskSchema.partial().parse(req.body);
+      const updatedTask = await storage.updateChecklistTask(req.params.id, validatedData);
+      if (!updatedTask) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+      res.json(updatedTask);
+    } catch (error) {
+      console.error("Error updating checklist task:", error);
+      res.status(400).json({ error: "Invalid task data" });
+    }
+  });
+
+  app.delete("/api/checklist-tasks/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteChecklistTask(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting checklist task:", error);
+      res.status(500).json({ error: "Failed to delete task" });
     }
   });
 

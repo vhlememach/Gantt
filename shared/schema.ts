@@ -40,6 +40,18 @@ export const appSettings = pgTable("app_settings", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Checklist tasks for marketing team members
+export const checklistTasks = pgTable("checklist_tasks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  releaseId: varchar("release_id").references(() => releases.id, { onDelete: "cascade" }),
+  assignedTo: text("assigned_to").notNull(), // Brian, Alex, Lucas, Victor
+  taskTitle: text("task_title").notNull(),
+  taskDescription: text("task_description"),
+  completed: boolean("completed").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+});
+
 export const insertReleaseGroupSchema = createInsertSchema(releaseGroups).omit({
   id: true,
   createdAt: true,
@@ -58,6 +70,12 @@ export const insertAppSettingsSchema = createInsertSchema(appSettings).omit({
   updatedAt: true,
 });
 
+export const insertChecklistTaskSchema = createInsertSchema(checklistTasks).omit({
+  id: true,
+  createdAt: true,
+  completedAt: true,
+});
+
 export type InsertReleaseGroup = z.infer<typeof insertReleaseGroupSchema>;
 export type ReleaseGroup = typeof releaseGroups.$inferSelect;
 
@@ -66,3 +84,6 @@ export type Release = typeof releases.$inferSelect;
 
 export type InsertAppSettings = z.infer<typeof insertAppSettingsSchema>;
 export type AppSettings = typeof appSettings.$inferSelect;
+
+export type InsertChecklistTask = z.infer<typeof insertChecklistTaskSchema>;
+export type ChecklistTask = typeof checklistTasks.$inferSelect;

@@ -1,4 +1,4 @@
-import { type ReleaseGroup, type InsertReleaseGroup, type Release, type InsertRelease, type AppSettings, type InsertAppSettings } from "@shared/schema";
+import { type ReleaseGroup, type InsertReleaseGroup, type Release, type InsertRelease, type AppSettings, type InsertAppSettings, type ChecklistTask, type InsertChecklistTask } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -20,16 +20,26 @@ export interface IStorage {
   // App Settings
   getAppSettings(): Promise<AppSettings>;
   updateAppSettings(settings: Partial<InsertAppSettings>): Promise<AppSettings>;
+  
+  // Checklist Tasks
+  getChecklistTasks(): Promise<ChecklistTask[]>;
+  getChecklistTasksByRelease(releaseId: string): Promise<ChecklistTask[]>;
+  getChecklistTasksByMember(assignedTo: string): Promise<ChecklistTask[]>;
+  createChecklistTask(task: InsertChecklistTask): Promise<ChecklistTask>;
+  updateChecklistTask(id: string, task: Partial<InsertChecklistTask>): Promise<ChecklistTask | undefined>;
+  deleteChecklistTask(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
   private releaseGroups: Map<string, ReleaseGroup>;
   private releases: Map<string, Release>;
+  private checklistTasks: Map<string, ChecklistTask>;
   private appSettings: AppSettings;
 
   constructor() {
     this.releaseGroups = new Map();
     this.releases = new Map();
+    this.checklistTasks = new Map();
     this.appSettings = {
       id: randomUUID(),
       headerTitle: "Release Gantt Chart",
@@ -140,6 +150,44 @@ export class MemStorage implements IStorage {
     releases.forEach(release => {
       this.releases.set(release.id, release);
     });
+
+    // Initialize sample checklist tasks
+    this.initializeSampleChecklistTasks(releases);
+  }
+
+  private initializeSampleChecklistTasks(releases: Release[]) {
+    const teamMembers = ["Brian", "Alex", "Lucas", "Victor"];
+    const sampleTasks = [
+      "Design UI mockups",
+      "Write technical documentation",
+      "Set up development environment", 
+      "Create test cases",
+      "Review code implementation",
+      "Perform quality assurance testing",
+      "Update user documentation",
+      "Deploy to staging environment"
+    ];
+
+    releases.forEach(release => {
+      teamMembers.forEach(member => {
+        // Create 2-3 tasks per member per release
+        const taskCount = Math.floor(Math.random() * 2) + 2;
+        for (let i = 0; i < taskCount; i++) {
+          const taskId = randomUUID();
+          const task: ChecklistTask = {
+            id: taskId,
+            releaseId: release.id,
+            assignedTo: member,
+            taskTitle: `${sampleTasks[Math.floor(Math.random() * sampleTasks.length)]} - ${release.name}`,
+            taskDescription: `${member}'s task for ${release.name}`,
+            completed: Math.random() > 0.7, // 30% completed randomly
+            createdAt: new Date(),
+            completedAt: Math.random() > 0.7 ? new Date() : null,
+          };
+          this.checklistTasks.set(taskId, task);
+        }
+      });
+    });
   }
 
   // Release Groups
@@ -237,6 +285,49 @@ export class MemStorage implements IStorage {
       updatedAt: new Date(),
     };
     return this.appSettings;
+  }
+
+  // Checklist Tasks
+  async getChecklistTasks(): Promise<ChecklistTask[]> {
+    return Array.from(this.checklistTasks.values());
+  }
+
+  async getChecklistTasksByRelease(releaseId: string): Promise<ChecklistTask[]> {
+    return Array.from(this.checklistTasks.values()).filter(task => task.releaseId === releaseId);
+  }
+
+  async getChecklistTasksByMember(assignedTo: string): Promise<ChecklistTask[]> {
+    return Array.from(this.checklistTasks.values()).filter(task => task.assignedTo === assignedTo);
+  }
+
+  async createChecklistTask(task: InsertChecklistTask): Promise<ChecklistTask> {
+    const id = randomUUID();
+    const newTask: ChecklistTask = {
+      ...task,
+      id,
+      completed: task.completed || false,
+      createdAt: new Date(),
+      completedAt: null,
+    };
+    this.checklistTasks.set(id, newTask);
+    return newTask;
+  }
+
+  async updateChecklistTask(id: string, task: Partial<InsertChecklistTask>): Promise<ChecklistTask | undefined> {
+    const existing = this.checklistTasks.get(id);
+    if (!existing) return undefined;
+
+    const updated: ChecklistTask = { 
+      ...existing, 
+      ...task,
+      completedAt: task.completed ? new Date() : (task.completed === false ? null : existing.completedAt)
+    };
+    this.checklistTasks.set(id, updated);
+    return updated;
+  }
+
+  async deleteChecklistTask(id: string): Promise<boolean> {
+    return this.checklistTasks.delete(id);
   }
 }
 

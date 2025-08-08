@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
-import { Palette, Ungroup, Download, Plus, ExpandIcon, ChevronDown, Settings } from "lucide-react";
+import { Palette, Ungroup, Download, Plus, ExpandIcon, ChevronDown, Settings, CheckSquare } from "lucide-react";
 
 import HeaderCustomizationModal from "@/components/gantt/header-customization-modal";
 import GroupManagementModal from "@/components/gantt/group-management-modal";
@@ -130,7 +131,6 @@ export default function GanttPage() {
               scrollX: 0,
               scrollY: 0,
               logging: false,
-              letterRendering: true,
               onclone: (clonedDoc) => {
                 // Ensure proper text rendering in cloned document
                 const clonedStyle = clonedDoc.createElement('style');
@@ -233,7 +233,6 @@ export default function GanttPage() {
               scrollX: 0,
               scrollY: 0,
               logging: false,
-              letterRendering: true,
               onclone: (clonedDoc) => {
                 // Ensure proper text rendering in cloned document
                 const clonedStyle = clonedDoc.createElement('style');
@@ -307,6 +306,15 @@ export default function GanttPage() {
               </h1>
             </div>
             <div className="flex items-center space-x-3">
+              <Link href="/checklist">
+                <Button 
+                  variant="secondary" 
+                  className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-0"
+                >
+                  <CheckSquare className="mr-2 h-4 w-4" />
+                  Team Checklist
+                </Button>
+              </Link>
               <Button
                 onClick={() => setIsGroupModalOpen(true)}
                 variant="secondary"

@@ -23,7 +23,8 @@ import {
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { Release } from "@shared/schema";
+import type { Release, ChecklistTask } from "@shared/schema";
+import { useQuery } from "@tanstack/react-query";
 
 const getStatusColor = (status: string) => {
   // Use CSS custom properties for dynamic status colors
@@ -56,6 +57,19 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
     endDate: new Date(release.endDate),
   });
   const barRef = useRef<HTMLDivElement>(null);
+
+  // Fetch checklist tasks for this release to calculate progress
+  const { data: checklistTasks = [] } = useQuery<ChecklistTask[]>({
+    queryKey: ["/api/checklist-tasks", "release", release.id],
+    queryFn: () => fetch(`/api/checklist-tasks/release/${release.id}`).then(res => res.json()),
+  });
+
+  // Calculate completion percentage
+  const completionPercentage = useMemo(() => {
+    if (checklistTasks.length === 0) return 0;
+    const completedTasks = checklistTasks.filter(task => task.completed).length;
+    return Math.round((completedTasks / checklistTasks.length) * 100);
+  }, [checklistTasks]);
 
   const updateReleaseMutation = useMutation({
     mutationFn: async (data: { startDate: string; endDate: string }) => {
@@ -325,6 +339,21 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
               {release.name}
             </span>
           </div>
+          
+          {/* Progress percentage between title and status */}
+          {checklistTasks.length > 0 && (
+            <div className="flex items-center space-x-2 pr-6">
+              <div className="text-white text-xs font-medium">
+                {completionPercentage}%
+              </div>
+              <div className="w-8 h-2 bg-white bg-opacity-30 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-white bg-opacity-80 transition-all duration-300"
+                  style={{ width: `${completionPercentage}%` }}
+                />
+              </div>
+            </div>
+          )}
         </div>
         
         {/* Status Circle - positioned at top-right corner */}
