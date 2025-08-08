@@ -186,23 +186,25 @@ export default function GanttChart({ zoomLevel, viewMode, onReleaseEdit }: Gantt
             </div>
           </div>
 
-          {/* Timeline Body - perfectly aligned with sidebar */}
-          <div className="pt-4 px-0">
+          {/* Timeline Body - exact mirror of sidebar structure */}
+          <div className="p-4">
             {releasesByGroup.map(({ group, releases: groupReleases }) => (
-              <div key={group.id} className="mb-4">
-                {/* Group header - exactly matching sidebar height and spacing */}
-                <div className="h-12 flex items-center mb-4 px-4">
-                  <div 
-                    className="w-3 h-3 rounded-full mr-2" 
-                    style={{ backgroundColor: group.color }}
-                  />
-                  <h4 className="font-semibold text-slate-700">{group.name}</h4>
+              <div key={group.id} className="mb-6">
+                {/* Group header - exact match to sidebar */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-2">
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: group.color }}
+                    />
+                    <h4 className="font-semibold text-slate-700">{group.name}</h4>
+                  </div>
                 </div>
                 
                 {!collapsedGroups.has(group.id) && (
-                  <div className="space-y-2 ml-5 px-4">
+                  <div className="space-y-2 ml-5">
                     {groupReleases.map((release) => (
-                      <div key={release.id} className="h-14 flex items-center">
+                      <div key={release.id} className="h-14 flex items-center p-3">
                         <TimelineBar
                           release={release}
                           groupColor={group.color}

@@ -153,10 +153,10 @@ export default function TimelineBar({ release, groupColor, onEdit }: TimelineBar
   });
 
   return (
-    <div className="relative h-14 w-full"> {/* Increased height for better content fit */}
+    <div className="relative w-full h-8"> {/* Match the container height */}
       <div
         ref={barRef}
-        className="absolute top-1 h-12 rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all duration-200 z-10"
+        className="absolute top-0 h-8 rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all duration-200 z-10"
         style={{
           left: `${leftPosition}%`,
           width: `${width}%`,
@@ -166,16 +166,16 @@ export default function TimelineBar({ release, groupColor, onEdit }: TimelineBar
         onClick={onEdit}
         onMouseDown={(e) => handleMouseDown(e, 'drag')}
       >
-        <div className="flex items-center justify-between h-full px-3">
+        <div className="flex items-center justify-between h-full px-2">
           <div className="flex items-center space-x-2 flex-1 min-w-0">
-            <i className={`${release.icon} text-white text-sm flex-shrink-0`} />
-            <span className="text-white font-medium text-sm truncate">
+            <i className={`${release.icon} text-white text-xs flex-shrink-0`} />
+            <span className="text-white font-medium text-xs truncate">
               {release.name}
             </span>
           </div>
-          <div className="flex items-center space-x-2 flex-shrink-0">
+          <div className="flex items-center space-x-1 flex-shrink-0">
             <div 
-              className={`w-3 h-3 rounded-full ${getStatusColor(release.status || 'upcoming')}`}
+              className={`w-2 h-2 rounded-full ${getStatusColor(release.status || 'upcoming')}`}
               title={`Status: ${release.status || 'upcoming'}`}
             />
           </div>
