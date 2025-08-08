@@ -58,15 +58,19 @@ export default function TimelineBar({ release, groupColor, onEdit }: TimelineBar
   const endDate = new Date(release.endDate);
   const duration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
   
-  // Simple positioning calculation that works across years
+  // Simple positioning calculation that maps to timeline quarters
+  // For 2025: Q1 = 0-25%, Q2 = 25-50%, Q3 = 50-75%, Q4 = 75-100%
   const releaseYear = startDate.getFullYear();
-  const yearStart = new Date(releaseYear, 0, 1);
-  const yearEnd = new Date(releaseYear, 11, 31);
-  const totalYearDays = (yearEnd.getTime() - yearStart.getTime()) / (1000 * 60 * 60 * 24);
+  const month = startDate.getMonth(); // 0-11
+  const quarter = Math.floor(month / 3); // 0-3
   
-  const daysFromYearStart = (startDate.getTime() - yearStart.getTime()) / (1000 * 60 * 60 * 24);
-  const leftPosition = Math.max(0, (daysFromYearStart / totalYearDays) * 85); // Use 85% of available space
-  const width = Math.max(10, Math.min(30, (duration / totalYearDays) * 85)); // 10-30% width range
+  // Position within the quarter based on the month
+  const monthInQuarter = month % 3; // 0-2
+  const quarterStart = quarter * 25; // 0, 25, 50, or 75
+  const monthOffset = (monthInQuarter / 3) * 25; // 0-8.33% within quarter
+  
+  const leftPosition = quarterStart + monthOffset;
+  const width = Math.max(8, Math.min(20, (duration / 30) * 5)); // Width based on duration
 
   const handleMouseDown = (e: React.MouseEvent, action: 'drag' | 'resize') => {
     e.preventDefault();
