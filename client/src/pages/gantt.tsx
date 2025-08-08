@@ -67,10 +67,21 @@ export default function GanttPage() {
       const element = document.querySelector('.gantt-container');
       if (element) {
         import('html2canvas').then(html2canvas => {
-          html2canvas.default(element as HTMLElement).then(canvas => {
+          html2canvas.default(element as HTMLElement, {
+            scale: 2, // Higher resolution for better text quality
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            height: element.scrollHeight,
+            width: element.scrollWidth,
+            scrollX: 0,
+            scrollY: 0,
+            letterRendering: true, // Better text rendering
+            logging: false
+          }).then(canvas => {
             const link = document.createElement('a');
             link.download = `gantt-chart-${new Date().toISOString().split('T')[0]}.png`;
-            link.href = canvas.toDataURL();
+            link.href = canvas.toDataURL('image/png', 1.0);
             link.click();
           });
         });
@@ -83,7 +94,18 @@ export default function GanttPage() {
           import('html2canvas'),
           import('jspdf')
         ]).then(([html2canvas, jsPDF]) => {
-          html2canvas.default(element as HTMLElement).then(canvas => {
+          html2canvas.default(element as HTMLElement, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            height: element.scrollHeight,
+            width: element.scrollWidth,
+            scrollX: 0,
+            scrollY: 0,
+            letterRendering: true,
+            logging: false
+          }).then(canvas => {
             const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF.jsPDF();
             const imgWidth = 210;

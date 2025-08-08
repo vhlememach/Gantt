@@ -112,8 +112,8 @@ export default function GanttChart({ zoomLevel, viewMode, onReleaseEdit }: Gantt
       }
       
       return {
-        labels: labels.slice(0, 8), // Limit to reasonable number
-        sublabels: Array(labels.slice(0, 8).length).fill(0).map((_, i) => sublabels[i % 4])
+        labels: labels.slice(0, Math.min(16, labels.length)), // Allow more quarters for extended timelines
+        sublabels: Array(labels.slice(0, Math.min(16, labels.length)).length).fill(0).map((_, i) => sublabels[i % 4])
       };
     } else if (mode === "Months") {
       const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -122,7 +122,7 @@ export default function GanttChart({ zoomLevel, viewMode, onReleaseEdit }: Gantt
       let currentDate = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
       const endDate = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0);
       
-      while (currentDate <= endDate && labels.length < 12) {
+      while (currentDate <= endDate && labels.length < 24) {
         labels.push(`${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`);
         currentDate.setMonth(currentDate.getMonth() + 1);
       }
