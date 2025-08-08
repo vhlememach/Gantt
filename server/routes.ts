@@ -61,6 +61,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/releases/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const release = await storage.getRelease(id);
+      if (!release) {
+        return res.status(404).json({ message: "Release not found" });
+      }
+      res.json(release);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get release" });
+    }
+  });
+
   app.get("/api/releases/group/:groupId", async (req, res) => {
     try {
       const { groupId } = req.params;

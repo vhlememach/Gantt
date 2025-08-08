@@ -190,6 +190,9 @@ export class MemStorage implements IStorage {
       ...release,
       id,
       createdAt: new Date(),
+      status: release.status || "upcoming",
+      description: release.description || "",
+      responsible: release.responsible || "",
     };
     this.releases.set(id, newRelease);
     return newRelease;
