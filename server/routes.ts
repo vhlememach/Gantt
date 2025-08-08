@@ -73,25 +73,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/releases", async (req, res) => {
     try {
+      console.log('Creating release with data:', req.body);
       const validatedData = insertReleaseSchema.parse(req.body);
+      console.log('Validated data:', validatedData);
       const release = await storage.createRelease(validatedData);
       res.json(release);
     } catch (error) {
-      res.status(400).json({ message: "Invalid release data" });
+      console.error('Release creation error:', error);
+      res.status(400).json({ message: "Invalid release data", error: error.message });
     }
   });
 
   app.put("/api/releases/:id", async (req, res) => {
     try {
       const { id } = req.params;
+      console.log('Updating release', id, 'with data:', req.body);
       const validatedData = insertReleaseSchema.partial().parse(req.body);
+      console.log('Validated data:', validatedData);
       const release = await storage.updateRelease(id, validatedData);
       if (!release) {
         return res.status(404).json({ message: "Release not found" });
       }
       res.json(release);
     } catch (error) {
-      res.status(400).json({ message: "Invalid release data" });
+      console.error('Release update error:', error);
+      res.status(400).json({ message: "Invalid release data", error: error.message });
     }
   });
 

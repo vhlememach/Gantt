@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import TimelineBar from "./timeline-bar";
+import TimelineBar from "./timeline-bar.tsx";
 import type { ReleaseGroup, Release } from "@shared/schema";
 
 interface GanttChartProps {
@@ -100,6 +100,10 @@ export default function GanttChart({ zoomLevel, viewMode, onReleaseEdit }: Gantt
                     key={release.id}
                     className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
                     onClick={() => onReleaseEdit(release.id)}
+                    draggable={true}
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData("text/plain", release.id);
+                    }}
                   >
                     <div className="flex items-center space-x-3">
                       <div 
