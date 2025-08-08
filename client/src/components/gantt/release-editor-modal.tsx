@@ -38,6 +38,9 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
     status: "upcoming",
   });
 
+  // Debug logging for modal props
+  console.log('ReleaseEditorModal render:', { isOpen, releaseId });
+
   const { data: groups = [] } = useQuery<ReleaseGroup[]>({
     queryKey: ["/api/release-groups"],
     enabled: isOpen,
@@ -46,6 +49,14 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
   const { data: release, isLoading: releaseLoading } = useQuery<Release>({
     queryKey: ["/api/releases", releaseId],
     enabled: isOpen && !!releaseId,
+  });
+
+  // Debug logging for query state
+  console.log('Query state:', { 
+    releaseId, 
+    hasRelease: !!release, 
+    releaseLoading, 
+    isQueryEnabled: isOpen && !!releaseId 
   });
 
   // Reset form when modal closes

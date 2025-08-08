@@ -24,6 +24,7 @@ export default function GanttPage() {
   });
 
   const handleReleaseEdit = (releaseId: string | null) => {
+    console.log('handleReleaseEdit called with:', releaseId);
     setSelectedReleaseId(releaseId);
     setIsReleaseModalOpen(true);
   };
