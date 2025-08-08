@@ -249,7 +249,7 @@ export default function TimelineBar({ release, group, onEdit, viewMode, timeline
           <div className="flex items-center space-x-2 flex-1 min-w-0">
             {release.icon.startsWith('lucide-') ? (
               (() => {
-                const iconName = release.icon.replace('lucide-', '').replace(/-([a-z])/g, (_, letter) => letter.toUpperCase()).replace(/^[a-z]/, match => match.toUpperCase());
+                const iconName = release.icon.replace('lucide-', '');
                 const IconComponent = (Icons as any)[iconName] || Icons.Rocket;
                 return <IconComponent className="w-4 h-4 text-white flex-shrink-0" />;
               })()
