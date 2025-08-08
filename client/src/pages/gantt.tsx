@@ -69,43 +69,39 @@ export default function GanttPage() {
       const element = document.querySelector('.gantt-container');
       if (element) {
         import('html2canvas').then(html2canvas => {
-          // Add temporary styles for export
-          const style = document.createElement('style');
-          style.innerHTML = `
-            .gantt-container * {
-              line-height: 1.4 !important;
-              padding-top: 4px !important;
-              padding-bottom: 4px !important;
-            }
-            .gantt-container .text-sm {
-              font-size: 14px !important;
-            }
-            .gantt-container .text-xs {
-              font-size: 12px !important;
-            }
-          `;
-          document.head.appendChild(style);
+          // Ensure all content is visible and properly sized
+          const originalOverflow = element.style.overflow;
+          element.style.overflow = 'visible';
           
-          html2canvas.default(element as HTMLElement, {
-            scale: 1.5, // Optimal scale for text rendering
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: '#ffffff',
-            height: element.scrollHeight + 100,
-            width: element.scrollWidth + 100,
-            scrollX: 0,
-            scrollY: 0,
-            logging: false,
-            foreignObjectRendering: true,
-            imageTimeout: 15000
-          }).then(canvas => {
-            // Remove temporary styles
-            document.head.removeChild(style);
+          // Wait a moment for any dynamic content to render
+          setTimeout(() => {
+            html2canvas.default(element as HTMLElement, {
+              scale: 2,
+              useCORS: true,
+              allowTaint: true,
+              backgroundColor: '#ffffff',
+              height: element.scrollHeight,
+              width: element.scrollWidth,
+              scrollX: 0,
+              scrollY: 0,
+              logging: true,
+              removeContainer: false,
+              imageTimeout: 30000
+            }).then(canvas => {
+              // Restore original overflow
+              element.style.overflow = originalOverflow;
             const link = document.createElement('a');
             link.download = `gantt-chart-${new Date().toISOString().split('T')[0]}.png`;
             link.href = canvas.toDataURL('image/png', 1.0);
             link.click();
+          }).catch(error => {
+            console.error('PNG Export failed:', error);
+            alert('Export failed. Please try again.');
           });
+          }, 500);
+        }).catch(error => {
+          console.error('HTML2Canvas load failed:', error);
+          alert('Export library failed to load.');
         });
       }
     } else if (format === 'pdf') {
@@ -116,38 +112,27 @@ export default function GanttPage() {
           import('html2canvas'),
           import('jspdf')
         ]).then(([html2canvas, jsPDF]) => {
-          // Add temporary styles for export
-          const style = document.createElement('style');
-          style.innerHTML = `
-            .gantt-container * {
-              line-height: 1.4 !important;
-              padding-top: 4px !important;
-              padding-bottom: 4px !important;
-            }
-            .gantt-container .text-sm {
-              font-size: 14px !important;
-            }
-            .gantt-container .text-xs {
-              font-size: 12px !important;
-            }
-          `;
-          document.head.appendChild(style);
+          // Ensure all content is visible and properly sized
+          const originalOverflow = element.style.overflow;
+          element.style.overflow = 'visible';
           
-          html2canvas.default(element as HTMLElement, {
-            scale: 1.5, // Optimal scale for text rendering
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: '#ffffff',
-            height: element.scrollHeight + 100,
-            width: element.scrollWidth + 100,
-            scrollX: 0,
-            scrollY: 0,
-            logging: false,
-            foreignObjectRendering: true,
-            imageTimeout: 15000
-          }).then(canvas => {
-            // Remove temporary styles
-            document.head.removeChild(style);
+          // Wait a moment for any dynamic content to render
+          setTimeout(() => {
+            html2canvas.default(element as HTMLElement, {
+              scale: 2,
+              useCORS: true,
+              allowTaint: true,
+              backgroundColor: '#ffffff',
+              height: element.scrollHeight,
+              width: element.scrollWidth,
+              scrollX: 0,
+              scrollY: 0,
+              logging: true,
+              removeContainer: false,
+              imageTimeout: 30000
+            }).then(canvas => {
+              // Restore original overflow
+              element.style.overflow = originalOverflow;
             const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF.jsPDF();
             const imgWidth = 210;
@@ -168,7 +153,14 @@ export default function GanttPage() {
             }
             
             pdf.save(`gantt-chart-${new Date().toISOString().split('T')[0]}.pdf`);
+          }).catch(error => {
+            console.error('PDF Export failed:', error);
+            alert('Export failed. Please try again.');
           });
+          }, 500);
+        }).catch(error => {
+          console.error('Libraries load failed:', error);
+          alert('Export libraries failed to load.');
         });
       }
     }

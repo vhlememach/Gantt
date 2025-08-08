@@ -228,24 +228,16 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
     } else if (viewMode === "Weeks") {
       // For weeks view, calculate position based on current week
       const currentYear = today.getFullYear();
+      
+      // Calculate current week of year (1-52/53)
       const startOfYear = new Date(currentYear, 0, 1);
+      const dayOfYear = Math.floor((today.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000)) + 1;
+      const currentWeek = Math.ceil(dayOfYear / 7);
       
-      // Calculate weeks more accurately
-      let currentWeekIndex = -1;
-      const currentWeek = Math.floor((today.getTime() - startOfYear.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
-      
-      // Find the matching week in timeline labels
-      for (let i = 0; i < timelineData.labels.length; i++) {
-        const label = timelineData.labels[i];
-        if (label === `Week ${currentWeek}`) {
-          currentWeekIndex = i;
-          break;
-        }
-      }
-      
-      if (currentWeekIndex >= 0) {
+      // Check if current week is within the visible timeline
+      if (currentWeek >= 1 && currentWeek <= timelineData.labels.length) {
         const weekWidth = 100 / timelineData.labels.length;
-        const position = (currentWeekIndex / timelineData.labels.length) * 100;
+        const position = ((currentWeek - 1) / timelineData.labels.length) * 100;
         
         // Add offset within week
         const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
