@@ -66,9 +66,9 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
       title.length > longest.length ? title : longest, ""
     );
     
-    // Base width + estimated character width (8px per char) + padding
-    const calculatedWidth = Math.max(320, longestTitle.length * 8 + 100);
-    return Math.min(calculatedWidth, 500); // Cap at 500px
+    // Base width + estimated character width (10px per char) + more padding for better spacing
+    const calculatedWidth = Math.max(400, longestTitle.length * 10 + 150);
+    return Math.min(calculatedWidth, 650); // Cap at 650px for wider sidebar
   }, [releases, groups]);
 
   // Add effect to ensure fresh data
@@ -410,7 +410,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                       return (
                         <div key={release.id}>
                           <div
-                            className={`flex items-center justify-between bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow ${viewType === "Condensed" ? "min-h-[44px] py-2" : "min-h-[60px] py-4"} px-4`}
+                            className={`flex items-center justify-between bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow ${viewType === "Condensed" ? "h-10" : "h-14"} px-4 py-2`}
                             draggable={true}
                           onDragStart={(e) => {
                             e.dataTransfer.setData("text/plain", release.id);
@@ -558,7 +558,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                         return (
                           <div key={release.id}>
                             {/* Timeline bar - SAME HEIGHT as sidebar item */}
-                            <div className={`${viewType === "Condensed" ? "min-h-[44px]" : "min-h-[60px]"} flex items-center`}>
+                            <div className={`${viewType === "Condensed" ? "h-10" : "h-14"} flex items-center`}>
                               <TimelineBar
                                 release={release}
                                 group={group}
