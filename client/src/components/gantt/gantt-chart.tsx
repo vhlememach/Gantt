@@ -570,42 +570,69 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                             />
                           </div>
                           
-                          {/* Expanded tasks view - now positioned to match the timeline bar container */}
+                          {/* Expanded tasks view - positioned using same absolute positioning as timeline bars */}
                           {isExpanded && releaseTasks.length > 0 && (
-                            <div 
-                              className="space-y-1" 
-                              style={{ 
-                                paddingLeft: '16px',
-                                paddingRight: '16px',
-                                marginTop: '4px'
-                              }}
-                            >
-                              {/* Group tasks by assignee */}
-                              {Object.entries(
-                                releaseTasks.reduce((groups: any, task: any) => {
-                                  const assignee = task.assignedTo;
-                                  if (!groups[assignee]) groups[assignee] = [];
-                                  groups[assignee].push(task);
-                                  return groups;
-                                }, {})
-                              ).map(([assignee, tasks]: [string, any]) => (
-                                <div key={assignee}>
-                                  <div className="text-xs font-medium text-gray-600 flex items-center space-x-2 mb-1">
-                                    <div className="w-1 h-3 rounded" style={{ backgroundColor: group.color }} />
-                                    <span>{assignee}</span>
-                                  </div>
-                                  {(tasks as any[]).map((task: any) => (
-                                    <div key={task.id} className="ml-3 mb-1">
-                                      <div className="flex items-center space-x-2 p-1 text-xs bg-slate-50 rounded h-6">
-                                        <div className={`w-2 h-2 rounded-full ${task.completed ? 'bg-green-500' : 'bg-gray-300'}`} />
-                                        <span className={task.completed ? 'line-through text-gray-500' : 'text-gray-700'}>
-                                          {task.taskTitle}
-                                        </span>
+                            <div className="relative w-full" style={{ height: 'auto', marginTop: '4px' }}>
+                              {/* Calculate timeline bar position for this release */}
+                              {(() => {
+                                const startDate = new Date(release.startDate);
+                                const endDate = new Date(release.endDate);
+                                let leftPosition = 0;
+                                let width = 25;
+
+                                if (viewMode === "Months") {
+                                  const startYear = startDate.getFullYear();
+                                  const startMonth = startDate.getMonth();
+                                  const endYear = endDate.getFullYear();
+                                  const endMonth = endDate.getMonth();
+                                  
+                                  const monthsFromStart = (startYear - 2025) * 12 + startMonth;
+                                  const totalMonths = (endYear - 2025) * 12 + endMonth - monthsFromStart + 1;
+                                  
+                                  leftPosition = (monthsFromStart / 12) * 100;
+                                  width = (totalMonths / 12) * 100;
+                                }
+
+                                return (
+                                  <div 
+                                    className="absolute space-y-1" 
+                                    style={{ 
+                                      left: `${leftPosition}%`,
+                                      width: `${width}%`,
+                                      minWidth: '200px',
+                                      top: '0px',
+                                      zIndex: 5
+                                    }}
+                                  >
+                                    {/* Group tasks by assignee */}
+                                    {Object.entries(
+                                      releaseTasks.reduce((groups: any, task: any) => {
+                                        const assignee = task.assignedTo;
+                                        if (!groups[assignee]) groups[assignee] = [];
+                                        groups[assignee].push(task);
+                                        return groups;
+                                      }, {})
+                                    ).map(([assignee, tasks]: [string, any]) => (
+                                      <div key={assignee}>
+                                        <div className="text-xs font-medium text-gray-600 flex items-center space-x-2 mb-1 bg-white px-2 py-1 rounded shadow-sm">
+                                          <div className="w-1 h-3 rounded" style={{ backgroundColor: group.color }} />
+                                          <span>{assignee}</span>
+                                        </div>
+                                        {(tasks as any[]).map((task: any) => (
+                                          <div key={task.id} className="ml-3 mb-1">
+                                            <div className="flex items-center space-x-2 p-2 text-xs bg-white rounded shadow-sm border h-6">
+                                              <div className={`w-2 h-2 rounded-full ${task.completed ? 'bg-green-500' : 'bg-gray-300'}`} />
+                                              <span className={task.completed ? 'line-through text-gray-500' : 'text-gray-700'}>
+                                                {task.taskTitle}
+                                              </span>
+                                            </div>
+                                          </div>
+                                        ))}
                                       </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              ))}
+                                    ))}
+                                  </div>
+                                );
+                              })()}
                             </div>
                           )}
                         </div>
