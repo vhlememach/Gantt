@@ -643,17 +643,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
               ))}
             </div>
 
-            {/* Timeline Grid Lines */}
-            <div className="absolute inset-0 pointer-events-none">
-              <div className="h-full grid gap-4 opacity-20" style={{ 
-                gridTemplateColumns: `repeat(${timelineData.labels.length}, 1fr)`,
-                minWidth: '800px'
-              }}>
-                {timelineData.labels.map((_, index) => (
-                  <div key={index} className="border-r border-slate-200" />
-                ))}
-              </div>
-            </div>
+            {/* Grid lines removed for cleaner appearance */}
 
             {/* Current Day Line */}
             {currentDayPosition >= 0 && (
