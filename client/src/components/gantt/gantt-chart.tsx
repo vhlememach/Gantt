@@ -497,12 +497,12 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
             </div>
           </div>
 
-          {/* Timeline Body - exact mirror of sidebar structure */}
+          {/* Timeline Body - EXACT structural mirror of sidebar */}
           <div className="p-4">
             {releasesByGroup.map(({ group, releases: groupReleases }) => (
               <div key={group.id} className="mb-6">
-                {/* Group header - exact match to sidebar */}
-                <div className="flex items-center justify-between mb-3">
+                {/* Group header - EXACT height and spacing match to sidebar */}
+                <div className="flex items-center mb-3" style={{ height: '32px' }}>
                   <div className="flex items-center space-x-2">
                     <div 
                       className="w-3 h-3 rounded-full" 
@@ -519,9 +519,16 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                       const isExpanded = expandedReleases.has(release.id);
                       
                       return (
-                        <div key={release.id} className="mb-2">
-                          {/* Timeline bar container */}
-                          <div className={`${viewType === "Condensed" ? "h-10" : "h-14"}`} style={{ height: viewType === "Condensed" ? '40px' : '56px' }}>
+                        <div key={release.id} className="relative mb-2">
+                          {/* Timeline bar - EXACT same height/margin as sidebar */}
+                          <div 
+                            className={`${viewType === "Condensed" ? "min-h-10" : "min-h-14"}`}
+                            style={{ 
+                              height: viewType === "Condensed" ? '40px' : '56px',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}
+                          >
                             <TimelineBar
                               release={release}
                               group={group}
@@ -532,10 +539,10 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                             />
                           </div>
                           
-                          {/* Expanded tasks view - positioned directly under the timeline bar */}
+                          {/* Expanded tasks - positioned below this specific bar */}
                           {isExpanded && releaseTasks.length > 0 && (
-                            <div className="relative w-full" style={{ marginTop: '4px' }}>
-                              <div className="space-y-1 bg-gray-50 p-2 rounded">
+                            <div className="w-full mt-1 mb-2">
+                              <div className="space-y-1 bg-gray-50 p-2 rounded shadow-sm">
                                 {/* Group tasks by assignee */}
                                 {Object.entries(
                                   releaseTasks.reduce((groups: any, task: any) => {
