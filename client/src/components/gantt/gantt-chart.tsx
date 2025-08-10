@@ -370,13 +370,13 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
               <div key={group.id} className="mb-6">
                 {/* Group header */}
                 <div className="flex items-center justify-between mb-3 h-12">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 flex-1">
                     <div 
-                      className="w-3 h-3 rounded-full" 
+                      className="w-3 h-3 rounded-full flex-shrink-0" 
                       style={{ backgroundColor: group.color }}
                     />
-                    <h4 className="font-semibold text-slate-700">{group.name}</h4>
-                    <span className="text-xs text-slate-500 bg-slate-200 px-2 py-1 rounded-full flex items-center justify-center min-w-[20px] h-5" style={{ lineHeight: '1' }}>
+                    <h4 className="font-semibold text-slate-700 break-words flex-1 min-w-0 pr-2" style={{ wordWrap: 'break-word', hyphens: 'auto' }}>{group.name}</h4>
+                    <span className="text-xs text-slate-500 bg-slate-200 px-2 py-1 rounded-full flex items-center justify-center min-w-[20px] h-5 flex-shrink-0" style={{ lineHeight: '1' }}>
                       {groupReleases.length}
                     </span>
                   </div>
@@ -474,10 +474,17 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                                   />
                                 )}
                               </div>
-                              <div>
-                                <div className={`font-medium text-slate-800 ${viewType === "Condensed" ? "text-sm truncate" : ""}`}>{release.name}</div>
+                              <div className="flex-1 min-w-0 pr-2">
+                                <div className={`font-medium text-slate-800 break-words ${viewType === "Condensed" ? "text-sm" : "text-base"}`} 
+                                     style={{ 
+                                       wordWrap: 'break-word', 
+                                       hyphens: 'auto',
+                                       lineHeight: viewType === "Condensed" ? '1.2' : '1.3'
+                                     }}>
+                                  {release.name}
+                                </div>
                                 {viewType !== "Condensed" && (
-                                  <div className="text-xs text-slate-500">
+                                  <div className="text-xs text-slate-500 mt-1">
                                     {new Date(release.startDate).toLocaleDateString()} - {new Date(release.endDate).toLocaleDateString()}
                                   </div>
                                 )}
@@ -575,8 +582,20 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                               const leftPercent = ((releaseStart.getTime() - startDate.getTime()) / totalDuration) * 100;
                               const widthPercent = ((releaseEnd.getTime() - releaseStart.getTime()) / totalDuration) * 100;
                               
+                              // Calculate dynamic height based on task count
+                              const taskCount = Object.values(
+                                releaseTasks.reduce((groups: any, task: any) => {
+                                  const assignee = task.assignedTo;
+                                  if (!groups[assignee]) groups[assignee] = [];
+                                  groups[assignee].push(task);
+                                  return groups;
+                                }, {})
+                              ).reduce((total: number, tasks: any) => total + (tasks as any[]).length, 0);
+                              
+                              const estimatedHeight = Math.max(120, (taskCount * 35) + 80); // 35px per task + padding
+                              
                               return (
-                                <div className="w-full relative min-h-[120px] mb-2">
+                                <div className="w-full relative mb-2" style={{ minHeight: `${estimatedHeight}px` }}>
                                   <div 
                                     className="bg-gray-50 border border-gray-200 p-3 rounded-md shadow-sm absolute top-0"
                                     style={{
