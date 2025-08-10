@@ -290,7 +290,6 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
             : group.color,
           minWidth: '120px', // Ensure minimum width for content
           height: viewType === "Condensed" ? '32px' : '40px',
-          border: release.highPriority ? `2px solid #dc2626` : 'none',
           outline: release.highPriority ? `2px solid #dc2626` : 'none',
           outlineOffset: release.highPriority ? '2px' : '0'
         }}
