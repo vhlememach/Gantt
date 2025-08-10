@@ -515,9 +515,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                                 )}
                               </Button>
                             )}
-                            <div className="text-slate-300 hover:text-slate-500">
-                              <i className="fas fa-grip-vertical" />
-                            </div>
+
                           </div>
                         </div>
                         
