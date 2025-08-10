@@ -369,13 +369,13 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
             {releasesByGroup.map(({ group, releases: groupReleases }) => (
               <div key={group.id} className="mb-6">
                 {/* Group header */}
-                <div className="flex items-center justify-between mb-3 h-12">
+                <div className="flex items-center justify-between mb-3 h-12 px-2">
                   <div className="flex items-center space-x-2 flex-1">
                     <div 
                       className="w-3 h-3 rounded-full flex-shrink-0" 
                       style={{ backgroundColor: group.color }}
                     />
-                    <h4 className="font-semibold text-slate-700 break-words flex-1 min-w-0 pr-2" style={{ wordWrap: 'break-word', hyphens: 'auto' }}>{group.name}</h4>
+                    <h4 className="font-semibold text-slate-700 break-words flex-1 min-w-0 pr-4" style={{ wordWrap: 'break-word', hyphens: 'auto' }}>{group.name}</h4>
                     <span className="text-xs text-slate-500 bg-slate-200 px-2 py-1 rounded-full flex items-center justify-center min-w-[20px] h-5 flex-shrink-0" style={{ lineHeight: '1' }}>
                       {groupReleases.length}
                     </span>
@@ -410,7 +410,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                       return (
                         <div key={release.id}>
                           <div
-                            className={`flex items-center justify-between bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow ${viewType === "Condensed" ? "h-10" : "h-14"} p-3`}
+                            className={`flex items-center justify-between bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow ${viewType === "Condensed" ? "h-10" : "h-14"} px-4 py-3`}
                             draggable={true}
                           onDragStart={(e) => {
                             e.dataTransfer.setData("text/plain", release.id);
@@ -474,7 +474,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                                   />
                                 )}
                               </div>
-                              <div className="flex-1 min-w-0 pr-2">
+                              <div className="flex-1 min-w-0 pr-4">
                                 <div className={`font-medium text-slate-800 break-words ${viewType === "Condensed" ? "text-sm" : "text-base"}`} 
                                      style={{ 
                                        wordWrap: 'break-word', 
