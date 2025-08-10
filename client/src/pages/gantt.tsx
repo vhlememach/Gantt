@@ -372,7 +372,7 @@ export default function GanttPage() {
       <div className="bg-white border-b border-slate-200 px-4 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <Button onClick={() => handleReleaseEdit(null)} className="bg-blue-600 hover:bg-blue-700">
+            <Button onClick={() => handleReleaseEdit(null)} className="hover:bg-blue-700 bg-[#7232d9]">
               <Plus className="mr-2 h-4 w-4" />
               Add Release
             </Button>
