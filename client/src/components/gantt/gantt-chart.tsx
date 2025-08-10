@@ -312,9 +312,9 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
   const currentDayPosition = getCurrentDayPosition();
 
   return (
-    <div className="flex h-full">
+    <div className="h-full grid grid-cols-[320px_1fr]">
       {/* Left Panel - Release List */}
-      <div className={`${viewType === "Condensed" ? "w-72" : "w-80"} bg-slate-50 border-r border-slate-200 overflow-y-auto`}>
+      <div className="bg-slate-50 border-r border-slate-200 overflow-y-auto">
         <div className="p-4">
           <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-4">
             Release Groups
@@ -323,7 +323,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
           {releasesByGroup.map(({ group, releases: groupReleases }) => (
             <div key={group.id} className="mb-6">
               {/* Group header */}
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-3 h-12">
                 <div className="flex items-center space-x-2">
                   <div 
                     className="w-3 h-3 rounded-full" 
@@ -356,15 +356,15 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
               </div>
               
               {!collapsedGroups.has(group.id) && (
-                <div className="ml-5">
+                <div className="ml-5 space-y-2">
                   {groupReleases.map((release, index) => {
                     const releaseTasks = (allTasks as any[]).filter((task: any) => task.releaseId === release.id);
                     const isExpanded = expandedReleases.has(release.id);
                     
                     return (
-                      <div key={release.id} className="mb-2">
+                      <div key={release.id}>
                         <div
-                          className={`flex items-center justify-between bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow ${viewType === "Condensed" ? "min-h-[40px] p-2" : "min-h-[56px] p-3"}`}
+                          className={`flex items-center justify-between bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow ${viewType === "Condensed" ? "h-10" : "h-14"} p-3`}
                           draggable={true}
                           onDragStart={(e) => {
                             e.dataTransfer.setData("text/plain", release.id);
@@ -480,7 +480,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
       </div>
 
       {/* Right Panel - Timeline */}
-      <div className="flex-1 overflow-x-auto">
+      <div className="overflow-x-auto">
         <div className="min-w-max" style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top left' }}>
           {/* Timeline Header */}
           <div className="h-16 bg-slate-100 border-b border-slate-200 flex items-center px-4">
@@ -498,12 +498,12 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
             </div>
           </div>
 
-          {/* Timeline Body - Simple grid system for perfect alignment */}
+          {/* Timeline Body - Mirror sidebar structure exactly */}
           <div className="p-4">
             {releasesByGroup.map(({ group, releases: groupReleases }) => (
               <div key={group.id} className="mb-6">
-                {/* Group header - matches sidebar exactly */}
-                <div className="flex items-center justify-between mb-3">
+                {/* Group header - exact same height as sidebar */}
+                <div className="flex items-center mb-3 h-12">
                   <div className="flex items-center space-x-2">
                     <div 
                       className="w-3 h-3 rounded-full" 
@@ -514,15 +514,15 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                 </div>
                 
                 {!collapsedGroups.has(group.id) && (
-                  <div className="ml-5">
+                  <div className="ml-5 space-y-2">
                     {groupReleases.map((release, releaseIndex) => {
                       const releaseTasks = (allTasks as any[]).filter((task: any) => task.releaseId === release.id);
                       const isExpanded = expandedReleases.has(release.id);
                       
                       return (
-                        <div key={release.id} className="mb-2">
-                          {/* Timeline bar - centered with sidebar item */}
-                          <div className={`${viewType === "Condensed" ? "min-h-[40px]" : "min-h-[56px]"} flex items-center justify-center py-1`}>
+                        <div key={release.id}>
+                          {/* Timeline bar - exact same height as sidebar item */}
+                          <div className={`${viewType === "Condensed" ? "h-10" : "h-14"} flex items-center`}>
                             <TimelineBar
                               release={release}
                               group={group}
@@ -535,8 +535,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                           
                           {/* Tasks directly below the bar */}
                           {isExpanded && releaseTasks.length > 0 && (
-                            <div className="mt-1 mb-2 bg-gray-50 p-2 rounded">
-                              {/* Group tasks by assignee */}
+                            <div className="bg-gray-50 p-2 rounded mb-2">
                               {Object.entries(
                                 releaseTasks.reduce((groups: any, task: any) => {
                                   const assignee = task.assignedTo;
