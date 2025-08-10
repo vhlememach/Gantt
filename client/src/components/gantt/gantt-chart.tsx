@@ -467,37 +467,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                           </div>
                         </div>
                         
-                        {/* Expanded tasks view - grouped by assignee */}
-                        {isExpanded && releaseTasks.length > 0 && (
-                          <div className="ml-8 mt-2 space-y-2">
-                            {/* Group tasks by assignee */}
-                            {Object.entries(
-                              releaseTasks.reduce((groups: any, task: any) => {
-                                const assignee = task.assignedTo;
-                                if (!groups[assignee]) groups[assignee] = [];
-                                groups[assignee].push(task);
-                                return groups;
-                              }, {})
-                            ).map(([assignee, tasks]: [string, any]) => (
-                              <div key={assignee} className="space-y-1">
-                                <div className="text-xs font-medium text-gray-600 flex items-center space-x-2">
-                                  <div className="w-1 h-3 rounded" style={{ backgroundColor: group.color }} />
-                                  <span>{assignee}</span>
-                                </div>
-                                <div className="ml-3 space-y-1">
-                                  {(tasks as any[]).map((task: any) => (
-                                    <div key={task.id} className="flex items-center space-x-2 p-1 text-xs bg-slate-50 rounded">
-                                      <div className={`w-2 h-2 rounded-full ${task.completed ? 'bg-green-500' : 'bg-gray-300'}`} />
-                                      <span className={task.completed ? 'line-through text-gray-500' : 'text-gray-700'}>
-                                        {task.taskTitle}
-                                      </span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
+
                       </div>
                     );
                   })}
@@ -562,35 +532,37 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                             />
                           </div>
                           
-                          {/* Expanded tasks view - positioned below the timeline bar, pushes other content down */}
+                          {/* Expanded tasks view - positioned directly under the timeline bar */}
                           {isExpanded && releaseTasks.length > 0 && (
-                            <div className="mt-2 mb-4 space-y-1 pl-4">
-                              {/* Group tasks by assignee */}
-                              {Object.entries(
-                                releaseTasks.reduce((groups: any, task: any) => {
-                                  const assignee = task.assignedTo;
-                                  if (!groups[assignee]) groups[assignee] = [];
-                                  groups[assignee].push(task);
-                                  return groups;
-                                }, {})
-                              ).map(([assignee, tasks]: [string, any]) => (
-                                <div key={assignee}>
-                                  <div className="text-xs font-medium text-gray-600 flex items-center space-x-2 mb-1">
-                                    <div className="w-1 h-3 rounded" style={{ backgroundColor: group.color }} />
-                                    <span>{assignee}</span>
-                                  </div>
-                                  {(tasks as any[]).map((task: any) => (
-                                    <div key={task.id} className="ml-3 mb-1">
-                                      <div className="flex items-center space-x-2 p-1 text-xs bg-slate-50 rounded h-6">
-                                        <div className={`w-2 h-2 rounded-full ${task.completed ? 'bg-green-500' : 'bg-gray-300'}`} />
-                                        <span className={task.completed ? 'line-through text-gray-500' : 'text-gray-700'}>
-                                          {task.taskTitle}
-                                        </span>
-                                      </div>
+                            <div className="relative w-full" style={{ marginTop: '4px' }}>
+                              <div className="space-y-1 bg-gray-50 p-2 rounded">
+                                {/* Group tasks by assignee */}
+                                {Object.entries(
+                                  releaseTasks.reduce((groups: any, task: any) => {
+                                    const assignee = task.assignedTo;
+                                    if (!groups[assignee]) groups[assignee] = [];
+                                    groups[assignee].push(task);
+                                    return groups;
+                                  }, {})
+                                ).map(([assignee, tasks]: [string, any]) => (
+                                  <div key={assignee}>
+                                    <div className="text-xs font-medium text-gray-600 flex items-center space-x-2 mb-1">
+                                      <div className="w-1 h-3 rounded" style={{ backgroundColor: group.color }} />
+                                      <span>{assignee}</span>
                                     </div>
-                                  ))}
-                                </div>
-                              ))}
+                                    {(tasks as any[]).map((task: any) => (
+                                      <div key={task.id} className="ml-3 mb-1">
+                                        <div className="flex items-center space-x-2 p-1 text-xs bg-white rounded h-6">
+                                          <div className={`w-2 h-2 rounded-full ${task.completed ? 'bg-green-500' : 'bg-gray-300'}`} />
+                                          <span className={task.completed ? 'line-through text-gray-500' : 'text-gray-700'}>
+                                            {task.taskTitle}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           )}
                         </div>
