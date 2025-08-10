@@ -194,7 +194,10 @@ export default function ChecklistPage() {
           {teamMembers.map(member => {
             const memberTasksCount = allTasks.filter(task => task.assignedTo === member);
             const completedCount = memberTasksCount.filter(task => task.completed).length;
-            const priorityCount = memberTasksCount.filter(task => isTaskHighPriority(task)).length;
+            const priorityCount = memberTasksCount.filter(task => {
+              const release = releases.find(r => r.id === task.releaseId);
+              return release?.highPriority || false;
+            }).length;
             
             return (
               <TabsTrigger key={member} value={member} className="flex items-center space-x-2">
