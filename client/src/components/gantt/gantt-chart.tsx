@@ -497,12 +497,20 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
             </div>
           </div>
 
-          {/* Timeline Body - EXACT structural mirror of sidebar */}
-          <div className="p-4">
+          {/* Timeline Body - EXACT structural mirror of sidebar with pixel-perfect alignment */}
+          <div style={{ padding: '16px' }}>
             {releasesByGroup.map(({ group, releases: groupReleases }) => (
-              <div key={group.id} className="mb-6">
+              <div key={group.id} style={{ marginBottom: '24px' }}>
                 {/* Group header - EXACT height and spacing match to sidebar */}
-                <div className="flex items-center mb-3" style={{ height: '32px' }}>
+                <div 
+                  className="flex items-center justify-between" 
+                  style={{ 
+                    height: '32px',
+                    marginBottom: '12px',
+                    paddingLeft: '0px',
+                    paddingRight: '0px'
+                  }}
+                >
                   <div className="flex items-center space-x-2">
                     <div 
                       className="w-3 h-3 rounded-full" 
@@ -513,20 +521,20 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                 </div>
                 
                 {!collapsedGroups.has(group.id) && (
-                  <div className="ml-5">
+                  <div style={{ marginLeft: '20px' }}>
                     {groupReleases.map((release, releaseIndex) => {
                       const releaseTasks = (allTasks as any[]).filter((task: any) => task.releaseId === release.id);
                       const isExpanded = expandedReleases.has(release.id);
                       
                       return (
-                        <div key={release.id} className="relative mb-2">
-                          {/* Timeline bar - EXACT same height/margin as sidebar */}
+                        <div key={release.id} style={{ marginBottom: '8px' }}>
+                          {/* Timeline bar container with EXACT same dimensions as sidebar items */}
                           <div 
-                            className={`${viewType === "Condensed" ? "min-h-10" : "min-h-14"}`}
                             style={{ 
                               height: viewType === "Condensed" ? '40px' : '56px',
                               display: 'flex',
-                              alignItems: 'center'
+                              alignItems: 'center',
+                              position: 'relative'
                             }}
                           >
                             <TimelineBar
@@ -539,9 +547,9 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                             />
                           </div>
                           
-                          {/* Expanded tasks - positioned below this specific bar */}
+                          {/* Expanded tasks positioned directly below */}
                           {isExpanded && releaseTasks.length > 0 && (
-                            <div className="w-full mt-1 mb-2">
+                            <div style={{ marginTop: '4px', marginBottom: '8px' }}>
                               <div className="space-y-1 bg-gray-50 p-2 rounded shadow-sm">
                                 {/* Group tasks by assignee */}
                                 {Object.entries(
