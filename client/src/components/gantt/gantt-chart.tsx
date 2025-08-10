@@ -529,11 +529,11 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
           </div>
 
           {/* Timeline Body - exact mirror of sidebar structure */}
-          <div className="p-4">
+          <div className="relative">
             {releasesByGroup.map(({ group, releases: groupReleases }) => (
               <div key={group.id} className="mb-6">
                 {/* Group header - exact match to sidebar */}
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-3 px-4">
                   <div className="flex items-center space-x-2">
                     <div 
                       className="w-3 h-3 rounded-full" 
@@ -551,7 +551,15 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                       
                       return (
                         <div key={release.id} className="mb-2">
-                          <div className={`${viewType === "Condensed" ? "h-10" : "h-14"}`} style={{ height: viewType === "Condensed" ? '40px' : '56px' }}>
+                          {/* Timeline bar container with full grid width */}
+                          <div 
+                            className={`relative ${viewType === "Condensed" ? "h-10" : "h-14"}`} 
+                            style={{ 
+                              height: viewType === "Condensed" ? '40px' : '56px',
+                              paddingLeft: '16px',
+                              paddingRight: '16px'
+                            }}
+                          >
                             <TimelineBar
                               release={release}
                               group={group}
@@ -562,13 +570,16 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                             />
                           </div>
                           
-                          {/* Expanded tasks view in timeline - positioned to align with timeline bars */}
+                          {/* Expanded tasks view - now positioned to match the timeline bar container */}
                           {isExpanded && releaseTasks.length > 0 && (
-                            <div className="space-y-1" style={{ 
-                              width: '100%',
-                              paddingLeft: '0px',
-                              marginLeft: '0px'
-                            }}>
+                            <div 
+                              className="space-y-1" 
+                              style={{ 
+                                paddingLeft: '16px',
+                                paddingRight: '16px',
+                                marginTop: '4px'
+                              }}
+                            >
                               {/* Group tasks by assignee */}
                               {Object.entries(
                                 releaseTasks.reduce((groups: any, task: any) => {
