@@ -52,6 +52,24 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
   const { data: settings } = useQuery({
     queryKey: ["/api/settings"],
   });
+  
+  // Calculate dynamic sidebar width based on longest title
+  const sidebarWidth = useMemo(() => {
+    if (!releases.length && !groups.length) return 320;
+    
+    const allTitles = [
+      ...groups.map(g => g.name),
+      ...releases.map(r => r.name)
+    ];
+    
+    const longestTitle = allTitles.reduce((longest, title) => 
+      title.length > longest.length ? title : longest, ""
+    );
+    
+    // Base width + estimated character width (8px per char) + padding
+    const calculatedWidth = Math.max(320, longestTitle.length * 8 + 100);
+    return Math.min(calculatedWidth, 500); // Cap at 500px
+  }, [releases, groups]);
 
   // Add effect to ensure fresh data
   useEffect(() => {
@@ -314,7 +332,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
   return (
     <div className="h-full">
       {/* Header Row */}
-      <div className="grid grid-cols-[320px_1fr] h-16">
+      <div className="grid h-16" style={{ gridTemplateColumns: `${sidebarWidth}px 1fr` }}>
         {/* Sidebar Header */}
         <div className="bg-slate-50 border-r border-b border-slate-200 p-4">
           <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wide">
@@ -344,7 +362,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
       </div>
 
       {/* Content Row */}
-      <div className="grid grid-cols-[320px_1fr] flex-1 overflow-hidden">
+      <div className="grid flex-1 overflow-hidden" style={{ gridTemplateColumns: `${sidebarWidth}px 1fr` }}>
         {/* Sidebar Content */}
         <div className="bg-slate-50 border-r border-slate-200 overflow-y-auto">
           <div className="p-4 pt-4">
@@ -544,36 +562,56 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                               />
                             </div>
                             
-                            {/* Tasks directly below */}
-                            {isExpanded && releaseTasks.length > 0 && (
-                              <div className="bg-gray-50 p-2 rounded mb-2">
-                                {Object.entries(
-                                  releaseTasks.reduce((groups: any, task: any) => {
-                                    const assignee = task.assignedTo;
-                                    if (!groups[assignee]) groups[assignee] = [];
-                                    groups[assignee].push(task);
-                                    return groups;
-                                  }, {})
-                                ).map(([assignee, tasks]: [string, any]) => (
-                                  <div key={assignee} className="mb-2 last:mb-0">
-                                    <div className="text-xs font-medium text-gray-600 flex items-center space-x-2 mb-1">
-                                      <div className="w-1 h-3 rounded" style={{ backgroundColor: group.color }} />
-                                      <span>{assignee}</span>
-                                    </div>
-                                    {(tasks as any[]).map((task: any) => (
-                                      <div key={task.id} className="ml-3 mb-1">
-                                        <div className="flex items-center space-x-2 text-xs">
-                                          <div className={`w-2 h-2 rounded-full ${task.completed ? 'bg-green-500' : 'bg-gray-300'}`} />
-                                          <span className={task.completed ? 'line-through text-gray-500' : 'text-gray-700'}>
-                                            {task.taskTitle}
-                                          </span>
-                                        </div>
+                            {/* Tasks directly below - positioned to align with timeline bar */}
+                            {isExpanded && releaseTasks.length > 0 && (() => {
+                              // Calculate timeline bar position and width for checklist alignment
+                              const timelineStart = new Date(timelineData.startDate);
+                              const timelineEnd = new Date(timelineData.endDate);
+                              const timelineRange = timelineEnd.getTime() - timelineStart.getTime();
+                              
+                              const releaseStart = new Date(release.startDate);
+                              const releaseEnd = new Date(release.endDate);
+                              
+                              const leftPosition = ((releaseStart.getTime() - timelineStart.getTime()) / timelineRange) * 100;
+                              const width = ((releaseEnd.getTime() - releaseStart.getTime()) / timelineRange) * 100;
+                              
+                              return (
+                                <div 
+                                  className="bg-gray-50 p-2 rounded mb-2 relative"
+                                  style={{
+                                    marginLeft: `${leftPosition}%`,
+                                    width: `${width}%`,
+                                    minWidth: '200px'
+                                  }}
+                                >
+                                  {Object.entries(
+                                    releaseTasks.reduce((groups: any, task: any) => {
+                                      const assignee = task.assignedTo;
+                                      if (!groups[assignee]) groups[assignee] = [];
+                                      groups[assignee].push(task);
+                                      return groups;
+                                    }, {})
+                                  ).map(([assignee, tasks]: [string, any]) => (
+                                    <div key={assignee} className="mb-2 last:mb-0">
+                                      <div className="text-xs font-medium text-gray-600 flex items-center space-x-2 mb-1">
+                                        <div className="w-1 h-3 rounded" style={{ backgroundColor: group.color }} />
+                                        <span>{assignee}</span>
                                       </div>
-                                    ))}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
+                                      {(tasks as any[]).map((task: any) => (
+                                        <div key={task.id} className="ml-3 mb-1">
+                                          <div className="flex items-center space-x-2 text-xs">
+                                            <div className={`w-2 h-2 rounded-full ${task.completed ? 'bg-green-500' : 'bg-gray-300'}`} />
+                                            <span className={task.completed ? 'line-through text-gray-500' : 'text-gray-700'}>
+                                              {task.taskTitle}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ))}
+                                </div>
+                              );
+                            })()}
                           </div>
                         );
                       })}
