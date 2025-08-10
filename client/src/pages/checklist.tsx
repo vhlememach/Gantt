@@ -116,14 +116,14 @@ export default function ChecklistPage() {
     });
   };
 
-  // Calculate days remaining for a release
+  // Calculate days remaining until release starts
   const getDaysRemaining = (releaseId: string) => {
     const release = releases.find(r => r.id === releaseId);
     if (!release) return 0;
     
     const now = new Date();
-    const endDate = new Date(release.endDate);
-    const diffTime = endDate.getTime() - now.getTime();
+    const startDate = new Date(release.startDate);
+    const diffTime = startDate.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
     return Math.max(0, diffDays);
