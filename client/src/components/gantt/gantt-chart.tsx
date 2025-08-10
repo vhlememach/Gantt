@@ -363,8 +363,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                     return (
                       <div key={release.id} className="mb-2">
                         <div
-                          className={`flex items-center justify-between bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow ${viewType === "Condensed" ? "h-10 p-2" : "h-14 p-3"}`}
-                          style={{ height: viewType === "Condensed" ? '40px' : '56px' }}
+                          className={`flex items-center justify-between bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow ${viewType === "Condensed" ? "min-h-10 p-2" : "min-h-14 p-3"}`}
                           draggable={true}
                           onDragStart={(e) => {
                             e.dataTransfer.setData("text/plain", release.id);
@@ -614,13 +613,13 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                                       }, {})
                                     ).map(([assignee, tasks]: [string, any]) => (
                                       <div key={assignee}>
-                                        <div className="text-xs font-medium text-gray-600 flex items-center space-x-2 mb-1 bg-white px-2 py-1 rounded shadow-sm">
+                                        <div className="text-xs font-medium text-gray-600 flex items-center space-x-2 mb-1">
                                           <div className="w-1 h-3 rounded" style={{ backgroundColor: group.color }} />
                                           <span>{assignee}</span>
                                         </div>
                                         {(tasks as any[]).map((task: any) => (
                                           <div key={task.id} className="ml-3 mb-1">
-                                            <div className="flex items-center space-x-2 p-2 text-xs bg-white rounded shadow-sm border h-6">
+                                            <div className="flex items-center space-x-2 p-1 text-xs bg-slate-50 rounded h-6">
                                               <div className={`w-2 h-2 rounded-full ${task.completed ? 'bg-green-500' : 'bg-gray-300'}`} />
                                               <span className={task.completed ? 'line-through text-gray-500' : 'text-gray-700'}>
                                                 {task.taskTitle}
