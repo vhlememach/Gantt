@@ -312,60 +312,88 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
   const currentDayPosition = getCurrentDayPosition();
 
   return (
-    <div className="h-full flex">
-      {/* Left Panel - Release List */}
-      <div className="w-80 bg-slate-50 border-r border-slate-200 overflow-y-auto">
-        <div className="p-4">
-          <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-4">
+    <div className="h-full">
+      {/* Header Row */}
+      <div className="grid grid-cols-[320px_1fr] h-16">
+        {/* Sidebar Header */}
+        <div className="bg-slate-50 border-r border-b border-slate-200 p-4">
+          <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wide">
             Release Groups
           </h3>
-          
-          {releasesByGroup.map(({ group, releases: groupReleases }) => (
-            <div key={group.id} className="mb-6">
-              {/* Group header */}
-              <div className="flex items-center justify-between mb-3 h-12">
-                <div className="flex items-center space-x-2">
-                  <div 
-                    className="w-3 h-3 rounded-full" 
-                    style={{ backgroundColor: group.color }}
-                  />
-                  <h4 className="font-semibold text-slate-700">{group.name}</h4>
-                  <span className="text-xs text-slate-500 bg-slate-200 px-2 py-1 rounded-full flex items-center justify-center min-w-[20px] h-5" style={{ lineHeight: '1' }}>
-                    {groupReleases.length}
-                  </span>
-                </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => {
-                    const newCollapsed = new Set(collapsedGroups);
-                    if (newCollapsed.has(group.id)) {
-                      newCollapsed.delete(group.id);
-                    } else {
-                      newCollapsed.add(group.id);
-                    }
-                    setCollapsedGroups(newCollapsed);
-                  }}
-                >
-                  {collapsedGroups.has(group.id) ? (
-                    <ChevronRight className="h-3 w-3" />
-                  ) : (
-                    <ChevronDown className="h-3 w-3" />
-                  )}
-                </Button>
+        </div>
+        
+        {/* Timeline Header */}
+        <div className="bg-slate-100 border-b border-slate-200 overflow-x-auto">
+          <div className="min-w-max h-full" style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top left' }}>
+            <div className="flex items-center px-4 h-full">
+              <div className="flex gap-4 w-full min-w-max" style={{ 
+                display: 'grid', 
+                gridTemplateColumns: `repeat(${timelineData.labels.length}, 1fr)`,
+                minWidth: '800px'
+              }}>
+                {timelineData.labels.map((label, index) => (
+                  <div key={label} className="text-center">
+                    <div className="text-sm font-semibold text-slate-700">{label}</div>
+                    <div className="text-xs text-slate-500">{timelineData.sublabels[index]}</div>
+                  </div>
+                ))}
               </div>
-              
-              {!collapsedGroups.has(group.id) && (
-                <div className="ml-5 space-y-2">
-                  {groupReleases.map((release, index) => {
-                    const releaseTasks = (allTasks as any[]).filter((task: any) => task.releaseId === release.id);
-                    const isExpanded = expandedReleases.has(release.id);
-                    
-                    return (
-                      <div key={release.id}>
-                        <div
-                          className={`flex items-center justify-between bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow ${viewType === "Condensed" ? "h-10" : "h-14"} p-3`}
-                          draggable={true}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Content Row */}
+      <div className="grid grid-cols-[320px_1fr] flex-1 overflow-hidden">
+        {/* Sidebar Content */}
+        <div className="bg-slate-50 border-r border-slate-200 overflow-y-auto">
+          <div className="p-4 pt-4">
+            {releasesByGroup.map(({ group, releases: groupReleases }) => (
+              <div key={group.id} className="mb-6">
+                {/* Group header */}
+                <div className="flex items-center justify-between mb-3 h-12">
+                  <div className="flex items-center space-x-2">
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: group.color }}
+                    />
+                    <h4 className="font-semibold text-slate-700">{group.name}</h4>
+                    <span className="text-xs text-slate-500 bg-slate-200 px-2 py-1 rounded-full flex items-center justify-center min-w-[20px] h-5" style={{ lineHeight: '1' }}>
+                      {groupReleases.length}
+                    </span>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => {
+                      const newCollapsed = new Set(collapsedGroups);
+                      if (newCollapsed.has(group.id)) {
+                        newCollapsed.delete(group.id);
+                      } else {
+                        newCollapsed.add(group.id);
+                      }
+                      setCollapsedGroups(newCollapsed);
+                    }}
+                  >
+                    {collapsedGroups.has(group.id) ? (
+                      <ChevronRight className="h-3 w-3" />
+                    ) : (
+                      <ChevronDown className="h-3 w-3" />
+                    )}
+                  </Button>
+                </div>
+                
+                {!collapsedGroups.has(group.id) && (
+                  <div className="ml-5 space-y-2">
+                    {groupReleases.map((release, index) => {
+                      const releaseTasks = (allTasks as any[]).filter((task: any) => task.releaseId === release.id);
+                      const isExpanded = expandedReleases.has(release.id);
+                      
+                      return (
+                        <div key={release.id}>
+                          <div
+                            className={`flex items-center justify-between bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow ${viewType === "Condensed" ? "h-10" : "h-14"} p-3`}
+                            draggable={true}
                           onDragStart={(e) => {
                             e.dataTransfer.setData("text/plain", release.id);
                             e.dataTransfer.setData("sourceGroupId", group.id);
@@ -479,136 +507,120 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
         </div>
       </div>
 
-      {/* Right Panel - Timeline - EXACT COPY of left structure */}
-      <div className="flex-1 overflow-x-auto">
-        <div className="min-w-max" style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top left' }}>
-          {/* Timeline Header */}
-          <div className="h-16 bg-slate-100 border-b border-slate-200 flex items-center px-4">
-            <div className="flex gap-4 w-full min-w-max" style={{ 
-              display: 'grid', 
-              gridTemplateColumns: `repeat(${timelineData.labels.length}, 1fr)`,
-              minWidth: '800px'
-            }}>
-              {timelineData.labels.map((label, index) => (
-                <div key={label} className="text-center">
-                  <div className="text-sm font-semibold text-slate-700">{label}</div>
-                  <div className="text-xs text-slate-500">{timelineData.sublabels[index]}</div>
+        {/* Timeline Content */}
+        <div className="overflow-x-auto overflow-y-auto">
+          <div className="min-w-max relative" style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top left' }}>
+            <div className="p-4 pt-4">
+              {releasesByGroup.map(({ group, releases: groupReleases }) => (
+                <div key={group.id} className="mb-6">
+                  {/* Group header - IDENTICAL to sidebar */}
+                  <div className="mb-3 h-12 flex items-center">
+                    <div className="flex items-center space-x-2">
+                      <div 
+                        className="w-3 h-3 rounded-full" 
+                        style={{ backgroundColor: group.color }}
+                      />
+                      <h4 className="font-semibold text-slate-700">{group.name}</h4>
+                    </div>
+                  </div>
+                  
+                  {!collapsedGroups.has(group.id) && (
+                    <div className="ml-5 space-y-2">
+                      {groupReleases.map((release, index) => {
+                        const releaseTasks = (allTasks as any[]).filter((task: any) => task.releaseId === release.id);
+                        const isExpanded = expandedReleases.has(release.id);
+                        
+                        return (
+                          <div key={release.id}>
+                            {/* Timeline bar - SAME HEIGHT as sidebar item */}
+                            <div className={`${viewType === "Condensed" ? "h-10" : "h-14"} flex items-center`}>
+                              <TimelineBar
+                                release={release}
+                                group={group}
+                                onEdit={() => onReleaseEdit(release.id)}
+                                viewMode={viewMode}
+                                viewType={viewType}
+                                timelineLabels={timelineData.labels}
+                              />
+                            </div>
+                            
+                            {/* Tasks directly below */}
+                            {isExpanded && releaseTasks.length > 0 && (
+                              <div className="bg-gray-50 p-2 rounded mb-2">
+                                {Object.entries(
+                                  releaseTasks.reduce((groups: any, task: any) => {
+                                    const assignee = task.assignedTo;
+                                    if (!groups[assignee]) groups[assignee] = [];
+                                    groups[assignee].push(task);
+                                    return groups;
+                                  }, {})
+                                ).map(([assignee, tasks]: [string, any]) => (
+                                  <div key={assignee} className="mb-2 last:mb-0">
+                                    <div className="text-xs font-medium text-gray-600 flex items-center space-x-2 mb-1">
+                                      <div className="w-1 h-3 rounded" style={{ backgroundColor: group.color }} />
+                                      <span>{assignee}</span>
+                                    </div>
+                                    {(tasks as any[]).map((task: any) => (
+                                      <div key={task.id} className="ml-3 mb-1">
+                                        <div className="flex items-center space-x-2 text-xs">
+                                          <div className={`w-2 h-2 rounded-full ${task.completed ? 'bg-green-500' : 'bg-gray-300'}`} />
+                                          <span className={task.completed ? 'line-through text-gray-500' : 'text-gray-700'}>
+                                            {task.taskTitle}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
-          </div>
 
-          {/* Timeline Body - EXACT COPY of sidebar structure */}
-          <div className="p-4">
-            {releasesByGroup.map(({ group, releases: groupReleases }) => (
-              <div key={group.id} className="mb-6">
-                {/* Group header - IDENTICAL to sidebar */}
-                <div className="flex items-center justify-between mb-3 h-12">
-                  <div className="flex items-center space-x-2">
-                    <div 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: group.color }}
-                    />
-                    <h4 className="font-semibold text-slate-700">{group.name}</h4>
-                  </div>
-                </div>
-                
-                {!collapsedGroups.has(group.id) && (
-                  <div className="ml-5 space-y-2">
-                    {groupReleases.map((release, index) => {
-                      const releaseTasks = (allTasks as any[]).filter((task: any) => task.releaseId === release.id);
-                      const isExpanded = expandedReleases.has(release.id);
-                      
-                      return (
-                        <div key={release.id}>
-                          {/* Timeline bar - SAME HEIGHT as sidebar item */}
-                          <div className={`${viewType === "Condensed" ? "h-10" : "h-14"} flex items-center`}>
-                            <TimelineBar
-                              release={release}
-                              group={group}
-                              onEdit={() => onReleaseEdit(release.id)}
-                              viewMode={viewMode}
-                              viewType={viewType}
-                              timelineLabels={timelineData.labels}
-                            />
-                          </div>
-                          
-                          {/* Tasks directly below */}
-                          {isExpanded && releaseTasks.length > 0 && (
-                            <div className="bg-gray-50 p-2 rounded mb-2">
-                              {Object.entries(
-                                releaseTasks.reduce((groups: any, task: any) => {
-                                  const assignee = task.assignedTo;
-                                  if (!groups[assignee]) groups[assignee] = [];
-                                  groups[assignee].push(task);
-                                  return groups;
-                                }, {})
-                              ).map(([assignee, tasks]: [string, any]) => (
-                                <div key={assignee} className="mb-2 last:mb-0">
-                                  <div className="text-xs font-medium text-gray-600 flex items-center space-x-2 mb-1">
-                                    <div className="w-1 h-3 rounded" style={{ backgroundColor: group.color }} />
-                                    <span>{assignee}</span>
-                                  </div>
-                                  {(tasks as any[]).map((task: any) => (
-                                    <div key={task.id} className="ml-3 mb-1">
-                                      <div className="flex items-center space-x-2 text-xs">
-                                        <div className={`w-2 h-2 rounded-full ${task.completed ? 'bg-green-500' : 'bg-gray-300'}`} />
-                                        <span className={task.completed ? 'line-through text-gray-500' : 'text-gray-700'}>
-                                          {task.taskTitle}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      );
+            {/* Timeline Grid Lines */}
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="h-full grid gap-4 opacity-20" style={{ 
+                gridTemplateColumns: `repeat(${timelineData.labels.length}, 1fr)`,
+                minWidth: '800px'
+              }}>
+                {timelineData.labels.map((_, index) => (
+                  <div key={index} className="border-r border-slate-200" />
+                ))}
+              </div>
+            </div>
+
+            {/* Current Day Line */}
+            {currentDayPosition >= 0 && (
+              <div 
+                className="absolute top-0 bottom-0 z-20 pointer-events-none"
+                style={{
+                  left: `calc(${currentDayPosition}% + 16px)`,
+                  borderLeft: `${(settings as any)?.currentDayLineThickness || 2}px dotted ${(settings as any)?.currentDayLineColor || '#000000'}`
+                }}
+              >
+                {/* Current Day Label */}
+                <div 
+                  className="absolute top-2 -left-12 bg-slate-800 text-white text-xs px-2 py-1 rounded shadow-sm whitespace-nowrap"
+                  style={{ fontSize: '10px' }}
+                >
+                  <div>Current Day</div>
+                  <div className="text-xs opacity-80">
+                    {new Date().toLocaleDateString('en-US', { 
+                      month: '2-digit', 
+                      day: '2-digit', 
+                      year: '2-digit' 
                     })}
                   </div>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* Timeline Grid Lines */}
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="h-full grid gap-4 opacity-20" style={{ 
-              gridTemplateColumns: `repeat(${timelineData.labels.length}, 1fr)`,
-              minWidth: '800px'
-            }}>
-              {timelineData.labels.map((_, index) => (
-                <div key={index} className="border-r border-slate-200" />
-              ))}
-            </div>
-          </div>
-
-          {/* Current Day Line */}
-          {currentDayPosition >= 0 && (
-            <div 
-              className="absolute top-16 bottom-0 z-20 pointer-events-none"
-              style={{
-                left: `calc(${currentDayPosition}% + 16px)`,
-                borderLeft: `${(settings as any)?.currentDayLineThickness || 2}px dotted ${(settings as any)?.currentDayLineColor || '#000000'}`
-              }}
-            >
-              {/* Current Day Label */}
-              <div 
-                className="absolute top-2 -left-12 bg-slate-800 text-white text-xs px-2 py-1 rounded shadow-sm whitespace-nowrap"
-                style={{ fontSize: '10px' }}
-              >
-                <div>Current Day</div>
-                <div className="text-xs opacity-80">
-                  {new Date().toLocaleDateString('en-US', { 
-                    month: '2-digit', 
-                    day: '2-digit', 
-                    year: '2-digit' 
-                  })}
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>
