@@ -322,11 +322,8 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
           
           {releasesByGroup.map(({ group, releases: groupReleases }) => (
             <div key={group.id} className="mb-6">
-              {/* Group header with exact height */}
-              <div 
-                className="flex items-center justify-between"
-                style={{ height: '48px', marginBottom: '12px' }}
-              >
+              {/* Group header */}
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-2">
                   <div 
                     className="w-3 h-3 rounded-full" 
@@ -359,19 +356,15 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
               </div>
               
               {!collapsedGroups.has(group.id) && (
-                <div className="ml-5 space-y-2">
+                <div className="ml-5">
                   {groupReleases.map((release, index) => {
                     const releaseTasks = (allTasks as any[]).filter((task: any) => task.releaseId === release.id);
                     const isExpanded = expandedReleases.has(release.id);
                     
                     return (
-                      <div key={release.id}>
+                      <div key={release.id} className="mb-2">
                         <div
-                          className={`flex items-center justify-between bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow`}
-                          style={{ 
-                            height: viewType === "Condensed" ? '40px' : '56px',
-                            padding: viewType === "Condensed" ? '8px' : '12px'
-                          }}
+                          className={`flex items-center justify-between bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow ${viewType === "Condensed" ? "h-10 p-2" : "h-14 p-3"}`}
                           draggable={true}
                           onDragStart={(e) => {
                             e.dataTransfer.setData("text/plain", release.id);
@@ -505,18 +498,12 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
             </div>
           </div>
 
-          {/* Timeline Body - EXACT structural mirror of sidebar */}
-          <div style={{ padding: '16px' }}>
+          {/* Timeline Body - Simple grid system for perfect alignment */}
+          <div className="p-4">
             {releasesByGroup.map(({ group, releases: groupReleases }) => (
               <div key={group.id} className="mb-6">
-                {/* Group header - EXACT same height and spacing as sidebar */}
-                <div 
-                  className="flex items-center"
-                  style={{ 
-                    height: '48px',
-                    marginBottom: '12px'
-                  }}
-                >
+                {/* Group header - matches sidebar exactly */}
+                <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center space-x-2">
                     <div 
                       className="w-3 h-3 rounded-full" 
@@ -527,21 +514,15 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                 </div>
                 
                 {!collapsedGroups.has(group.id) && (
-                  <div className="ml-5 space-y-2">
+                  <div className="ml-5">
                     {groupReleases.map((release, releaseIndex) => {
                       const releaseTasks = (allTasks as any[]).filter((task: any) => task.releaseId === release.id);
                       const isExpanded = expandedReleases.has(release.id);
                       
                       return (
-                        <div key={release.id}>
-                          {/* Timeline bar container - EXACT same height as sidebar items */}
-                          <div 
-                            style={{ 
-                              height: viewType === "Condensed" ? '40px' : '56px',
-                              display: 'flex',
-                              alignItems: 'center'
-                            }}
-                          >
+                        <div key={release.id} className="mb-2">
+                          {/* Timeline bar - exact same height as sidebar item */}
+                          <div className={`${viewType === "Condensed" ? "h-10" : "h-14"} flex items-center`}>
                             <TimelineBar
                               release={release}
                               group={group}
@@ -552,37 +533,35 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                             />
                           </div>
                           
-                          {/* Expanded tasks positioned directly below */}
+                          {/* Tasks directly below the bar */}
                           {isExpanded && releaseTasks.length > 0 && (
-                            <div className="mt-1 mb-2">
-                              <div className="space-y-1 bg-gray-50 p-2 rounded shadow-sm">
-                                {/* Group tasks by assignee */}
-                                {Object.entries(
-                                  releaseTasks.reduce((groups: any, task: any) => {
-                                    const assignee = task.assignedTo;
-                                    if (!groups[assignee]) groups[assignee] = [];
-                                    groups[assignee].push(task);
-                                    return groups;
-                                  }, {})
-                                ).map(([assignee, tasks]: [string, any]) => (
-                                  <div key={assignee}>
-                                    <div className="text-xs font-medium text-gray-600 flex items-center space-x-2 mb-1">
-                                      <div className="w-1 h-3 rounded" style={{ backgroundColor: group.color }} />
-                                      <span>{assignee}</span>
-                                    </div>
-                                    {(tasks as any[]).map((task: any) => (
-                                      <div key={task.id} className="ml-3 mb-1">
-                                        <div className="flex items-center space-x-2 p-1 text-xs bg-white rounded h-6">
-                                          <div className={`w-2 h-2 rounded-full ${task.completed ? 'bg-green-500' : 'bg-gray-300'}`} />
-                                          <span className={task.completed ? 'line-through text-gray-500' : 'text-gray-700'}>
-                                            {task.taskTitle}
-                                          </span>
-                                        </div>
-                                      </div>
-                                    ))}
+                            <div className="mt-1 mb-2 bg-gray-50 p-2 rounded">
+                              {/* Group tasks by assignee */}
+                              {Object.entries(
+                                releaseTasks.reduce((groups: any, task: any) => {
+                                  const assignee = task.assignedTo;
+                                  if (!groups[assignee]) groups[assignee] = [];
+                                  groups[assignee].push(task);
+                                  return groups;
+                                }, {})
+                              ).map(([assignee, tasks]: [string, any]) => (
+                                <div key={assignee} className="mb-2 last:mb-0">
+                                  <div className="text-xs font-medium text-gray-600 flex items-center space-x-2 mb-1">
+                                    <div className="w-1 h-3 rounded" style={{ backgroundColor: group.color }} />
+                                    <span>{assignee}</span>
                                   </div>
-                                ))}
-                              </div>
+                                  {(tasks as any[]).map((task: any) => (
+                                    <div key={task.id} className="ml-3 mb-1">
+                                      <div className="flex items-center space-x-2 text-xs">
+                                        <div className={`w-2 h-2 rounded-full ${task.completed ? 'bg-green-500' : 'bg-gray-300'}`} />
+                                        <span className={task.completed ? 'line-through text-gray-500' : 'text-gray-700'}>
+                                          {task.taskTitle}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ))}
                             </div>
                           )}
                         </div>
