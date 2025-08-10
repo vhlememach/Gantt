@@ -35,6 +35,7 @@ interface GanttChartProps {
 
 export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdit }: GanttChartProps) {
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [expandedReleases, setExpandedReleases] = useState<Set<string>>(new Set());
   
   const { data: groups = [] } = useQuery<ReleaseGroup[]>({
     queryKey: ["/api/release-groups"],
@@ -42,6 +43,10 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
 
   const { data: releases = [], refetch: refetchReleases } = useQuery<Release[]>({
     queryKey: ["/api/releases"],
+  });
+
+  const { data: allTasks = [] } = useQuery({
+    queryKey: ["/api/checklist-tasks"],
   });
 
   const { data: settings } = useQuery({
@@ -351,87 +356,133 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
               
               {!collapsedGroups.has(group.id) && (
                 <div className="ml-5">
-                  {groupReleases.map((release, index) => (
-                  <div
-                    key={release.id}
-                    className={`flex items-center justify-between bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer ${viewType === "Condensed" ? "h-10 p-2" : "h-14 p-3"}`}
-                    style={{ marginBottom: '8px', height: viewType === "Condensed" ? '40px' : '56px' }}
-                    onClick={() => {
-                      console.log('Sidebar release clicked:', release.id);
-                      onReleaseEdit(release.id);
-                    }}
-                    draggable={true}
-                    onDragStart={(e) => {
-                      e.dataTransfer.setData("text/plain", release.id);
-                      e.dataTransfer.setData("sourceGroupId", group.id);
-                      e.dataTransfer.setData("sourceIndex", index.toString());
-                    }}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      const draggedReleaseId = e.dataTransfer.getData("text/plain");
-                      const sourceGroupId = e.dataTransfer.getData("sourceGroupId");
-                      const sourceIndex = parseInt(e.dataTransfer.getData("sourceIndex"));
-                      
-                      if (draggedReleaseId !== release.id) {
-                        console.log('Reordering release:', { draggedReleaseId, targetReleaseId: release.id, sourceGroupId, targetGroupId: group.id });
-                        // Here you would implement the reordering logic
-                        // For now, just log it
-                      }
-                    }}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div 
-                        className={`${viewType === "Condensed" ? "w-6 h-6" : "w-8 h-8"} rounded-lg flex items-center justify-center`}
-                        style={{ backgroundColor: `${group.color}20` }}
-                      >
-                        {release.icon.startsWith('lucide-') ? (
-                          (() => {
-                            const iconName = release.icon.replace('lucide-', '');
-                            const iconMap: Record<string, React.ComponentType<any>> = {
-                              Box, Briefcase, Building, Calculator, Calendar, BarChart3, LineChart, 
-                              Clipboard, Database, File, Folder, Globe, TrendingUp, Users, 
-                              Settings, Shield, Target, PieChart, FileText, FolderOpen, Archive,
-                              Code, Cpu, HardDrive, Laptop, Monitor, Mouse, Phone, Router, 
-                              Server, Smartphone, Tablet, Wifi, Battery, Bluetooth, Camera, 
-                              Headphones, Keyboard, Zap, Power, Usb,
-                              Edit, Hammer, Key, Lock, Wand2, RefreshCw, Save, 
-                              Wrench, Trash, Unlock, Paintbrush, Scissors, Ruler, 
-                              Navigation, Flashlight, Cog,
-                              Mail, MessageCircle, MessageSquare, PhoneCall, Send, Share2, 
-                              Video, Mic, Megaphone, Bell, Radio, Satellite, Rss,
-                              Volume2, Headset, Speaker, MessageSquareMore, AtSign, Hash,
-                              Car, Truck, Plane, Train, Ship, Bike, Bus, 
-                              PlaneTakeoff, PlaneLanding, MapPin, Map, Compass, 
-                              Route, Navigation2, Move, ArrowRight, ArrowUp, ArrowDown,
-                              TreePine, Leaf, Flower, Sun, Moon, Star, Cloud, 
-                              Snowflake, Droplets, Flame, Atom, Dna, Microscope, Telescope, 
-                              TestTube, Magnet, Thermometer, Wind
-                            };
-                            const IconComponent = iconMap[iconName] || Rocket;
-                            return <IconComponent className="w-4 h-4" style={{ color: group.color }} />;
-                          })()
-                        ) : (
-                          <i 
-                            className={`${release.icon} text-sm`}
-                            style={{ color: group.color }}
-                          />
-                        )}
-                      </div>
-                      <div>
-                        <div className={`font-medium text-slate-800 ${viewType === "Condensed" ? "text-sm truncate" : ""}`}>{release.name}</div>
-                        {viewType !== "Condensed" && (
-                          <div className="text-xs text-slate-500">
-                            {new Date(release.startDate).toLocaleDateString()} - {new Date(release.endDate).toLocaleDateString()}
+                  {groupReleases.map((release, index) => {
+                    const releaseTasks = (allTasks as any[]).filter((task: any) => task.releaseId === release.id);
+                    const isExpanded = expandedReleases.has(release.id);
+                    
+                    return (
+                      <div key={release.id} className="mb-2">
+                        <div
+                          className={`flex items-center justify-between bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow ${viewType === "Condensed" ? "h-10 p-2" : "h-14 p-3"}`}
+                          style={{ height: viewType === "Condensed" ? '40px' : '56px' }}
+                          draggable={true}
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData("text/plain", release.id);
+                            e.dataTransfer.setData("sourceGroupId", group.id);
+                            e.dataTransfer.setData("sourceIndex", index.toString());
+                          }}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            const draggedReleaseId = e.dataTransfer.getData("text/plain");
+                            const sourceGroupId = e.dataTransfer.getData("sourceGroupId");
+                            const sourceIndex = parseInt(e.dataTransfer.getData("sourceIndex"));
+                            
+                            if (draggedReleaseId !== release.id) {
+                              console.log('Reordering release:', { draggedReleaseId, targetReleaseId: release.id, sourceGroupId, targetGroupId: group.id });
+                            }
+                          }}
+                        >
+                          <div 
+                            className="flex-1 flex items-center cursor-pointer"
+                            onClick={() => {
+                              console.log('Sidebar release clicked:', release.id);
+                              onReleaseEdit(release.id);
+                            }}
+                          >
+                            <div className="flex items-center space-x-3">
+                              <div 
+                                className={`${viewType === "Condensed" ? "w-6 h-6" : "w-8 h-8"} rounded-lg flex items-center justify-center`}
+                                style={{ backgroundColor: `${group.color}20` }}
+                              >
+                                {release.icon.startsWith('lucide-') ? (
+                                  (() => {
+                                    const iconName = release.icon.replace('lucide-', '');
+                                    const iconMap: Record<string, React.ComponentType<any>> = {
+                                      Box, Briefcase, Building, Calculator, Calendar, BarChart3, LineChart, 
+                                      Clipboard, Database, File, Folder, Globe, TrendingUp, Users, 
+                                      Settings, Shield, Target, PieChart, FileText, FolderOpen, Archive,
+                                      Code, Cpu, HardDrive, Laptop, Monitor, Mouse, Phone, Router, 
+                                      Server, Smartphone, Tablet, Wifi, Battery, Bluetooth, Camera, 
+                                      Headphones, Keyboard, Zap, Power, Usb,
+                                      Edit, Hammer, Key, Lock, Wand2, RefreshCw, Save, 
+                                      Wrench, Trash, Unlock, Paintbrush, Scissors, Ruler, 
+                                      Navigation, Flashlight, Cog,
+                                      Mail, MessageCircle, MessageSquare, PhoneCall, Send, Share2, 
+                                      Video, Mic, Megaphone, Bell, Radio, Satellite, Rss,
+                                      Volume2, Headset, Speaker, MessageSquareMore, AtSign, Hash,
+                                      Car, Truck, Plane, Train, Ship, Bike, Bus, 
+                                      PlaneTakeoff, PlaneLanding, MapPin, Map, Compass, 
+                                      Route, Navigation2, Move, ArrowRight, ArrowUp, ArrowDown,
+                                      TreePine, Leaf, Flower, Sun, Moon, Star, Cloud, 
+                                      Snowflake, Droplets, Flame, Atom, Dna, Microscope, Telescope, 
+                                      TestTube, Magnet, Thermometer, Wind
+                                    };
+                                    const IconComponent = iconMap[iconName] || Rocket;
+                                    return <IconComponent className="w-4 h-4" style={{ color: group.color }} />;
+                                  })()
+                                ) : (
+                                  <i 
+                                    className={`${release.icon} text-sm`}
+                                    style={{ color: group.color }}
+                                  />
+                                )}
+                              </div>
+                              <div>
+                                <div className={`font-medium text-slate-800 ${viewType === "Condensed" ? "text-sm truncate" : ""}`}>{release.name}</div>
+                                {viewType !== "Condensed" && (
+                                  <div className="text-xs text-slate-500">
+                                    {new Date(release.startDate).toLocaleDateString()} - {new Date(release.endDate).toLocaleDateString()}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            {releaseTasks.length > 0 && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const newExpanded = new Set(expandedReleases);
+                                  if (newExpanded.has(release.id)) {
+                                    newExpanded.delete(release.id);
+                                  } else {
+                                    newExpanded.add(release.id);
+                                  }
+                                  setExpandedReleases(newExpanded);
+                                }}
+                              >
+                                {isExpanded ? (
+                                  <ChevronDown className="h-3 w-3" />
+                                ) : (
+                                  <ChevronRight className="h-3 w-3" />
+                                )}
+                              </Button>
+                            )}
+                            <div className="text-slate-300 hover:text-slate-500">
+                              <i className="fas fa-grip-vertical" />
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Expanded tasks view */}
+                        {isExpanded && releaseTasks.length > 0 && (
+                          <div className="ml-8 mt-2 space-y-1">
+                            {releaseTasks.map((task: any) => (
+                              <div key={task.id} className="flex items-center space-x-2 p-2 text-xs bg-slate-50 rounded border-l-2" style={{ borderLeftColor: group.color }}>
+                                <div className={`w-2 h-2 rounded-full ${task.completed ? 'bg-green-500' : 'bg-gray-300'}`} />
+                                <span className={task.completed ? 'line-through text-gray-500' : 'text-gray-700'}>{task.title}</span>
+                                <span className="text-gray-400">({task.assignedTo})</span>
+                              </div>
+                            ))}
                           </div>
                         )}
                       </div>
-                    </div>
-                    <div className="text-slate-300 hover:text-slate-500">
-                      <i className="fas fa-grip-vertical" />
-                    </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -475,18 +526,40 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                 
                 {!collapsedGroups.has(group.id) && (
                   <div className="ml-5">
-                    {groupReleases.map((release, releaseIndex) => (
-                      <div key={release.id} className={`${viewType === "Condensed" ? "h-10" : "h-14"}`} style={{ marginBottom: '8px', height: viewType === "Condensed" ? '40px' : '56px' }}>
-                        <TimelineBar
-                          release={release}
-                          group={group}
-                          onEdit={() => onReleaseEdit(release.id)}
-                          viewMode={viewMode}
-                          viewType={viewType}
-                          timelineLabels={timelineData.labels}
-                        />
-                      </div>
-                    ))}
+                    {groupReleases.map((release, releaseIndex) => {
+                      const releaseTasks = (allTasks as any[]).filter((task: any) => task.releaseId === release.id);
+                      const isExpanded = expandedReleases.has(release.id);
+                      
+                      return (
+                        <div key={release.id} className="mb-2">
+                          <div className={`${viewType === "Condensed" ? "h-10" : "h-14"}`} style={{ height: viewType === "Condensed" ? '40px' : '56px' }}>
+                            <TimelineBar
+                              release={release}
+                              group={group}
+                              onEdit={() => onReleaseEdit(release.id)}
+                              viewMode={viewMode}
+                              viewType={viewType}
+                              timelineLabels={timelineData.labels}
+                            />
+                          </div>
+                          
+                          {/* Expanded tasks view in timeline */}
+                          {isExpanded && releaseTasks.length > 0 && (
+                            <div className="mt-1 space-y-1">
+                              {releaseTasks.map((task: any) => (
+                                <div key={task.id} className="relative" style={{ height: '24px', marginLeft: '0px' }}>
+                                  <div className="flex items-center space-x-2 p-1 text-xs bg-slate-50 rounded border-l-2 h-6" style={{ borderLeftColor: group.color }}>
+                                    <div className={`w-2 h-2 rounded-full ${task.completed ? 'bg-green-500' : 'bg-gray-300'} ml-2`} />
+                                    <span className={task.completed ? 'line-through text-gray-500' : 'text-gray-700'}>{task.title}</span>
+                                    <span className="text-gray-400">({task.assignedTo})</span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
