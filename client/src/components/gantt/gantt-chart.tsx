@@ -562,9 +562,10 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                             />
                           </div>
                           
-                          {/* Expanded tasks view in timeline - grouped by assignee */}
+                          {/* Expanded tasks view in timeline - positioned to align with timeline bars */}
                           {isExpanded && releaseTasks.length > 0 && (
-                            <div className="space-y-2" style={{ 
+                            <div className="space-y-1" style={{ 
+                              width: '100%',
                               paddingLeft: '0px',
                               marginLeft: '0px'
                             }}>
@@ -577,23 +578,21 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                                   return groups;
                                 }, {})
                               ).map(([assignee, tasks]: [string, any]) => (
-                                <div key={assignee} className="space-y-1">
-                                  <div className="text-xs font-medium text-gray-600 flex items-center space-x-2">
+                                <div key={assignee}>
+                                  <div className="text-xs font-medium text-gray-600 flex items-center space-x-2 mb-1">
                                     <div className="w-1 h-3 rounded" style={{ backgroundColor: group.color }} />
                                     <span>{assignee}</span>
                                   </div>
-                                  <div className="ml-3 space-y-1">
-                                    {(tasks as any[]).map((task: any) => (
-                                      <div key={task.id} className="relative h-6">
-                                        <div className="flex items-center space-x-2 p-1 text-xs bg-slate-50 rounded h-6">
-                                          <div className={`w-2 h-2 rounded-full ${task.completed ? 'bg-green-500' : 'bg-gray-300'}`} />
-                                          <span className={task.completed ? 'line-through text-gray-500' : 'text-gray-700'}>
-                                            {task.taskTitle}
-                                          </span>
-                                        </div>
+                                  {(tasks as any[]).map((task: any) => (
+                                    <div key={task.id} className="ml-3 mb-1">
+                                      <div className="flex items-center space-x-2 p-1 text-xs bg-slate-50 rounded h-6">
+                                        <div className={`w-2 h-2 rounded-full ${task.completed ? 'bg-green-500' : 'bg-gray-300'}`} />
+                                        <span className={task.completed ? 'line-through text-gray-500' : 'text-gray-700'}>
+                                          {task.taskTitle}
+                                        </span>
                                       </div>
-                                    ))}
-                                  </div>
+                                    </div>
+                                  ))}
                                 </div>
                               ))}
                             </div>
