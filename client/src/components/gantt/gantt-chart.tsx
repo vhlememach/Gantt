@@ -564,9 +564,9 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                           
                           {/* Expanded tasks view in timeline - grouped by assignee */}
                           {isExpanded && releaseTasks.length > 0 && (
-                            <div className="mt-1 space-y-2 relative" style={{ 
-                              marginLeft: '16px',
-                              width: 'calc(100% - 16px)'
+                            <div className="space-y-2" style={{ 
+                              paddingLeft: '0px',
+                              marginLeft: '0px'
                             }}>
                               {/* Group tasks by assignee */}
                               {Object.entries(
@@ -578,7 +578,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                                 }, {})
                               ).map(([assignee, tasks]: [string, any]) => (
                                 <div key={assignee} className="space-y-1">
-                                  <div className="text-xs font-medium text-gray-600 flex items-center space-x-2 pl-2">
+                                  <div className="text-xs font-medium text-gray-600 flex items-center space-x-2">
                                     <div className="w-1 h-3 rounded" style={{ backgroundColor: group.color }} />
                                     <span>{assignee}</span>
                                   </div>
