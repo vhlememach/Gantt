@@ -277,19 +277,19 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
   });
 
   return (
-    <div className={`relative w-full`} style={{ height: viewType === "Condensed" ? '40px' : '56px' }}> {/* Container height matches sidebar items */}
+    <div className="relative w-full h-full flex items-center"> {/* Center the bar vertically */}
       <div
         ref={barRef}
-        className={`absolute ${viewType === "Condensed" ? "h-8" : "h-12"} rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all duration-200 z-10`}
+        className={`absolute ${viewType === "Condensed" ? "h-7" : "h-10"} rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all duration-200 z-10`}
         style={{
           left: `${leftPosition}%`,
           width: `${width}%`,
-          top: '0px',
+          top: '50%',
+          transform: 'translateY(-50%)', // Center the bar vertically
           background: group.gradientEnabled === "true" 
             ? `linear-gradient(135deg, ${group.color}, ${group.gradientSecondaryColor || '#FFFFFF'})`
             : group.color,
           minWidth: '120px', // Ensure minimum width for content
-          height: viewType === "Condensed" ? '32px' : '40px',
           outline: release.highPriority ? `2px solid #dc2626` : 'none',
           outlineOffset: release.highPriority ? '2px' : '0'
         }}

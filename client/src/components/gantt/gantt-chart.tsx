@@ -364,7 +364,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                     return (
                       <div key={release.id} className="mb-2">
                         <div
-                          className={`flex items-center justify-between bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow ${viewType === "Condensed" ? "h-10 p-2" : "h-14 p-3"}`}
+                          className={`flex items-center justify-between bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow ${viewType === "Condensed" ? "min-h-[40px] p-2" : "min-h-[56px] p-3"}`}
                           draggable={true}
                           onDragStart={(e) => {
                             e.dataTransfer.setData("text/plain", release.id);
@@ -521,8 +521,8 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                       
                       return (
                         <div key={release.id} className="mb-2">
-                          {/* Timeline bar - exact same height as sidebar item */}
-                          <div className={`${viewType === "Condensed" ? "h-10" : "h-14"} flex items-center`}>
+                          {/* Timeline bar - centered with sidebar item */}
+                          <div className={`${viewType === "Condensed" ? "min-h-[40px]" : "min-h-[56px]"} flex items-center justify-center py-1`}>
                             <TimelineBar
                               release={release}
                               group={group}
