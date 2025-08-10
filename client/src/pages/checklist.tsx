@@ -196,7 +196,7 @@ export default function ChecklistPage() {
             const completedCount = memberTasksCount.filter(task => task.completed).length;
             const priorityCount = memberTasksCount.filter(task => {
               const release = releases.find(r => r.id === task.releaseId);
-              return release?.highPriority || false;
+              return (release?.highPriority || false) && !task.completed; // Only count incomplete priority tasks
             }).length;
             
             return (
