@@ -116,6 +116,19 @@ export default function ChecklistPage() {
     });
   };
 
+  // Calculate days remaining for a release
+  const getDaysRemaining = (releaseId: string) => {
+    const release = releases.find(r => r.id === releaseId);
+    if (!release) return 0;
+    
+    const now = new Date();
+    const endDate = new Date(release.endDate);
+    const diffTime = endDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return Math.max(0, diffDays);
+  };
+
   // Export functionality
   const exportChecklist = (member: string) => {
     const memberTasks = allTasks.filter(task => task.assignedTo === member);
@@ -258,22 +271,40 @@ export default function ChecklistPage() {
                 </CardContent>
               </Card>
 
-              {/* Tasks by Release */}
-              {Object.entries(tasksByRelease).map(([releaseId, tasks]) => {
+              {/* Tasks by Release - sorted by priority */}
+              {Object.entries(tasksByRelease)
+                .sort(([releaseIdA], [releaseIdB]) => {
+                  const releaseA = releases.find(r => r.id === releaseIdA);
+                  const releaseB = releases.find(r => r.id === releaseIdB);
+                  const priorityA = releaseA?.highPriority ? 1 : 0;
+                  const priorityB = releaseB?.highPriority ? 1 : 0;
+                  return priorityB - priorityA; // High priority first
+                })
+                .map(([releaseId, tasks]) => {
                 const release = releases.find(r => r.id === releaseId);
                 const releaseProgress = getReleaseProgress(releaseId);
                 const memberSortOption = sortBy[member] || "priority";
                 const sortedTasks = getSortedTasks(tasks, memberSortOption);
+                const daysRemaining = getDaysRemaining(releaseId);
+                const isHighPriority = release?.highPriority || false;
                 
                 return (
-                  <Card key={releaseId}>
+                  <Card 
+                    key={releaseId}
+                    className={isHighPriority ? 'ring-2 ring-red-400 ring-opacity-60' : ''}
+                  >
                     <CardHeader>
                       <CardTitle className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
                           <span>{release?.name || 'Unassigned Tasks'}</span>
-                          <Badge variant={releaseProgress === 100 ? "default" : "outline"}>
-                            {releaseProgress}% Complete
-                          </Badge>
+                          <div className="flex items-center space-x-2">
+                            <Badge variant={releaseProgress === 100 ? "default" : "outline"}>
+                              {releaseProgress}% Complete
+                            </Badge>
+                            <Badge variant="secondary" className="text-xs">
+                              {daysRemaining} days remaining
+                            </Badge>
+                          </div>
                         </div>
                         <div className="flex items-center space-x-4">
                           <div className="flex items-center space-x-2">
