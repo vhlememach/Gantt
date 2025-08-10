@@ -365,7 +365,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
       <div className="grid flex-1 overflow-hidden" style={{ gridTemplateColumns: `${sidebarWidth}px 1fr` }}>
         {/* Sidebar Content */}
         <div className="bg-slate-50 border-r border-slate-200 overflow-y-auto">
-          <div className="p-4 pt-4">
+          <div className="p-4 pt-4 pb-16">
             {releasesByGroup.map(({ group, releases: groupReleases }) => (
               <div key={group.id} className="mb-6">
                 {/* Group header */}
@@ -535,7 +535,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
         {/* Timeline Content */}
         <div className="overflow-x-auto overflow-y-auto">
           <div className="min-w-max relative" style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top left' }}>
-            <div className="p-4 pt-4">
+            <div className="p-4 pt-4 pb-16">
               {releasesByGroup.map(({ group, releases: groupReleases }) => (
                 <div key={group.id} className="mb-6">
                   {/* Group header - IDENTICAL to sidebar */}
@@ -595,15 +595,14 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                               const estimatedHeight = Math.max(120, (taskCount * 35) + 80); // 35px per task + padding
                               
                               return (
-                                <div className="w-full relative mb-2" style={{ minHeight: `${estimatedHeight}px` }}>
+                                <div className="w-full mb-4">
                                   <div 
-                                    className="bg-gray-50 border border-gray-200 p-3 rounded-md shadow-sm absolute top-0"
+                                    className="bg-gray-50 border border-gray-200 p-4 rounded-md shadow-sm mb-6"
                                     style={{
-                                      left: `${Math.max(0, leftPercent)}%`,
+                                      marginLeft: `${Math.max(0, leftPercent)}%`,
                                       width: `${Math.max(25, widthPercent)}%`,
                                       minWidth: '280px',
-                                      maxWidth: '90%',
-                                      zIndex: 10
+                                      maxWidth: '90%'
                                     }}
                                   >
                                     {Object.entries(
