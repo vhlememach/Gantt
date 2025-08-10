@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Calendar, CalendarDays } from "lucide-react";
+import { Calendar, CalendarDays, Trash2 } from "lucide-react";
 import { IconPicker } from "@/components/ui/icon-picker";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -151,6 +151,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
         icon: "lucide-rocket",
         responsible: "",
         status: "upcoming",
+        highPriority: false
       });
       onClose();
     },
@@ -188,7 +189,32 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
     },
   });
 
+  // Delete Release Mutation
+  const deleteReleaseMutation = useMutation({
+    mutationFn: async () => {
+      if (!releaseId) throw new Error("No release ID provided");
+      const response = await apiRequest("DELETE", `/api/releases/${releaseId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/releases"] });
+      queryClient.refetchQueries({ queryKey: ["/api/releases"] });
+      toast({ title: "Release deleted successfully" });
+      onClose();
+    },
+    onError: (error) => {
+      console.error('Delete error:', error);
+      toast({ title: "Failed to delete release", variant: "destructive" });
+    },
+  });
 
+  const handleDelete = () => {
+    if (!releaseId) return;
+    
+    if (window.confirm("Are you sure you want to delete this release? This action cannot be undone.")) {
+      deleteReleaseMutation.mutate();
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -344,16 +370,35 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
             onChange={(icon) => setFormData(prev => ({ ...prev, icon }))}
           />
 
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              disabled={createReleaseMutation.isPending || updateReleaseMutation.isPending}
-            >
-              {releaseId ? "Update Release" : "Create Release"}
-            </Button>
+          <div className="flex justify-between items-center pt-4">
+            {/* Delete button - only show when editing existing release */}
+            <div>
+              {releaseId && (
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={handleDelete}
+                  disabled={deleteReleaseMutation.isPending}
+                  className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </Button>
+              )}
+            </div>
+            
+            {/* Cancel and Save buttons */}
+            <div className="flex space-x-3">
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={createReleaseMutation.isPending || updateReleaseMutation.isPending || deleteReleaseMutation.isPending}
+              >
+                {releaseId ? "Update Release" : "Create Release"}
+              </Button>
+            </div>
           </div>
         </form>
       </DialogContent>
