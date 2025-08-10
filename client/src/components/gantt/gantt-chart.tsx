@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { 
   ChevronDown, ChevronRight,
@@ -311,10 +311,68 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
 
   const currentDayPosition = getCurrentDayPosition();
 
+  // Create flattened list of all releases with their positions
+  const flattenedReleases = useMemo(() => {
+    let currentTop = 16 + 16 + 20; // padding + header + mb-4 (converted to px)
+    const items: Array<{
+      type: 'group' | 'release';
+      id: string;
+      data: any;
+      top: number;
+      height: number;
+      groupId?: string;
+    }> = [];
+    
+    releasesByGroup.forEach(({ group, releases: groupReleases }) => {
+      // Group header
+      items.push({
+        type: 'group',
+        id: group.id,
+        data: { group, releases: groupReleases },
+        top: currentTop,
+        height: 48 // h-12 = 48px
+      });
+      currentTop += 48 + 12; // height + mb-3 (12px)
+      
+      if (!collapsedGroups.has(group.id)) {
+        // Add ml-5 (20px offset for releases)
+        groupReleases.forEach((release, index) => {
+          items.push({
+            type: 'release',
+            id: release.id,
+            data: release,
+            top: currentTop,
+            height: viewType === "Condensed" ? 40 : 56, // h-10 or h-14
+            groupId: group.id
+          });
+          currentTop += (viewType === "Condensed" ? 40 : 56) + 8; // height + space-y-2 (8px)
+          
+          // Add space for expanded tasks
+          const releaseTasks = (allTasks as any[]).filter((task: any) => task.releaseId === release.id);
+          if (expandedReleases.has(release.id) && releaseTasks.length > 0) {
+            // Calculate approximate height of task list
+            const taskGroupsCount = Object.keys(
+              releaseTasks.reduce((groups: any, task: any) => {
+                if (!groups[task.assignedTo]) groups[task.assignedTo] = [];
+                groups[task.assignedTo].push(task);
+                return groups;
+              }, {})
+            ).length;
+            const taskHeight = releaseTasks.length * 24 + taskGroupsCount * 20 + 16; // approximate
+            currentTop += taskHeight;
+          }
+        });
+      }
+      currentTop += 24; // mb-6
+    });
+    
+    return items;
+  }, [releasesByGroup, collapsedGroups, expandedReleases, viewType, allTasks]);
+
   return (
-    <div className="h-full grid grid-cols-[320px_1fr]">
+    <div className="h-full flex">
       {/* Left Panel - Release List */}
-      <div className="bg-slate-50 border-r border-slate-200 overflow-y-auto">
+      <div className="w-80 bg-slate-50 border-r border-slate-200 overflow-y-auto">
         <div className="p-4">
           <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-4">
             Release Groups
@@ -480,7 +538,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
       </div>
 
       {/* Right Panel - Timeline */}
-      <div className="overflow-x-auto">
+      <div className="flex-1 overflow-x-auto">
         <div className="min-w-max" style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top left' }}>
           {/* Timeline Header */}
           <div className="h-16 bg-slate-100 border-b border-slate-200 flex items-center px-4">
@@ -498,12 +556,20 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
             </div>
           </div>
 
-          {/* Timeline Body - Mirror sidebar structure exactly */}
-          <div className="p-4">
-            {releasesByGroup.map(({ group, releases: groupReleases }) => (
-              <div key={group.id} className="mb-6">
-                {/* Group header - exact same height as sidebar */}
-                <div className="flex items-center mb-3 h-12">
+          {/* Timeline Body - Absolute positioned bars */}
+          <div className="relative" style={{ height: flattenedReleases.length > 0 ? `${Math.max(...flattenedReleases.map(item => item.top + item.height)) + 100}px` : '600px' }}>
+            {/* Group headers */}
+            {flattenedReleases.filter(item => item.type === 'group').map((groupItem) => {
+              const { group } = groupItem.data;
+              return (
+                <div
+                  key={`group-${group.id}`}
+                  className="absolute left-4 flex items-center"
+                  style={{
+                    top: `${groupItem.top}px`,
+                    height: `${groupItem.height}px`
+                  }}
+                >
                   <div className="flex items-center space-x-2">
                     <div 
                       className="w-3 h-3 rounded-full" 
@@ -512,64 +578,85 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                     <h4 className="font-semibold text-slate-700">{group.name}</h4>
                   </div>
                 </div>
-                
-                {!collapsedGroups.has(group.id) && (
-                  <div className="ml-5 space-y-2">
-                    {groupReleases.map((release, releaseIndex) => {
-                      const releaseTasks = (allTasks as any[]).filter((task: any) => task.releaseId === release.id);
-                      const isExpanded = expandedReleases.has(release.id);
-                      
-                      return (
-                        <div key={release.id}>
-                          {/* Timeline bar - exact same height as sidebar item */}
-                          <div className={`${viewType === "Condensed" ? "h-10" : "h-14"} flex items-center`}>
-                            <TimelineBar
-                              release={release}
-                              group={group}
-                              onEdit={() => onReleaseEdit(release.id)}
-                              viewMode={viewMode}
-                              viewType={viewType}
-                              timelineLabels={timelineData.labels}
-                            />
+              );
+            })}
+
+            {/* Timeline bars */}
+            {flattenedReleases.filter(item => item.type === 'release').map((releaseItem) => {
+              const release = releaseItem.data;
+              const group = releasesByGroup.find(g => g.group.id === releaseItem.groupId)?.group;
+              if (!group) return null;
+
+              return (
+                <div
+                  key={`timeline-${release.id}`}
+                  className="absolute"
+                  style={{
+                    top: `${releaseItem.top}px`,
+                    left: '20px', // ml-5 equivalent
+                    right: '16px',
+                    height: `${releaseItem.height}px`
+                  }}
+                >
+                  <TimelineBar
+                    release={release}
+                    group={group}
+                    onEdit={() => onReleaseEdit(release.id)}
+                    viewMode={viewMode}
+                    viewType={viewType}
+                    timelineLabels={timelineData.labels}
+                  />
+                </div>
+              );
+            })}
+
+            {/* Expanded tasks */}
+            {flattenedReleases.filter(item => item.type === 'release').map((releaseItem) => {
+              const release = releaseItem.data;
+              const group = releasesByGroup.find(g => g.group.id === releaseItem.groupId)?.group;
+              const releaseTasks = (allTasks as any[]).filter((task: any) => task.releaseId === release.id);
+              const isExpanded = expandedReleases.has(release.id);
+              
+              if (!group || !isExpanded || releaseTasks.length === 0) return null;
+
+              return (
+                <div
+                  key={`tasks-${release.id}`}
+                  className="absolute bg-gray-50 p-2 rounded"
+                  style={{
+                    top: `${releaseItem.top + releaseItem.height + 4}px`, // 4px gap
+                    left: '20px', // ml-5 equivalent
+                    right: '16px'
+                  }}
+                >
+                  {Object.entries(
+                    releaseTasks.reduce((groups: any, task: any) => {
+                      const assignee = task.assignedTo;
+                      if (!groups[assignee]) groups[assignee] = [];
+                      groups[assignee].push(task);
+                      return groups;
+                    }, {})
+                  ).map(([assignee, tasks]: [string, any]) => (
+                    <div key={assignee} className="mb-2 last:mb-0">
+                      <div className="text-xs font-medium text-gray-600 flex items-center space-x-2 mb-1">
+                        <div className="w-1 h-3 rounded" style={{ backgroundColor: group.color }} />
+                        <span>{assignee}</span>
+                      </div>
+                      {(tasks as any[]).map((task: any) => (
+                        <div key={task.id} className="ml-3 mb-1">
+                          <div className="flex items-center space-x-2 text-xs">
+                            <div className={`w-2 h-2 rounded-full ${task.completed ? 'bg-green-500' : 'bg-gray-300'}`} />
+                            <span className={task.completed ? 'line-through text-gray-500' : 'text-gray-700'}>
+                              {task.taskTitle}
+                            </span>
                           </div>
-                          
-                          {/* Tasks directly below the bar */}
-                          {isExpanded && releaseTasks.length > 0 && (
-                            <div className="bg-gray-50 p-2 rounded mb-2">
-                              {Object.entries(
-                                releaseTasks.reduce((groups: any, task: any) => {
-                                  const assignee = task.assignedTo;
-                                  if (!groups[assignee]) groups[assignee] = [];
-                                  groups[assignee].push(task);
-                                  return groups;
-                                }, {})
-                              ).map(([assignee, tasks]: [string, any]) => (
-                                <div key={assignee} className="mb-2 last:mb-0">
-                                  <div className="text-xs font-medium text-gray-600 flex items-center space-x-2 mb-1">
-                                    <div className="w-1 h-3 rounded" style={{ backgroundColor: group.color }} />
-                                    <span>{assignee}</span>
-                                  </div>
-                                  {(tasks as any[]).map((task: any) => (
-                                    <div key={task.id} className="ml-3 mb-1">
-                                      <div className="flex items-center space-x-2 text-xs">
-                                        <div className={`w-2 h-2 rounded-full ${task.completed ? 'bg-green-500' : 'bg-gray-300'}`} />
-                                        <span className={task.completed ? 'line-through text-gray-500' : 'text-gray-700'}>
-                                          {task.taskTitle}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              ))}
-                            </div>
-                          )}
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            ))}
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
           </div>
 
           {/* Timeline Grid Lines */}
