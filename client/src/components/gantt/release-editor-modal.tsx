@@ -11,7 +11,7 @@ import { Calendar, CalendarDays, Trash2 } from "lucide-react";
 import { IconPicker } from "@/components/ui/icon-picker";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { Release, ReleaseGroup } from "@shared/schema";
+import type { Release, ReleaseGroup, WaterfallCycle } from "@shared/schema";
 
 interface ReleaseEditorModalProps {
   isOpen: boolean;
@@ -48,7 +48,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
     enabled: isOpen && !!releaseId,
   });
 
-  const { data: waterfallCycles = [] } = useQuery({
+  const { data: waterfallCycles = [] } = useQuery<WaterfallCycle[]>({
     queryKey: ["/api/waterfall-cycles"],
     enabled: isOpen,
   });
@@ -397,13 +397,13 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
 
           <div>
             <Label htmlFor="waterfallCycleId">Waterfall Cycle (optional)</Label>
-            <Select value={formData.waterfallCycleId} onValueChange={(value) => setFormData(prev => ({ ...prev, waterfallCycleId: value }))}>
+            <Select value={formData.waterfallCycleId || "none"} onValueChange={(value) => setFormData(prev => ({ ...prev, waterfallCycleId: value === "none" ? "" : value }))}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a waterfall cycle" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">None</SelectItem>
-                {waterfallCycles.map((cycle: any) => (
+                <SelectItem value="none">None</SelectItem>
+                {waterfallCycles.map((cycle) => (
                   <SelectItem key={cycle.id} value={cycle.id}>
                     {cycle.name}
                   </SelectItem>

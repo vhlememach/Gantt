@@ -25,7 +25,7 @@ export function Navigation({ className }: NavigationProps) {
   ];
 
   return (
-    <nav className={cn("flex items-center space-x-6", className)}>
+    <nav className={cn("flex items-center space-x-3", className)}>
       {navigationItems.map((item) => {
         const isActive = location === item.path || (item.path !== "/" && location.startsWith(item.path));
         const Icon = item.icon;
@@ -34,15 +34,15 @@ export function Navigation({ className }: NavigationProps) {
           <Link
             key={item.path}
             href={item.path}
-            className={cn(
-              "flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-              isActive
-                ? "bg-[#7232d9] text-white"
-                : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
-            )}
           >
-            <Icon className="h-4 w-4" />
-            <span>{item.label}</span>
+            <button className={cn(
+              "flex items-center space-x-2 px-3 py-2 rounded text-sm font-medium transition-colors border-0",
+              "bg-white bg-opacity-20 hover:bg-opacity-30 text-white",
+              isActive && "bg-opacity-30"
+            )}>
+              <Icon className="h-4 w-4" />
+              <span>{item.label}</span>
+            </button>
           </Link>
         );
       })}
