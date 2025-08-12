@@ -256,6 +256,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Generate evergreen tasks for all boxes with assigned waterfall cycles
+  app.post("/api/evergreen-tasks/generate", async (req, res) => {
+    try {
+      console.log("Starting evergreen task generation...");
+      
+      const evergreenBoxes = await storage.getEvergreenBoxes();
+      const assignments = await storage.getContentFormatAssignments();
+      const cycles = await storage.getWaterfallCycles();
+      
+      console.log("Found boxes:", evergreenBoxes.length, "assignments:", assignments.length, "cycles:", cycles.length);
+      
+      let tasksCreated = 0;
+      
+      for (const box of evergreenBoxes) {
+        if (box.waterfallCycleId) {
+          const cycle = cycles.find(c => c.id === box.waterfallCycleId);
+          
+          if (cycle) {
+            console.log(`Generating tasks for box "${box.title}" with cycle "${cycle.name}"`);
+            
+            for (const assignment of assignments) {
+              const formatType = assignment.formatType;
+              const requirement = cycle.contentRequirements[formatType] || 0;
+              
+              if (requirement > 0 && assignment.assignedMembers.length > 0) {
+                // Create ONE task per format, assigned to first member
+                const assignedMember = assignment.assignedMembers[0];
+                const taskName = `${box.title} > ${formatType.charAt(0).toUpperCase() + formatType.slice(1)}`;
+                
+                const taskData = {
+                  taskTitle: taskName,
+                  assignedTo: assignedMember,
+                  evergreenBoxId: box.id,
+                  waterfallCycleId: box.waterfallCycleId,
+                  contentFormatType: formatType,
+                  completed: false
+                };
+                
+                console.log("Creating task:", taskData);
+                await storage.createChecklistTask(taskData);
+                tasksCreated++;
+              }
+            }
+          }
+        }
+      }
+      
+      console.log(`Generated ${tasksCreated} evergreen tasks`);
+      res.json({ 
+        message: "Evergreen tasks generated successfully", 
+        tasksCreated 
+      });
+    } catch (error) {
+      console.error("Error generating evergreen tasks:", error);
+      res.status(500).json({ error: "Failed to generate evergreen tasks" });
+    }
+  });
+
   // Waterfall Cycles
   app.get("/api/waterfall-cycles", async (req, res) => {
     try {
