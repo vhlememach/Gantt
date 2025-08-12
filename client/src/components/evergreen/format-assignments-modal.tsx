@@ -73,11 +73,27 @@ export default function FormatAssignmentsModal({ isOpen, onClose }: FormatAssign
         const allTasks = await tasksResponse.json();
         
         // Delete ALL tasks that have either waterfallCycleId OR contentFormatType OR evergreenBoxId
+        // Also delete tasks whose title contains format keywords (backup cleanup)
         const tasksToDelete = allTasks.filter((task: any) => 
-          task.waterfallCycleId || task.contentFormatType || task.evergreenBoxId
+          task.waterfallCycleId || 
+          task.contentFormatType || 
+          task.evergreenBoxId ||
+          (task.taskTitle && (
+            task.taskTitle.toLowerCase().includes('article') ||
+            task.taskTitle.toLowerCase().includes('thread') ||
+            task.taskTitle.toLowerCase().includes('video') ||
+            task.taskTitle.toLowerCase().includes('animation') ||
+            task.taskTitle.toLowerCase().includes('visual')
+          ))
         );
         
-        console.log("Tasks to delete:", tasksToDelete.length, tasksToDelete.map((t: any) => ({ id: t.id, title: t.taskTitle, type: t.evergreenBoxId ? 'evergreen' : 'release' })));
+        console.log("Tasks to delete:", tasksToDelete.length, tasksToDelete.map((t: any) => ({ 
+          id: t.id, 
+          title: t.taskTitle, 
+          type: t.evergreenBoxId ? 'evergreen' : 'release',
+          waterfallCycleId: t.waterfallCycleId,
+          contentFormatType: t.contentFormatType
+        })));
         
         // Delete all tasks sequentially to ensure proper cleanup
         for (const task of tasksToDelete) {
