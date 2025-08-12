@@ -1,15 +1,22 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Settings, Megaphone, Mail, FileText } from "lucide-react";
+import { Plus, Settings, Megaphone, Mail, FileText, Home } from "lucide-react";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Navigation, MobileNavigation } from "@/components/ui/navigation";
+import EvergreenBoxEditorModal from "@/components/evergreen/evergreen-box-editor-modal";
+import WaterfallCyclesModal from "@/components/evergreen/waterfall-cycles-modal";
 import type { EvergreenBox, ReleaseGroup, WaterfallCycle } from "@shared/schema";
 
 interface EvergreenPageProps {}
 
 export default function EvergreenPage({}: EvergreenPageProps) {
   const [selectedGroupId, setSelectedGroupId] = useState<string>("");
+  const [isBoxModalOpen, setIsBoxModalOpen] = useState(false);
+  const [isCyclesModalOpen, setIsCyclesModalOpen] = useState(false);
+  const [editingBoxId, setEditingBoxId] = useState<string | null>(null);
 
   // Fetch data
   const { data: groups = [] } = useQuery<ReleaseGroup[]>({
@@ -49,6 +56,21 @@ export default function EvergreenPage({}: EvergreenPageProps) {
     }
   };
 
+  const handleBoxClick = (boxId: string) => {
+    setEditingBoxId(boxId);
+    setIsBoxModalOpen(true);
+  };
+
+  const handleAddNewBox = () => {
+    setEditingBoxId(null);
+    setIsBoxModalOpen(true);
+  };
+
+  const handleCloseBoxModal = () => {
+    setIsBoxModalOpen(false);
+    setEditingBoxId(null);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
@@ -56,22 +78,40 @@ export default function EvergreenPage({}: EvergreenPageProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                Evergreen Content
-              </h1>
+              <div className="flex items-center space-x-6">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                  Evergreen Content
+                </h1>
+                
+                {/* Navigation */}
+                <div className="hidden md:block">
+                  <Navigation />
+                </div>
+              </div>
               <p className="mt-2 text-gray-600 dark:text-gray-300">
                 Monthly recurring content requirements and campaigns
               </p>
             </div>
             <div className="flex items-center space-x-3">
+              <Link href="/">
+                <Button 
+                  variant="outline" 
+                  className="flex items-center space-x-2"
+                >
+                  <Home className="h-4 w-4" />
+                  <span>Back to Gantt</span>
+                </Button>
+              </Link>
               <Button 
                 variant="outline" 
+                onClick={() => setIsCyclesModalOpen(true)}
                 className="flex items-center space-x-2"
               >
                 <Settings className="h-4 w-4" />
                 <span>Manage Waterfall Cycles</span>
               </Button>
               <Button 
+                onClick={handleAddNewBox}
                 className="bg-[#7232d9] hover:bg-[#6028c5] text-white flex items-center space-x-2"
               >
                 <Plus className="h-4 w-4" />
@@ -105,6 +145,7 @@ export default function EvergreenPage({}: EvergreenPageProps) {
               {groupBoxes.map((box) => (
                 <Card 
                   key={box.id}
+                  onClick={() => handleBoxClick(box.id)}
                   className="hover:shadow-lg transition-shadow duration-200 cursor-pointer border-l-4"
                   style={{ borderLeftColor: group.color }}
                 >
@@ -156,7 +197,10 @@ export default function EvergreenPage({}: EvergreenPageProps) {
               ))}
 
               {/* Add New Box Card */}
-              <Card className="border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 transition-colors duration-200 cursor-pointer">
+              <Card 
+                onClick={handleAddNewBox}
+                className="border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 transition-colors duration-200 cursor-pointer"
+              >
                 <CardContent className="flex flex-col items-center justify-center h-full min-h-[200px] text-center">
                   <Plus className="h-8 w-8 text-gray-400 dark:text-gray-500 mb-3" />
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
@@ -182,6 +226,7 @@ export default function EvergreenPage({}: EvergreenPageProps) {
                 Get started by creating your first evergreen content box. These represent ongoing monthly content requirements.
               </p>
               <Button 
+                onClick={handleAddNewBox}
                 className="bg-[#7232d9] hover:bg-[#6028c5] text-white"
               >
                 <Plus className="h-4 w-4 mr-2" />
@@ -190,6 +235,23 @@ export default function EvergreenPage({}: EvergreenPageProps) {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Modals */}
+      <EvergreenBoxEditorModal
+        isOpen={isBoxModalOpen}
+        onClose={handleCloseBoxModal}
+        boxId={editingBoxId}
+      />
+      
+      <WaterfallCyclesModal
+        isOpen={isCyclesModalOpen}
+        onClose={() => setIsCyclesModalOpen(false)}
+      />
+
+      {/* Mobile Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 md:hidden">
+        <MobileNavigation />
       </div>
     </div>
   );
