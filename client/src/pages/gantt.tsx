@@ -157,20 +157,32 @@ export default function GanttPage() {
               if (data.evergreenBoxes) {
                 console.log("Importing evergreen boxes:", data.evergreenBoxes.length);
                 data.evergreenBoxes.forEach((box: any) => {
-                  // Clean up evergreen box data
+                  // Map the old group ID to the new group ID
+                  const newGroupId = groupMapping[box.groupId] || Object.values(groupMapping)[0] || null;
+                  // Clean up evergreen box data - remove ID to let server generate new ones
                   const cleanBox = {
-                    id: box.id,
                     title: box.title,
                     description: box.description || '',
-                    recurringFrequency: box.recurringFrequency,
-                    waterfallCycleId: box.waterfallCycleId || null
+                    responsible: box.responsible || '',
+                    groupId: newGroupId,
+                    waterfallCycleId: box.waterfallCycleId || null,
+                    icon: box.icon || 'lucide-box',
+                    url: box.url || null
                   };
                   releasePromises.push(
                     fetch('/api/evergreen-boxes', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify(cleanBox)
-                    }).then(r => { console.log("Evergreen box imported:", r.status); return r; })
+                    }).then(async (r) => {
+                      if (!r.ok) {
+                        const error = await r.text();
+                        console.error("Evergreen box import failed:", r.status, error, cleanBox);
+                      } else {
+                        console.log("Evergreen box imported:", r.status);
+                      }
+                      return r;
+                    })
                   );
                 });
               }
@@ -183,8 +195,8 @@ export default function GanttPage() {
               if (data.contentFormatAssignments) {
                 console.log("Importing format assignments:", data.contentFormatAssignments.length);
                 data.contentFormatAssignments.forEach((assignment: any) => {
+                  // Remove ID to let server generate new ones
                   const cleanAssignment = {
-                    id: assignment.id,
                     formatType: assignment.formatType,
                     assignedMembers: Array.isArray(assignment.assignedMembers) 
                       ? assignment.assignedMembers 
@@ -202,19 +214,50 @@ export default function GanttPage() {
 
               if (data.checklistTasks) {
                 console.log("Importing checklist tasks:", data.checklistTasks.length);
+                
+                // Get newly created releases and evergreen boxes to map old IDs to new IDs
+                const [newReleases, newEvergreenBoxes] = await Promise.all([
+                  fetch('/api/releases').then(r => r.json()),
+                  fetch('/api/evergreen-boxes').then(r => r.json())
+                ]);
+                
+                // Create mapping for release IDs
+                const releaseMapping: { [oldId: string]: string } = {};
+                if (data.releases && newReleases) {
+                  data.releases.forEach((oldRelease: any, index: number) => {
+                    if (newReleases[index]) {
+                      releaseMapping[oldRelease.id] = newReleases[index].id;
+                    }
+                  });
+                }
+                
+                // Create mapping for evergreen box IDs
+                const evergreenMapping: { [oldId: string]: string } = {};
+                if (data.evergreenBoxes && newEvergreenBoxes) {
+                  data.evergreenBoxes.forEach((oldBox: any, index: number) => {
+                    if (newEvergreenBoxes[index]) {
+                      evergreenMapping[oldBox.id] = newEvergreenBoxes[index].id;
+                    }
+                  });
+                }
+                
                 data.checklistTasks.forEach((task: any) => {
+                  // Map old IDs to new IDs
+                  const newReleaseId = task.releaseId ? releaseMapping[task.releaseId] : null;
+                  const newEvergreenId = task.evergreenBoxId ? evergreenMapping[task.evergreenBoxId] : null;
+                  
+                  // Remove ID and fix field names to match schema
                   const cleanTask = {
-                    id: task.id,
                     taskTitle: task.taskTitle,
-                    description: task.description || '',
+                    taskDescription: task.taskDescription || task.description || '',
                     assignedTo: task.assignedTo,
-                    releaseId: task.releaseId || null,
-                    evergreenBoxId: task.evergreenBoxId || null,
+                    releaseId: newReleaseId,
+                    evergreenBoxId: newEvergreenId,
                     waterfallCycleId: task.waterfallCycleId || null,
                     contentFormatType: task.contentFormatType || null,
-                    isCompleted: task.isCompleted === true || task.isCompleted === 'true',
-                    dueDate: task.dueDate || null,
-                    priority: task.priority || 'medium'
+                    completed: task.completed === true || task.completed === 'true' || task.isCompleted === true || task.isCompleted === 'true',
+                    priority: task.priority === true || task.priority === 'true' || task.priority === 'high',
+                    taskUrl: task.taskUrl || null
                   };
                   finalPromises.push(
                     fetch('/api/checklist-tasks', {
