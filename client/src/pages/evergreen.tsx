@@ -56,64 +56,8 @@ export default function EvergreenPage({}: EvergreenPageProps) {
     return Math.round((completedTasks / boxTasks.length) * 100);
   };
 
-  // Auto-generate tasks for boxes with waterfall cycles but no tasks
-  useEffect(() => {
-    const autoGenerateTasks = async () => {
-      if (boxes.length > 0 && waterfallCycles.length > 0) {
-        for (const box of boxes) {
-          if (box.waterfallCycleId) {
-            const existingTasks = allTasks.filter(task => task.evergreenBoxId === box.id);
-            if (existingTasks.length === 0) {
-              // This box has a waterfall cycle but no tasks, generate them
-              try {
-                const cycle = waterfallCycles.find(c => c.id === box.waterfallCycleId);
-                if (!cycle) continue;
-
-                // Get format assignments
-                const assignmentsResponse = await fetch("/api/content-format-assignments");
-                const assignments = await assignmentsResponse.json();
-
-                // Generate tasks for each format type based on assignments
-                for (const assignment of assignments) {
-                  const formatType = assignment.formatType;
-                  const requirement = cycle.contentRequirements[formatType] || 0;
-                  
-                  if (requirement > 0) {
-                    // Create tasks for each assigned member
-                    for (const member of assignment.assignedMembers) {
-                      const taskName = `${box.title} > ${formatType.charAt(0).toUpperCase() + formatType.slice(1)}`;
-                      
-                      const taskPayload = {
-                        taskTitle: taskName,
-                        assignedTo: member,
-                        evergreenBoxId: box.id,
-                        waterfallCycleId: box.waterfallCycleId,
-                        contentFormatType: formatType,
-                        completed: false
-                      };
-
-                      await fetch("/api/checklist-tasks", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(taskPayload),
-                      });
-                    }
-                  }
-                }
-              } catch (error) {
-                console.error(`Auto-generate tasks failed for box ${box.id}:`, error);
-              }
-            }
-          }
-        }
-        
-        // Refresh tasks after generation
-        queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
-      }
-    };
-
-    autoGenerateTasks();
-  }, [boxes, waterfallCycles, allTasks, queryClient]);
+  // Remove the problematic auto-generate useEffect to prevent duplicates
+  // Tasks should be generated through proper UI actions only
 
   const getIconComponent = (iconName: string) => {
     switch (iconName) {

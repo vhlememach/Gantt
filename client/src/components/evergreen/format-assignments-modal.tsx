@@ -109,9 +109,96 @@ export default function FormatAssignmentsModal({ isOpen, onClose }: FormatAssign
 
       await Promise.all(promises);
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ["/api/content-format-assignments"] });
       queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
+      
+      // Regenerate tasks for existing boxes and releases with waterfall cycles
+      try {
+        // Get all current data
+        const [boxesResponse, releasesResponse, cyclesResponse] = await Promise.all([
+          fetch("/api/evergreen-boxes"),
+          fetch("/api/releases"),
+          fetch("/api/waterfall-cycles")
+        ]);
+        
+        const boxes = await boxesResponse.json();
+        const releases = await releasesResponse.json();
+        const cycles = await cyclesResponse.json();
+        
+        // Get new assignments
+        const assignmentsResponse = await fetch("/api/content-format-assignments");
+        const assignments = await assignmentsResponse.json();
+        
+        // Regenerate tasks for evergreen boxes
+        for (const box of boxes) {
+          if (box.waterfallCycleId) {
+            const cycle = cycles.find((c: any) => c.id === box.waterfallCycleId);
+            if (cycle) {
+              for (const assignment of assignments) {
+                const formatType = assignment.formatType;
+                const requirement = cycle.contentRequirements[formatType] || 0;
+                
+                if (requirement > 0) {
+                  for (const member of assignment.assignedMembers) {
+                    const taskName = `${box.title} > ${formatType.charAt(0).toUpperCase() + formatType.slice(1)}`;
+                    
+                    await fetch("/api/checklist-tasks", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        taskTitle: taskName,
+                        assignedTo: member,
+                        evergreenBoxId: box.id,
+                        waterfallCycleId: box.waterfallCycleId,
+                        contentFormatType: formatType,
+                        completed: false
+                      }),
+                    });
+                  }
+                }
+              }
+            }
+          }
+        }
+        
+        // Regenerate tasks for releases
+        for (const release of releases) {
+          if (release.waterfallCycleId) {
+            const cycle = cycles.find((c: any) => c.id === release.waterfallCycleId);
+            if (cycle) {
+              for (const assignment of assignments) {
+                const formatType = assignment.formatType;
+                const requirement = cycle.contentRequirements[formatType] || 0;
+                
+                if (requirement > 0) {
+                  for (const member of assignment.assignedMembers) {
+                    const taskName = `${cycle.name} > ${requirement}x ${formatType.charAt(0).toUpperCase() + formatType.slice(1)}`;
+                    
+                    await fetch("/api/checklist-tasks", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        taskTitle: taskName,
+                        assignedTo: member,
+                        releaseId: release.id,
+                        waterfallCycleId: release.waterfallCycleId,
+                        contentFormatType: formatType,
+                        completed: false
+                      }),
+                    });
+                  }
+                }
+              }
+            }
+          }
+        }
+        
+        queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
+      } catch (error) {
+        console.error("Failed to regenerate tasks:", error);
+      }
+      
       toast({ title: "Format assignments saved successfully" });
       onClose();
     },

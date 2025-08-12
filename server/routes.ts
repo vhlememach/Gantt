@@ -237,11 +237,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { assignedTo, contentFormatType } = req.body;
       const allTasks = await storage.getChecklistTasks();
       
-      // Find tasks that match the criteria for cleanup (evergreenBoxId + format type + assignee)
+      // Find tasks that match the criteria for cleanup (format type + assignee for both release and evergreen)
       const tasksToDelete = allTasks.filter(task => 
         task.assignedTo === assignedTo &&
-        task.title?.includes(contentFormatType) &&
-        task.evergreenBoxId
+        task.taskTitle?.toLowerCase().includes(contentFormatType.toLowerCase()) &&
+        (task.evergreenBoxId || task.releaseId) // Include both evergreen and release tasks
       );
       
       // Delete each matching task
