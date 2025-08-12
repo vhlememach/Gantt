@@ -71,17 +71,29 @@ export default function FormatAssignmentsModal({ isOpen, onClose }: FormatAssign
         const tasksResponse = await fetch("/api/checklist-tasks");
         const allTasks = await tasksResponse.json();
         
+        console.log("All tasks before cleanup:", allTasks.length);
+        
         // Find all tasks that are format-based (have waterfallCycleId and contentFormatType)
         const formatTasks = allTasks.filter((task: any) => 
           task.waterfallCycleId && task.contentFormatType
         );
         
-        // Delete all format-based tasks
+        console.log("Format tasks to delete:", formatTasks.length, formatTasks.map(t => ({id: t.id, title: t.taskTitle, assignedTo: t.assignedTo})));
+        
+        // Delete all format-based tasks sequentially with error handling
         for (const task of formatTasks) {
-          await fetch(`/api/checklist-tasks/${task.id}`, {
-            method: "DELETE"
-          });
+          try {
+            const deleteResponse = await fetch(`/api/checklist-tasks/${task.id}`, {
+              method: "DELETE"
+            });
+            console.log(`Deleted task ${task.id}:`, deleteResponse.status);
+          } catch (deleteError) {
+            console.error(`Failed to delete task ${task.id}:`, deleteError);
+          }
         }
+        
+        // Wait a moment for deletes to complete
+        await new Promise(resolve => setTimeout(resolve, 500));
       } catch (error) {
         console.error("Failed to cleanup existing format tasks:", error);
       }
