@@ -127,6 +127,20 @@ export default function ChecklistPage() {
     }
   });
 
+  // Unpause task mutation
+  const unpauseTaskMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return apiRequest('PUT', `/api/checklist-tasks/${id}`, { 
+        paused: false,
+        blockerReason: null,
+        blockerRequestedBy: null
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
+    }
+  });
+
   // Create new task
   const createTaskMutation = useMutation({
     mutationFn: async (taskData: { releaseId: string, assignedTo: string, taskTitle: string, taskUrl?: string }) => {
@@ -147,6 +161,10 @@ export default function ChecklistPage() {
   const handleReportBlocker = (taskId: string) => {
     setSelectedTaskForBlocker(taskId);
     setBlockerModalOpen(true);
+  };
+
+  const handleUnpauseTask = (taskId: string) => {
+    unpauseTaskMutation.mutate(taskId);
   };
 
   const handleSubmitBlocker = () => {
@@ -480,16 +498,28 @@ export default function ChecklistPage() {
                               )}
                             </div>
                             <div className="flex items-center space-x-2">
-                              {!task.completed && !task.paused && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleReportBlocker(task.id)}
-                                  className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
-                                >
-                                  <Pause className="w-3 h-3 mr-1" />
-                                  Report Blocker
-                                </Button>
+                              {!task.completed && (
+                                task.paused ? (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleUnpauseTask(task.id)}
+                                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                  >
+                                    <CheckCircle className="w-3 h-3 mr-1" />
+                                    Unpause
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleReportBlocker(task.id)}
+                                    className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                  >
+                                    <Pause className="w-3 h-3 mr-1" />
+                                    Report Blocker
+                                  </Button>
+                                )
                               )}
                               {task.completed ? (
                                 <Badge variant="outline" className="bg-green-100 text-green-800">
