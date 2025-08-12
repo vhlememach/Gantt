@@ -21,7 +21,7 @@ interface CalendarTask {
   releaseColor?: string;
   releaseIcon?: string;
   priority: boolean;
-  scheduledDate?: string;
+  scheduledDate?: string | null;
 }
 
 const getDaysInMonth = (year: number, month: number) => {
@@ -80,7 +80,7 @@ export default function CalendarPage() {
       releaseColor: group?.color || '#6b7280',
       releaseIcon: release?.icon || 'fas fa-calendar',
       priority: task.priority || false,
-      scheduledDate: task.scheduledDate
+      scheduledDate: task.scheduledDate || undefined
     };
   });
 
@@ -142,10 +142,8 @@ export default function CalendarPage() {
   // Mutation to schedule a task
   const scheduleTaskMutation = useMutation({
     mutationFn: async ({ taskId, scheduledDate }: { taskId: string; scheduledDate: string }) => {
-      return apiRequest(`/api/checklist-tasks/${taskId}/schedule`, {
-        method: "PATCH",
-        body: { scheduledDate }
-      });
+      const response = await apiRequest("PATCH", `/api/checklist-tasks/${taskId}/schedule`, { scheduledDate });
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
@@ -155,9 +153,8 @@ export default function CalendarPage() {
   // Mutation to unschedule a task
   const unscheduleTaskMutation = useMutation({
     mutationFn: async (taskId: string) => {
-      return apiRequest(`/api/checklist-tasks/${taskId}/unschedule`, {
-        method: "PATCH"
-      });
+      const response = await apiRequest("PATCH", `/api/checklist-tasks/${taskId}/unschedule`, {});
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
