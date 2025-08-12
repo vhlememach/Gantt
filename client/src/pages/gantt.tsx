@@ -58,79 +58,70 @@ export default function GanttPage() {
                 fetch('/api/waterfall-cycles', { method: 'DELETE' })
               ]);
 
-              console.log("Data cleared, starting import...");
+              console.log("Data cleared, starting sequential import...");
 
-              // Import new data in proper sequence
-              const importPromises: Promise<any>[] = [];
+              // Import data sequentially to maintain relationships
+              const idMappings: { [key: string]: { [key: string]: string } } = {
+                groups: {},
+                waterfallCycles: {},
+                evergreenBoxes: {},
+                releases: {}
+              };
               
+              // 1. Import groups first and store ID mappings
               if (data.groups) {
                 console.log("Importing groups:", data.groups.length);
-                data.groups.forEach((group: any) => {
-                  // Clean up the group data to match schema
-                  // Remove the id field to let the server generate new IDs
-                  // This prevents ID mismatches during import
+                for (const group of data.groups) {
                   const cleanGroup = {
                     name: group.name,
                     color: group.color || '#8B5CF6',
-                    gradientStart: group.gradientStart || '#8B5CF6',
-                    gradientEnd: group.gradientEnd || '#3B82F6'
+                    gradientEnabled: group.gradientEnabled || 'true',
+                    gradientSecondaryColor: group.gradientSecondaryColor || '#DDD6FE'
                   };
-                  importPromises.push(
-                    fetch('/api/release-groups', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(cleanGroup)
-                    }).then(r => { console.log("Group imported:", r.status); return r; })
-                  );
-                });
+                  const response = await fetch('/api/release-groups', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(cleanGroup)
+                  });
+                  const newGroup = await response.json();
+                  idMappings.groups[group.id] = newGroup.id;
+                  console.log(`Group "${group.name}" imported: ${group.id} -> ${newGroup.id}`);
+                }
               }
               
+              // 2. Import waterfall cycles and store ID mappings
               if (data.waterfallCycles) {
                 console.log("Importing waterfall cycles:", data.waterfallCycles.length);
-                data.waterfallCycles.forEach((cycle: any) => {
-                  // Clean up the cycle data
+                for (const cycle of data.waterfallCycles) {
                   const cleanCycle = {
-                    id: cycle.id,
                     name: cycle.name,
                     description: cycle.description || '',
-                    cycleType: cycle.cycleType,
                     contentRequirements: typeof cycle.contentRequirements === 'object' && cycle.contentRequirements !== null
                       ? cycle.contentRequirements
                       : {}
                   };
-                  importPromises.push(
-                    fetch('/api/waterfall-cycles', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(cleanCycle)
-                    }).then(r => { console.log("Cycle imported:", r.status); return r; })
-                  );
-                });
+                  const response = await fetch('/api/waterfall-cycles', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(cleanCycle)
+                  });
+                  const newCycle = await response.json();
+                  idMappings.waterfallCycles[cycle.id] = newCycle.id;
+                  console.log(`Waterfall cycle "${cycle.name}" imported: ${cycle.id} -> ${newCycle.id}`);
+                }
               }
 
-              await Promise.all(importPromises);
               console.log("Groups and cycles imported");
 
-              // Get the newly created groups to map old IDs to new IDs
-              const newGroups = await fetch('/api/release-groups').then(r => r.json());
-              const groupMapping: { [oldId: string]: string } = {};
-              if (data.groups && newGroups) {
-                data.groups.forEach((oldGroup: any, index: number) => {
-                  if (newGroups[index]) {
-                    groupMapping[oldGroup.id] = newGroups[index].id;
-                  }
-                });
-              }
-              console.log("Group ID mapping:", groupMapping);
-
-              // Import releases and evergreen boxes
-              const releasePromises: Promise<any>[] = [];
+              // 3. Import releases with proper group ID mapping
               if (data.releases) {
                 console.log("Importing releases:", data.releases.length);
-                data.releases.forEach((release: any) => {
-                  // Clean up release data
-                  // Map the old group ID to the new group ID
-                  const newGroupId = groupMapping[release.groupId] || release.groupId;
+                for (const release of data.releases) {
+                  const newGroupId = idMappings.groups[release.groupId] || release.groupId;
+                  const newWaterfallCycleId = release.waterfallCycleId 
+                    ? idMappings.waterfallCycles[release.waterfallCycleId] || null
+                    : null;
+                  
                   const cleanRelease = {
                     name: release.name,
                     description: release.description || '',
@@ -142,143 +133,121 @@ export default function GanttPage() {
                     responsible: release.responsible || '',
                     status: release.status || 'upcoming',
                     highPriority: release.highPriority === true || release.highPriority === 'true',
-                    waterfallCycleId: release.waterfallCycleId || null
+                    waterfallCycleId: newWaterfallCycleId
                   };
-                  releasePromises.push(
-                    fetch('/api/releases', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(cleanRelease)
-                    }).then(r => { console.log("Release imported:", r.status); return r; })
-                  );
-                });
+                  const response = await fetch('/api/releases', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(cleanRelease)
+                  });
+                  const newRelease = await response.json();
+                  idMappings.releases[release.id] = newRelease.id;
+                  console.log(`Release "${release.name}" imported: ${release.id} -> ${newRelease.id}`);
+                }
               }
 
+              // 4. Import evergreen boxes with proper ID mapping
               if (data.evergreenBoxes) {
                 console.log("Importing evergreen boxes:", data.evergreenBoxes.length);
-                data.evergreenBoxes.forEach((box: any) => {
-                  // Map the old group ID to the new group ID
-                  const newGroupId = groupMapping[box.groupId] || Object.values(groupMapping)[0] || null;
-                  // Clean up evergreen box data - remove ID to let server generate new ones
+                for (const box of data.evergreenBoxes) {
+                  const newGroupId = idMappings.groups[box.groupId] || Object.values(idMappings.groups)[0] || null;
+                  const newWaterfallCycleId = box.waterfallCycleId 
+                    ? idMappings.waterfallCycles[box.waterfallCycleId] || null
+                    : null;
+                  
                   const cleanBox = {
                     title: box.title,
                     description: box.description || '',
                     responsible: box.responsible || '',
                     groupId: newGroupId,
-                    waterfallCycleId: box.waterfallCycleId || null,
+                    waterfallCycleId: newWaterfallCycleId,
                     icon: box.icon || 'lucide-box',
                     url: box.url || null
                   };
-                  releasePromises.push(
-                    fetch('/api/evergreen-boxes', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(cleanBox)
-                    }).then(async (r) => {
-                      if (!r.ok) {
-                        const error = await r.text();
-                        console.error("Evergreen box import failed:", r.status, error, cleanBox);
-                      } else {
-                        console.log("Evergreen box imported:", r.status);
-                      }
-                      return r;
-                    })
-                  );
-                });
+                  const response = await fetch('/api/evergreen-boxes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(cleanBox)
+                  });
+                  if (!response.ok) {
+                    const error = await response.text();
+                    console.error("Evergreen box import failed:", response.status, error, cleanBox);
+                  } else {
+                    const newBox = await response.json();
+                    idMappings.evergreenBoxes[box.id] = newBox.id;
+                    console.log(`Evergreen box "${box.title}" imported: ${box.id} -> ${newBox.id}`);
+                  }
+                }
               }
 
-              await Promise.all(releasePromises);
               console.log("Releases and evergreen boxes imported");
 
-              // Import assignments and tasks
-              const finalPromises: Promise<any>[] = [];
+              // 5. Import content format assignments
               if (data.contentFormatAssignments) {
                 console.log("Importing format assignments:", data.contentFormatAssignments.length);
-                data.contentFormatAssignments.forEach((assignment: any) => {
-                  // Remove ID to let server generate new ones
+                for (const assignment of data.contentFormatAssignments) {
                   const cleanAssignment = {
                     formatType: assignment.formatType,
                     assignedMembers: Array.isArray(assignment.assignedMembers) 
                       ? assignment.assignedMembers 
                       : []
                   };
-                  finalPromises.push(
-                    fetch('/api/content-format-assignments', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(cleanAssignment)
-                    }).then(r => { console.log("Assignment imported:", r.status); return r; })
-                  );
-                });
+                  const response = await fetch('/api/content-format-assignments', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(cleanAssignment)
+                  });
+                  if (response.ok) {
+                    console.log(`Assignment "${assignment.formatType}" imported successfully`);
+                  } else {
+                    console.error(`Failed to import assignment ${assignment.formatType}:`, response.status);
+                  }
+                }
               }
 
+              // 6. Import checklist tasks with proper ID mapping
               if (data.checklistTasks) {
                 console.log("Importing checklist tasks:", data.checklistTasks.length);
-                
-                // Get newly created releases and evergreen boxes to map old IDs to new IDs
-                const [newReleases, newEvergreenBoxes] = await Promise.all([
-                  fetch('/api/releases').then(r => r.json()),
-                  fetch('/api/evergreen-boxes').then(r => r.json())
-                ]);
-                
-                // Create mapping for release IDs
-                const releaseMapping: { [oldId: string]: string } = {};
-                if (data.releases && newReleases) {
-                  data.releases.forEach((oldRelease: any, index: number) => {
-                    if (newReleases[index]) {
-                      releaseMapping[oldRelease.id] = newReleases[index].id;
-                    }
-                  });
-                }
-                
-                // Create mapping for evergreen box IDs
-                const evergreenMapping: { [oldId: string]: string } = {};
-                if (data.evergreenBoxes && newEvergreenBoxes) {
-                  data.evergreenBoxes.forEach((oldBox: any, index: number) => {
-                    if (newEvergreenBoxes[index]) {
-                      evergreenMapping[oldBox.id] = newEvergreenBoxes[index].id;
-                    }
-                  });
-                }
-                
-                data.checklistTasks.forEach((task: any) => {
-                  // Map old IDs to new IDs
-                  const newReleaseId = task.releaseId ? releaseMapping[task.releaseId] : null;
-                  const newEvergreenId = task.evergreenBoxId ? evergreenMapping[task.evergreenBoxId] : null;
-                  
-                  // Remove ID and fix field names to match schema
+                for (const task of data.checklistTasks) {
+                  const newReleaseId = task.releaseId 
+                    ? idMappings.releases[task.releaseId] || null
+                    : null;
+                  const newEvergreenBoxId = task.evergreenBoxId 
+                    ? idMappings.evergreenBoxes[task.evergreenBoxId] || null
+                    : null;
+                  const newWaterfallCycleId = task.waterfallCycleId 
+                    ? idMappings.waterfallCycles[task.waterfallCycleId] || null
+                    : null;
+                    
                   const cleanTask = {
-                    taskTitle: task.taskTitle,
-                    taskDescription: task.taskDescription || task.description || '',
+                    taskTitle: task.taskTitle || task.taskName,
+                    taskDescription: task.taskDescription || task.description,
                     assignedTo: task.assignedTo,
                     releaseId: newReleaseId,
-                    evergreenBoxId: newEvergreenId,
-                    waterfallCycleId: task.waterfallCycleId || null,
+                    evergreenBoxId: newEvergreenBoxId,
+                    waterfallCycleId: newWaterfallCycleId,
                     contentFormatType: task.contentFormatType || null,
-                    completed: task.completed === true || task.completed === 'true' || task.isCompleted === true || task.isCompleted === 'true',
-                    priority: task.priority === true || task.priority === 'true' || task.priority === 'high',
-                    taskUrl: task.taskUrl || null
+                    taskUrl: task.taskUrl || null,
+                    priority: task.priority === true || task.priority === 'true',
+                    completed: task.completed === true || task.completed === 'true'
                   };
-                  finalPromises.push(
-                    fetch('/api/checklist-tasks', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(cleanTask)
-                    }).then(async (r) => { 
-                      if (!r.ok) {
-                        const error = await r.text();
-                        console.error("Task import failed:", r.status, error, cleanTask);
-                      } else {
-                        console.log("Task imported:", r.status);
-                      }
-                      return r; 
-                    })
-                  );
-                });
+                  const response = await fetch('/api/checklist-tasks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(cleanTask)
+                  });
+                  if (response.ok) {
+                    console.log(`Task "${task.taskTitle || task.taskName}" imported successfully`);
+                  } else {
+                    console.error(`Failed to import task:`, response.status);
+                  }
+                }
               }
 
-              await Promise.all(finalPromises);
-              console.log("All data imported successfully");
+              console.log("Import completed successfully!");
+              
+              // Trigger evergreen task generation after import
+              await fetch('/api/evergreen-tasks/generate', { method: 'POST' });
 
               // Update settings if present
               if (data.settings) {
