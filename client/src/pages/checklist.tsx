@@ -29,6 +29,8 @@ export default function ChecklistPage() {
   const [selectedTaskForBlocker, setSelectedTaskForBlocker] = useState<string | null>(null);
   const [blockerReason, setBlockerReason] = useState("");
   const [blockerRequestedBy, setBlockerRequestedBy] = useState("");
+  const [blockerDetailsModalOpen, setBlockerDetailsModalOpen] = useState(false);
+  const [selectedTaskForDetails, setSelectedTaskForDetails] = useState<ChecklistTask | null>(null);
   
   const queryClient = useQueryClient();
 
@@ -165,6 +167,11 @@ export default function ChecklistPage() {
 
   const handleUnpauseTask = (taskId: string) => {
     unpauseTaskMutation.mutate(taskId);
+  };
+
+  const handleViewBlockerDetails = (task: ChecklistTask) => {
+    setSelectedTaskForDetails(task);
+    setBlockerDetailsModalOpen(true);
   };
 
   const handleSubmitBlocker = () => {
@@ -527,7 +534,10 @@ export default function ChecklistPage() {
                                   Done
                                 </Badge>
                               ) : task.paused ? (
-                                <Badge className="bg-orange-500 text-white">
+                                <Badge 
+                                  className="bg-orange-500 text-white cursor-pointer hover:bg-orange-600 transition-colors"
+                                  onClick={() => handleViewBlockerDetails(task)}
+                                >
                                   <AlertTriangle className="w-3 h-3 mr-1" />
                                   Paused
                                 </Badge>
@@ -603,6 +613,52 @@ export default function ChecklistPage() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Blocker Details Modal */}
+      <Dialog open={blockerDetailsModalOpen} onOpenChange={setBlockerDetailsModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Blocker Details</DialogTitle>
+          </DialogHeader>
+          {selectedTaskForDetails && (
+            <div className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium text-gray-700">Task</Label>
+                <p className="mt-1 text-sm text-gray-900">{selectedTaskForDetails.taskTitle}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-700">Blocking Issue</Label>
+                <p className="mt-1 text-sm text-gray-900 p-3 bg-gray-50 rounded-md">
+                  {selectedTaskForDetails.blockerReason || "No reason provided"}
+                </p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-700">Requested By</Label>
+                <p className="mt-1 text-sm text-gray-900">
+                  {selectedTaskForDetails.blockerRequestedBy || "Unknown"}
+                </p>
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setBlockerDetailsModalOpen(false)}
+                >
+                  Close
+                </Button>
+                <Button 
+                  onClick={() => {
+                    handleUnpauseTask(selectedTaskForDetails.id);
+                    setBlockerDetailsModalOpen(false);
+                  }}
+                  className="bg-green-500 hover:bg-green-600 text-white"
+                >
+                  Unpause Task
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
