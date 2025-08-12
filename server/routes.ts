@@ -41,6 +41,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Bulk delete all release groups
+  app.delete("/api/release-groups", async (req, res) => {
+    try {
+      const groups = await storage.getReleaseGroups();
+      for (const group of groups) {
+        await storage.deleteReleaseGroup(group.id);
+      }
+      res.json({ success: true, message: "All release groups deleted" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete release groups" });
+    }
+  });
+
   app.delete("/api/release-groups/:id", async (req, res) => {
     try {
       const { id } = req.params;
@@ -126,6 +139,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         res.status(400).json({ message: "Invalid release data", error: String(error) });
       }
+    }
+  });
+
+  // Bulk delete all releases
+  app.delete("/api/releases", async (req, res) => {
+    try {
+      const releases = await storage.getReleases();
+      for (const release of releases) {
+        await storage.deleteRelease(release.id);
+      }
+      res.json({ success: true, message: "All releases deleted" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete releases" });
     }
   });
 
@@ -215,6 +241,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating checklist task:", error);
       res.status(400).json({ error: "Invalid task data" });
+    }
+  });
+
+  // Bulk delete all checklist tasks
+  app.delete("/api/checklist-tasks", async (req, res) => {
+    try {
+      const tasks = await storage.getChecklistTasks();
+      for (const task of tasks) {
+        await storage.deleteChecklistTask(task.id);
+      }
+      res.json({ success: true, message: "All checklist tasks deleted" });
+    } catch (error) {
+      console.error("Error deleting all checklist tasks:", error);
+      res.status(500).json({ error: "Failed to delete all tasks" });
     }
   });
 
@@ -359,6 +399,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Bulk delete all waterfall cycles
+  app.delete("/api/waterfall-cycles", async (req, res) => {
+    try {
+      const cycles = await storage.getWaterfallCycles();
+      for (const cycle of cycles) {
+        await storage.deleteWaterfallCycle(cycle.id);
+      }
+      res.json({ success: true, message: "All waterfall cycles deleted" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete waterfall cycles" });
+    }
+  });
+
   app.delete("/api/waterfall-cycles/:id", async (req, res) => {
     try {
       const deleted = await storage.deleteWaterfallCycle(req.params.id);
@@ -468,6 +521,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(box);
     } catch (error) {
       res.status(400).json({ message: "Invalid evergreen box data" });
+    }
+  });
+
+  // Bulk delete all evergreen boxes
+  app.delete("/api/evergreen-boxes", async (req, res) => {
+    try {
+      const boxes = await storage.getEvergreenBoxes();
+      for (const box of boxes) {
+        await storage.deleteEvergreenBox(box.id);
+      }
+      res.json({ success: true, message: "All evergreen boxes deleted" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete evergreen boxes" });
     }
   });
 
