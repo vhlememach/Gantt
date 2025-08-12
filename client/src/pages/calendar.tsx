@@ -44,6 +44,8 @@ export default function CalendarPage() {
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
   const [draggedTask, setDraggedTask] = useState<CalendarTask | null>(null);
   const [showColorPicker, setShowColorPicker] = useState(false);
+  const [priorityCells, setPriorityCells] = useState<Set<string>>(new Set());
+  const [editingGroupColor, setEditingGroupColor] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -204,6 +206,19 @@ export default function CalendarPage() {
     }
   };
 
+  const handleCellClick = (day: number) => {
+    const dateKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const newPriorityCells = new Set(priorityCells);
+    
+    if (priorityCells.has(dateKey)) {
+      newPriorityCells.delete(dateKey);
+    } else {
+      newPriorityCells.add(dateKey);
+    }
+    
+    setPriorityCells(newPriorityCells);
+  };
+
   const navigateMonth = (direction: 'prev' | 'next') => {
     if (direction === 'prev') {
       if (selectedMonth === 0) {
@@ -262,7 +277,7 @@ export default function CalendarPage() {
 
       <div className="flex h-screen pt-16">
         {/* Left Sidebar - Completed Tasks */}
-        <div className="w-1/3 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
+        <div className="w-1/6 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
           <div className="p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
@@ -273,49 +288,64 @@ export default function CalendarPage() {
               </Badge>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               {Object.entries(tasksByRelease).map(([releaseId, tasks]) => {
                 const release = releases.find(r => r.id === releaseId);
                 const group = release ? releaseGroups.find(g => g.id === release.groupId) : null;
                 
                 return (
-                  <Card key={releaseId}>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        {release?.name || 'Evergreen'}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
+                  <div key={releaseId} className="border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {release?.name || 'Evergreen'}
+                        </h3>
+                        {group && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs px-2 py-1 h-6"
+                            onClick={() => setEditingGroupColor(editingGroupColor === group.id ? null : group.id)}
+                          >
+                            Change Color
+                          </Button>
+                        )}
+                      </div>
+                      {editingGroupColor === group?.id && (
+                        <div className="flex space-x-1 mb-2">
+                          {['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#F97316', '#6B7280', '#EC4899'].map(color => (
+                            <button
+                              key={color}
+                              className="w-4 h-4 rounded border border-gray-300 hover:scale-110 transition-transform"
+                              style={{ backgroundColor: color }}
+                              onClick={() => {
+                                const updatedGroups = releaseGroups.map(g => 
+                                  g.id === group.id ? { ...g, color } : g
+                                );
+                                queryClient.setQueryData(["/api/release-groups"], updatedGroups);
+                                setEditingGroupColor(null);
+                              }}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-2 space-y-1">
                       {tasks.map(task => (
                         <div
                           key={task.id}
                           draggable
                           onDragStart={() => handleDragStart(task)}
-                          className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 cursor-move hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                          className="p-2 bg-gray-50 dark:bg-gray-700 rounded text-xs cursor-move hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                          title={task.taskTitle}
                         >
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center space-x-2">
-                                <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                  {task.taskTitle}
-                                </span>
-                                {task.priority && (
-                                  <Star className="w-3 h-3 text-yellow-500 fill-current" />
-                                )}
-                              </div>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                Assigned to {task.assignedTo}
-                              </p>
-                            </div>
-                            <Badge variant="outline" className="bg-green-100 text-green-800 text-xs">
-                              <CheckCircle className="w-3 h-3 mr-1" />
-                              Done
-                            </Badge>
+                          <div className="truncate font-medium text-gray-900 dark:text-white">
+                            {task.taskTitle}
                           </div>
                         </div>
                       ))}
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 );
               })}
             </div>
@@ -408,10 +438,10 @@ export default function CalendarPage() {
             )}
 
             {/* Calendar Grid */}
-            <div className="grid grid-cols-7 gap-4">
+            <div className="grid grid-cols-7 gap-3">
               {/* Day Headers */}
               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                <div key={day} className="p-2 text-center text-sm font-medium text-gray-500 dark:text-gray-400">
+                <div key={day} className="p-3 text-center text-sm font-medium text-gray-500 dark:text-gray-400">
                   {day}
                 </div>
               ))}
@@ -419,7 +449,7 @@ export default function CalendarPage() {
               {/* Calendar Days */}
               {calendarDays.map((day, index) => {
                 if (day === null) {
-                  return <div key={`empty-${index}`} className="h-32"></div>;
+                  return <div key={`empty-${index}`} className="h-40"></div>;
                 }
 
                 const tasksForDay = getTasksForDay(day);
@@ -429,22 +459,44 @@ export default function CalendarPage() {
                   day === currentDate.getDate() && 
                   selectedMonth === currentDate.getMonth() && 
                   selectedYear === currentDate.getFullYear();
+                
+                const dateKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const isHighPriority = priorityCells.has(dateKey);
 
                 return (
                   <div
                     key={day}
-                    className={`min-h-32 p-2 border border-gray-200 dark:border-gray-700 rounded-lg ${
-                      isToday ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-300' : 'bg-white dark:bg-gray-800'
-                    } hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors`}
+                    className={`min-h-40 p-3 border-2 rounded-lg cursor-pointer transition-colors ${
+                      isHighPriority 
+                        ? 'border-red-400 bg-red-50 dark:bg-red-900/20' 
+                        : isToday 
+                          ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-300' 
+                          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
+                    } hover:bg-gray-50 dark:hover:bg-gray-700`}
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, day)}
+                    onClick={(e) => {
+                      // Only handle cell click if not clicking on tasks
+                      if (e.target === e.currentTarget || (e.target as HTMLElement).closest('.cell-header')) {
+                        handleCellClick(day);
+                      }
+                    }}
                   >
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="cell-header flex items-center justify-between mb-2">
                       <span className={`text-sm font-medium ${
-                        isToday ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-white'
+                        isHighPriority 
+                          ? 'text-red-600 dark:text-red-400' 
+                          : isToday 
+                            ? 'text-blue-600 dark:text-blue-400' 
+                            : 'text-gray-900 dark:text-white'
                       }`}>
                         {day}
                       </span>
+                      {isHighPriority && (
+                        <span className="text-xs text-red-600 dark:text-red-400 font-medium">
+                          HIGH PRIORITY
+                        </span>
+                      )}
                     </div>
 
                     {/* Release dividers for active releases */}
@@ -457,7 +509,7 @@ export default function CalendarPage() {
                           <div key={release.id} className="space-y-1">
                             {/* Release divider box */}
                             <div 
-                              className="text-xs font-medium px-2 py-1 rounded text-white opacity-80"
+                              className="text-xs font-medium px-2 py-1 rounded text-white opacity-90"
                               style={{ backgroundColor: group?.color || '#6b7280' }}
                             >
                               <i className={`${release.icon} mr-1`}></i>
@@ -470,7 +522,10 @@ export default function CalendarPage() {
                                 key={task.id}
                                 className="text-xs p-1 bg-gray-100 dark:bg-gray-600 rounded truncate cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors ml-2"
                                 title={`${task.taskTitle} - Click to remove`}
-                                onClick={() => handleTaskClick(task)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleTaskClick(task);
+                                }}
                               >
                                 {task.taskTitle}
                               </div>
@@ -484,7 +539,7 @@ export default function CalendarPage() {
                         .filter(([releaseId]) => releaseId === 'evergreen' || !releases.find(r => r.id === releaseId))
                         .map(([releaseId, { tasks }]) => (
                           <div key={releaseId} className="space-y-1">
-                            <div className="text-xs font-medium px-2 py-1 rounded text-white bg-gray-500">
+                            <div className="text-xs font-medium px-2 py-1 rounded text-white bg-gray-500 opacity-90">
                               <i className="fas fa-calendar mr-1"></i>
                               Evergreen
                             </div>
@@ -493,7 +548,10 @@ export default function CalendarPage() {
                                 key={task.id}
                                 className="text-xs p-1 bg-gray-100 dark:bg-gray-600 rounded truncate cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors ml-2"
                                 title={`${task.taskTitle} - Click to remove`}
-                                onClick={() => handleTaskClick(task)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleTaskClick(task);
+                                }}
                               >
                                 {task.taskTitle}
                               </div>
