@@ -55,7 +55,7 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
       groupId: "",
       responsible: "",
       icon: "lucide-megaphone",
-      waterfallCycleId: "",
+      waterfallCycleId: "none",
     },
   });
 
@@ -68,7 +68,7 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
         groupId: box.groupId,
         responsible: box.responsible || "",
         icon: box.icon,
-        waterfallCycleId: box.waterfallCycleId || "",
+        waterfallCycleId: box.waterfallCycleId || "none",
       });
     } else if (!isEditing) {
       form.reset({
@@ -77,7 +77,7 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
         groupId: "",
         responsible: "",
         icon: "lucide-megaphone",
-        waterfallCycleId: "",
+        waterfallCycleId: "none",
       });
     }
   }, [box, isEditing, form]);
@@ -142,10 +142,16 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
   });
 
   const onSubmit = (data: z.infer<typeof formSchema>) => {
+    // Convert "none" back to empty string for the API
+    const submitData = {
+      ...data,
+      waterfallCycleId: data.waterfallCycleId === "none" ? "" : data.waterfallCycleId,
+    };
+    
     if (isEditing) {
-      updateMutation.mutate(data);
+      updateMutation.mutate(submitData);
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate(submitData);
     }
   };
 
@@ -284,14 +290,14 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Waterfall Cycle (Optional)</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ""}>
+                  <Select onValueChange={field.onChange} value={field.value || "none"}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select waterfall cycle" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">No cycle assigned</SelectItem>
+                      <SelectItem value="none">No cycle assigned</SelectItem>
                       {waterfallCycles.map((cycle) => (
                         <SelectItem key={cycle.id} value={cycle.id}>
                           {cycle.name}
