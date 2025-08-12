@@ -86,6 +86,52 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
     }
   }, [box, isEditing, form]);
 
+  // Function to generate evergreen tasks based on waterfall cycle assignments
+  const generateEvergreenTasks = async (boxId: string, waterfallCycleId: string, boxTitle: string) => {
+    try {
+      // Get waterfall cycle details
+      const cycleResponse = await apiRequest("GET", `/api/waterfall-cycles/${waterfallCycleId}`);
+      const cycle = await cycleResponse.json();
+
+      // Get format assignments
+      const assignmentsResponse = await apiRequest("GET", "/api/content-format-assignments");
+      const assignments = await assignmentsResponse.json();
+
+      // Generate tasks for each format type based on assignments
+      const taskPromises = assignments.map(async (assignment: any) => {
+        const formatType = assignment.formatType;
+        const requirement = cycle.contentRequirements[formatType] || 0;
+        
+        if (requirement > 0) {
+          // Create tasks for each assigned member
+          return assignment.assignedMembers.map(async (member: string) => {
+            const taskName = `${boxTitle} > ${formatType.charAt(0).toUpperCase() + formatType.slice(1)}`;
+            
+            const taskPayload = {
+              taskTitle: taskName,
+              assignedTo: member,
+              evergreenBoxId: boxId,
+              waterfallCycleId: waterfallCycleId,
+              contentFormatType: formatType,
+              completed: false
+            };
+
+            return apiRequest("POST", "/api/checklist-tasks", taskPayload);
+          });
+        }
+        return [];
+      });
+
+      await Promise.all(taskPromises.flat());
+      
+      // Invalidate checklist tasks to refresh the UI
+      queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
+      
+    } catch (error) {
+      console.error('Error generating evergreen tasks:', error);
+    }
+  };
+
   const createMutation = useMutation({
     mutationFn: async (data: InsertEvergreenBox) => {
       const response = await fetch("/api/evergreen-boxes", {
@@ -96,8 +142,15 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
       if (!response.ok) throw new Error("Failed to create");
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async (newBox) => {
       queryClient.invalidateQueries({ queryKey: ["/api/evergreen-boxes"] });
+      
+      // If waterfall cycle is assigned, generate format-based checklist tasks
+      const waterfallCycleId = form.getValues('waterfallCycleId');
+      if (waterfallCycleId && waterfallCycleId !== "none") {
+        await generateEvergreenTasks(newBox.id, waterfallCycleId, newBox.title);
+      }
+      
       toast({ title: "Evergreen box created successfully" });
       onClose();
     },
@@ -116,9 +169,16 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
       if (!response.ok) throw new Error("Failed to update");
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async (updatedBox) => {
       queryClient.invalidateQueries({ queryKey: ["/api/evergreen-boxes"] });
       queryClient.invalidateQueries({ queryKey: ["/api/evergreen-boxes", boxId] });
+      
+      // If waterfall cycle is assigned, generate format-based checklist tasks
+      const waterfallCycleId = form.getValues('waterfallCycleId');
+      if (waterfallCycleId && waterfallCycleId !== "none") {
+        await generateEvergreenTasks(updatedBox.id, waterfallCycleId, updatedBox.title);
+      }
+      
       toast({ title: "Evergreen box updated successfully" });
       onClose();
     },

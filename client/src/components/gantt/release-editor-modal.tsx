@@ -153,7 +153,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
             const taskName = `${member} > ${cycle.name} > ${requirement}x ${formatType.charAt(0).toUpperCase() + formatType.slice(1)}`;
             
             const taskPayload = {
-              name: taskName,
+              taskTitle: taskName,
               assignedTo: member,
               releaseId: releaseId,
               completed: false

@@ -36,8 +36,8 @@ export function Navigation({ className }: NavigationProps) {
             href={item.path}
           >
             <button className={cn(
-              "flex items-center space-x-2 px-3 py-2 rounded text-sm font-medium transition-colors border-0",
-              "bg-white bg-opacity-20 hover:bg-opacity-30 text-white",
+              "flex items-center space-x-2 px-3 py-2 text-sm font-medium transition-colors border-0",
+              "bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded",
               isActive && "bg-opacity-30"
             )}>
               <Icon className="h-4 w-4" />
