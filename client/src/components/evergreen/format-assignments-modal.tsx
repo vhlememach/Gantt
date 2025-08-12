@@ -60,6 +60,34 @@ export default function FormatAssignmentsModal({ isOpen, onClose }: FormatAssign
 
   const saveMutation = useMutation({
     mutationFn: async (assignmentData: Record<string, string[]>) => {
+      // Find members that were removed from each format type
+      const oldAssignments = currentAssignments.reduce((acc, assignment) => {
+        acc[assignment.formatType] = assignment.assignedMembers;
+        return acc;
+      }, {} as Record<string, string[]>);
+
+      // Clean up tasks for removed members
+      for (const [formatType, newMembers] of Object.entries(assignmentData)) {
+        const oldMembers = oldAssignments[formatType] || [];
+        const removedMembers = oldMembers.filter(member => !newMembers.includes(member));
+        
+        // Delete tasks for removed members
+        for (const member of removedMembers) {
+          try {
+            await fetch(`/api/checklist-tasks/cleanup`, {
+              method: "POST", 
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                assignedTo: member,
+                contentFormatType: formatType,
+              }),
+            });
+          } catch (error) {
+            console.error(`Failed to cleanup tasks for ${member} - ${formatType}:`, error);
+          }
+        }
+      }
+
       // Clear existing assignments and create new ones
       await fetch("/api/content-format-assignments", {
         method: "DELETE",
@@ -83,6 +111,7 @@ export default function FormatAssignmentsModal({ isOpen, onClose }: FormatAssign
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/content-format-assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
       toast({ title: "Format assignments saved successfully" });
       onClose();
     },

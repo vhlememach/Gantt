@@ -150,7 +150,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
         if (requirement > 0) {
           // Create tasks for each assigned member
           return assignment.assignedMembers.map(async (member: string) => {
-            const taskName = `${member} > ${cycle.name} > ${requirement}x ${formatType.charAt(0).toUpperCase() + formatType.slice(1)}`;
+            const taskName = `${cycle.name} > ${requirement}x ${formatType.charAt(0).toUpperCase() + formatType.slice(1)}`;
             
             const taskPayload = {
               taskTitle: taskName,

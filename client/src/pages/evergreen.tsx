@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Settings, Megaphone, Mail, FileText, Home } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -8,11 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { Navigation, MobileNavigation } from "@/components/ui/navigation";
 import EvergreenBoxEditorModal from "@/components/evergreen/evergreen-box-editor-modal";
 import WaterfallCyclesModal from "@/components/evergreen/waterfall-cycles-modal";
-import type { EvergreenBox, ReleaseGroup, WaterfallCycle } from "@shared/schema";
+import type { EvergreenBox, ReleaseGroup, WaterfallCycle, ChecklistTask } from "@shared/schema";
 
 interface EvergreenPageProps {}
 
 export default function EvergreenPage({}: EvergreenPageProps) {
+  const queryClient = useQueryClient();
   const [selectedGroupId, setSelectedGroupId] = useState<string>("");
   const [isBoxModalOpen, setIsBoxModalOpen] = useState(false);
   const [isCyclesModalOpen, setIsCyclesModalOpen] = useState(false);
@@ -31,6 +32,10 @@ export default function EvergreenPage({}: EvergreenPageProps) {
     queryKey: ["/api/waterfall-cycles"],
   });
 
+  const { data: allTasks = [] } = useQuery<ChecklistTask[]>({
+    queryKey: ["/api/checklist-tasks"],
+  });
+
   // Group boxes by release group
   const boxesByGroup = groups.map(group => ({
     group,
@@ -42,6 +47,73 @@ export default function EvergreenPage({}: EvergreenPageProps) {
     const cycle = waterfallCycles.find(c => c.id === cycleId);
     return cycle?.name || "Unknown cycle";
   };
+
+  // Calculate completion percentage for each evergreen box
+  const getBoxProgress = (boxId: string) => {
+    const boxTasks = allTasks.filter(task => task.evergreenBoxId === boxId);
+    if (boxTasks.length === 0) return 0;
+    const completedTasks = boxTasks.filter(task => task.completed).length;
+    return Math.round((completedTasks / boxTasks.length) * 100);
+  };
+
+  // Auto-generate tasks for boxes with waterfall cycles but no tasks
+  useEffect(() => {
+    const autoGenerateTasks = async () => {
+      if (boxes.length > 0 && waterfallCycles.length > 0) {
+        for (const box of boxes) {
+          if (box.waterfallCycleId) {
+            const existingTasks = allTasks.filter(task => task.evergreenBoxId === box.id);
+            if (existingTasks.length === 0) {
+              // This box has a waterfall cycle but no tasks, generate them
+              try {
+                const cycle = waterfallCycles.find(c => c.id === box.waterfallCycleId);
+                if (!cycle) continue;
+
+                // Get format assignments
+                const assignmentsResponse = await fetch("/api/content-format-assignments");
+                const assignments = await assignmentsResponse.json();
+
+                // Generate tasks for each format type based on assignments
+                for (const assignment of assignments) {
+                  const formatType = assignment.formatType;
+                  const requirement = cycle.contentRequirements[formatType] || 0;
+                  
+                  if (requirement > 0) {
+                    // Create tasks for each assigned member
+                    for (const member of assignment.assignedMembers) {
+                      const taskName = `${box.title} > ${formatType.charAt(0).toUpperCase() + formatType.slice(1)}`;
+                      
+                      const taskPayload = {
+                        taskTitle: taskName,
+                        assignedTo: member,
+                        evergreenBoxId: box.id,
+                        waterfallCycleId: box.waterfallCycleId,
+                        contentFormatType: formatType,
+                        completed: false
+                      };
+
+                      await fetch("/api/checklist-tasks", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(taskPayload),
+                      });
+                    }
+                  }
+                }
+              } catch (error) {
+                console.error(`Auto-generate tasks failed for box ${box.id}:`, error);
+              }
+            }
+          }
+        }
+        
+        // Refresh tasks after generation
+        queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
+      }
+    };
+
+    autoGenerateTasks();
+  }, [boxes, waterfallCycles, allTasks, queryClient]);
 
   const getIconComponent = (iconName: string) => {
     switch (iconName) {
@@ -81,7 +153,10 @@ export default function EvergreenPage({}: EvergreenPageProps) {
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
                 Evergreen Content
               </h1>
-              <p className="mt-2 text-gray-600 dark:text-gray-300">
+              <p className="mt-1 text-lg text-gray-500 dark:text-gray-400">
+                August 2025
+              </p>
+              <p className="mt-1 text-gray-600 dark:text-gray-300">
                 Monthly recurring content requirements and campaigns
               </p>
             </div>
@@ -174,6 +249,16 @@ export default function EvergreenPage({}: EvergreenPageProps) {
                           className="text-xs"
                         >
                           {getWaterfallCycleName(box.waterfallCycleId)}
+                        </Badge>
+                      </div>
+                      
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-500 dark:text-gray-400">Completion:</span>
+                        <Badge 
+                          variant={getBoxProgress(box.id) === 100 ? "default" : "outline"}
+                          className="text-xs"
+                        >
+                          {getBoxProgress(box.id)}% Complete
                         </Badge>
                       </div>
                     </div>

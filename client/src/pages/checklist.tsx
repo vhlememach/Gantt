@@ -38,13 +38,18 @@ export default function ChecklistPage() {
   // Filter tasks by selected member
   const memberTasks = allTasks.filter(task => task.assignedTo === selectedMember);
 
-  // Group tasks by release
+  // Group tasks by release and evergreen
   const tasksByRelease = memberTasks.reduce((acc, task) => {
-    const releaseId = task.releaseId || 'unassigned';
-    if (!acc[releaseId]) {
-      acc[releaseId] = [];
+    let groupId;
+    if (task.evergreenBoxId) {
+      groupId = 'evergreen';
+    } else {
+      groupId = task.releaseId || 'unassigned';
     }
-    acc[releaseId].push(task);
+    if (!acc[groupId]) {
+      acc[groupId] = [];
+    }
+    acc[groupId].push(task);
     return acc;
   }, {} as Record<string, ChecklistTask[]>);
 
@@ -175,17 +180,15 @@ export default function ChecklistPage() {
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
-            <div className="flex items-center space-x-6">
-              <Link href="/">
-                <Button variant="ghost" className="p-2">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Gantt Chart
-                </Button>
-              </Link>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                Team Checklist
-              </h1>
-            </div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Team Checklist
+            </h1>
+            <Link href="/">
+              <Button variant="ghost" className="p-2">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Gantt Chart
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
@@ -308,7 +311,10 @@ export default function ChecklistPage() {
                     <CardHeader>
                       <CardTitle className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
-                          <span>{release?.name || 'Unassigned Tasks'}</span>
+                          <span>
+                            {releaseId === 'evergreen' ? 'Evergreen Content' : 
+                             release?.name || 'Unassigned Tasks'}
+                          </span>
                           <div className="flex items-center space-x-2">
                             <Badge variant={releaseProgress === 100 ? "default" : "outline"}>
                               {releaseProgress}% Complete

@@ -231,6 +231,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Cleanup tasks for removed format assignments
+  app.post("/api/checklist-tasks/cleanup", async (req, res) => {
+    try {
+      const { assignedTo, contentFormatType } = req.body;
+      const allTasks = await storage.getChecklistTasks();
+      
+      // Find tasks that match the criteria for cleanup (evergreenBoxId + format type + assignee)
+      const tasksToDelete = allTasks.filter(task => 
+        task.assignedTo === assignedTo &&
+        task.title?.includes(contentFormatType) &&
+        task.evergreenBoxId
+      );
+      
+      // Delete each matching task
+      for (const task of tasksToDelete) {
+        await storage.deleteChecklistTask(task.id);
+      }
+      
+      res.json({ deletedCount: tasksToDelete.length });
+    } catch (error) {
+      console.error("Error cleaning up tasks:", error);
+      res.status(500).json({ error: "Failed to cleanup tasks" });
+    }
+  });
+
   // Waterfall Cycles
   app.get("/api/waterfall-cycles", async (req, res) => {
     try {
