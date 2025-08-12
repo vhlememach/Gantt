@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Plus, User, CheckCircle, Clock, Users, BarChart3, Download, ArrowUpDown, Star, AlertTriangle, ExternalLink } from "lucide-react";
 import { Link } from "wouter";
+import { Navigation, MobileNavigation } from "@/components/ui/navigation";
 
 const teamMembers = ["Brian", "Alex", "Lucas", "Victor"];
 
@@ -169,25 +170,32 @@ export default function ChecklistPage() {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Marketing Team Checklist
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Track task completion for all team members across releases
-            </p>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Header */}
+      <div className="bg-white dark:bg-gray-800 shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div className="flex items-center space-x-6">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                Team Checklist
+              </h1>
+              
+              {/* Navigation */}
+              <div className="hidden md:block">
+                <Navigation />
+              </div>
+            </div>
           </div>
-          <Link href="/">
-            <Button variant="outline">
-              <BarChart3 className="w-4 h-4 mr-2" />
-              Back to Gantt Chart
-            </Button>
-          </Link>
         </div>
       </div>
+
+      {/* Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-6">
+          <p className="text-gray-600 dark:text-gray-300">
+            Track task completion for all team members across releases
+          </p>
+        </div>
 
       <Tabs value={selectedMember} onValueChange={setSelectedMember}>
         <TabsList className="grid w-full grid-cols-4 mb-6">
@@ -352,7 +360,7 @@ export default function ChecklistPage() {
                             }`}
                           >
                             <Checkbox
-                              checked={task.completed}
+                              checked={task.completed || false}
                               onCheckedChange={(checked) => 
                                 handleTaskToggle(task.id, !!checked)
                               }
@@ -416,6 +424,12 @@ export default function ChecklistPage() {
           </TabsContent>
         ))}
       </Tabs>
+      </div>
+      
+      {/* Mobile Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 md:hidden">
+        <MobileNavigation />
+      </div>
     </div>
   );
 }

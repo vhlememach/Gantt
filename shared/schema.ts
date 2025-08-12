@@ -24,6 +24,7 @@ export const releases = pgTable("releases", {
   responsible: text("responsible").default(""),
   status: text("status").notNull().default("upcoming"), // upcoming, in-progress, completed, delayed
   highPriority: boolean("high_priority").default(false).notNull(),
+  waterfallCycleId: varchar("waterfall_cycle_id").references(() => waterfallCycles.id),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -40,15 +41,47 @@ export const appSettings = pgTable("app_settings", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Waterfall cycle definitions
+export const waterfallCycles = pgTable("waterfall_cycles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(), // Monthly, Weekly, Simple
+  description: text("description"),
+  contentRequirements: jsonb("content_requirements").notNull(), // {article: 1, thread: 1, video: 1, animation: 1, visual: 1}
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Content format team assignments
+export const contentFormatAssignments = pgTable("content_format_assignments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  formatType: text("format_type").notNull(), // article, thread, video, animation, visual
+  assignedMembers: text("assigned_members").array().notNull(), // ["Brian", "Alex"] for articles, ["Lucas"] for videos
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Evergreen content boxes
+export const evergreenBoxes = pgTable("evergreen_boxes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  description: text("description").default(""),
+  responsible: text("responsible").default(""),
+  groupId: varchar("group_id").notNull().references(() => releaseGroups.id, { onDelete: "cascade" }),
+  waterfallCycleId: varchar("waterfall_cycle_id").references(() => waterfallCycles.id),
+  icon: text("icon").notNull().default("lucide-box"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Checklist tasks for marketing team members
 export const checklistTasks = pgTable("checklist_tasks", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   releaseId: varchar("release_id").references(() => releases.id, { onDelete: "cascade" }),
+  evergreenBoxId: varchar("evergreen_box_id").references(() => evergreenBoxes.id, { onDelete: "cascade" }),
   assignedTo: text("assigned_to").notNull(), // Brian, Alex, Lucas, Victor
   taskTitle: text("task_title").notNull(),
   taskDescription: text("task_description"),
   taskUrl: text("task_url"), // URL/Links field
   priority: boolean("priority").default(false), // High priority tasks
+  waterfallCycleId: varchar("waterfall_cycle_id").references(() => waterfallCycles.id),
+  contentFormatType: text("content_format_type"), // article, thread, video, animation, visual
   completed: boolean("completed").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   completedAt: timestamp("completed_at"),
@@ -72,6 +105,21 @@ export const insertAppSettingsSchema = createInsertSchema(appSettings).omit({
   updatedAt: true,
 });
 
+export const insertWaterfallCycleSchema = createInsertSchema(waterfallCycles).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertContentFormatAssignmentSchema = createInsertSchema(contentFormatAssignments).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertEvergreenBoxSchema = createInsertSchema(evergreenBoxes).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertChecklistTaskSchema = createInsertSchema(checklistTasks).omit({
   id: true,
   createdAt: true,
@@ -86,6 +134,15 @@ export type Release = typeof releases.$inferSelect;
 
 export type InsertAppSettings = z.infer<typeof insertAppSettingsSchema>;
 export type AppSettings = typeof appSettings.$inferSelect;
+
+export type InsertWaterfallCycle = z.infer<typeof insertWaterfallCycleSchema>;
+export type WaterfallCycle = typeof waterfallCycles.$inferSelect;
+
+export type InsertContentFormatAssignment = z.infer<typeof insertContentFormatAssignmentSchema>;
+export type ContentFormatAssignment = typeof contentFormatAssignments.$inferSelect;
+
+export type InsertEvergreenBox = z.infer<typeof insertEvergreenBoxSchema>;
+export type EvergreenBox = typeof evergreenBoxes.$inferSelect;
 
 export type InsertChecklistTask = z.infer<typeof insertChecklistTaskSchema>;
 export type ChecklistTask = typeof checklistTasks.$inferSelect;

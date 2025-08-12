@@ -7,6 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Slider } from "@/components/ui/slider";
 import { Palette, Ungroup, Download, Plus, ExpandIcon, ChevronDown, Settings, CheckSquare } from "lucide-react";
 
+import { Navigation, MobileNavigation } from "@/components/ui/navigation";
 import HeaderCustomizationModal from "@/components/gantt/header-customization-modal";
 import GroupManagementModal from "@/components/gantt/group-management-modal";
 import ReleaseEditorModal from "@/components/gantt/release-editor-modal";
@@ -295,7 +296,7 @@ export default function GanttPage() {
       <header className="text-white shadow-lg" style={headerStyle}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-6">
               <h1 
                 className="text-xl font-bold"
                 style={{
@@ -304,6 +305,11 @@ export default function GanttPage() {
               >
                 {settings?.headerTitle || "Release Gantt Chart"}
               </h1>
+              
+              {/* Navigation */}
+              <div className="hidden md:block">
+                <Navigation className="text-white" />
+              </div>
             </div>
             <div className="flex items-center space-x-3">
               <Link href="/checklist">
@@ -465,6 +471,11 @@ export default function GanttPage() {
         isOpen={isStatusColorModalOpen}
         onClose={() => setIsStatusColorModalOpen(false)}
       />
+      
+      {/* Mobile Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 md:hidden">
+        <MobileNavigation />
+      </div>
     </div>
   );
 }

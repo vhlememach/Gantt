@@ -1,7 +1,10 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertReleaseGroupSchema, insertReleaseSchema, insertAppSettingsSchema, insertChecklistTaskSchema } from "@shared/schema";
+import { 
+  insertReleaseGroupSchema, insertReleaseSchema, insertAppSettingsSchema, insertChecklistTaskSchema,
+  insertWaterfallCycleSchema, insertContentFormatAssignmentSchema, insertEvergreenBoxSchema
+} from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Release Groups
@@ -225,6 +228,173 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting checklist task:", error);
       res.status(500).json({ error: "Failed to delete task" });
+    }
+  });
+
+  // Waterfall Cycles
+  app.get("/api/waterfall-cycles", async (req, res) => {
+    try {
+      const cycles = await storage.getWaterfallCycles();
+      res.json(cycles);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get waterfall cycles" });
+    }
+  });
+
+  app.get("/api/waterfall-cycles/:id", async (req, res) => {
+    try {
+      const cycle = await storage.getWaterfallCycle(req.params.id);
+      if (!cycle) {
+        return res.status(404).json({ message: "Waterfall cycle not found" });
+      }
+      res.json(cycle);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get waterfall cycle" });
+    }
+  });
+
+  app.post("/api/waterfall-cycles", async (req, res) => {
+    try {
+      const validatedData = insertWaterfallCycleSchema.parse(req.body);
+      const cycle = await storage.createWaterfallCycle(validatedData);
+      res.json(cycle);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid waterfall cycle data" });
+    }
+  });
+
+  app.put("/api/waterfall-cycles/:id", async (req, res) => {
+    try {
+      const validatedData = insertWaterfallCycleSchema.partial().parse(req.body);
+      const cycle = await storage.updateWaterfallCycle(req.params.id, validatedData);
+      if (!cycle) {
+        return res.status(404).json({ message: "Waterfall cycle not found" });
+      }
+      res.json(cycle);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid waterfall cycle data" });
+    }
+  });
+
+  app.delete("/api/waterfall-cycles/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteWaterfallCycle(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Waterfall cycle not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete waterfall cycle" });
+    }
+  });
+
+  // Content Format Assignments
+  app.get("/api/content-format-assignments", async (req, res) => {
+    try {
+      const assignments = await storage.getContentFormatAssignments();
+      res.json(assignments);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get content format assignments" });
+    }
+  });
+
+  app.post("/api/content-format-assignments", async (req, res) => {
+    try {
+      const validatedData = insertContentFormatAssignmentSchema.parse(req.body);
+      const assignment = await storage.createContentFormatAssignment(validatedData);
+      res.json(assignment);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid content format assignment data" });
+    }
+  });
+
+  app.put("/api/content-format-assignments/:id", async (req, res) => {
+    try {
+      const validatedData = insertContentFormatAssignmentSchema.partial().parse(req.body);
+      const assignment = await storage.updateContentFormatAssignment(req.params.id, validatedData);
+      if (!assignment) {
+        return res.status(404).json({ message: "Content format assignment not found" });
+      }
+      res.json(assignment);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid content format assignment data" });
+    }
+  });
+
+  // Evergreen Boxes
+  app.get("/api/evergreen-boxes", async (req, res) => {
+    try {
+      const boxes = await storage.getEvergreenBoxes();
+      res.json(boxes);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get evergreen boxes" });
+    }
+  });
+
+  app.get("/api/evergreen-boxes/:id", async (req, res) => {
+    try {
+      const box = await storage.getEvergreenBox(req.params.id);
+      if (!box) {
+        return res.status(404).json({ message: "Evergreen box not found" });
+      }
+      res.json(box);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get evergreen box" });
+    }
+  });
+
+  app.get("/api/evergreen-boxes/group/:groupId", async (req, res) => {
+    try {
+      const boxes = await storage.getEvergreenBoxesByGroup(req.params.groupId);
+      res.json(boxes);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get evergreen boxes for group" });
+    }
+  });
+
+  app.post("/api/evergreen-boxes", async (req, res) => {
+    try {
+      const validatedData = insertEvergreenBoxSchema.parse(req.body);
+      const box = await storage.createEvergreenBox(validatedData);
+      res.json(box);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid evergreen box data" });
+    }
+  });
+
+  app.put("/api/evergreen-boxes/:id", async (req, res) => {
+    try {
+      const validatedData = insertEvergreenBoxSchema.partial().parse(req.body);
+      const box = await storage.updateEvergreenBox(req.params.id, validatedData);
+      if (!box) {
+        return res.status(404).json({ message: "Evergreen box not found" });
+      }
+      res.json(box);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid evergreen box data" });
+    }
+  });
+
+  app.delete("/api/evergreen-boxes/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteEvergreenBox(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Evergreen box not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete evergreen box" });
+    }
+  });
+
+  // Checklist tasks by evergreen box
+  app.get("/api/checklist-tasks/evergreen/:evergreenBoxId", async (req, res) => {
+    try {
+      const tasks = await storage.getChecklistTasksByEvergreenBox(req.params.evergreenBoxId);
+      res.json(tasks);
+    } catch (error) {
+      console.error("Error fetching checklist tasks by evergreen box:", error);
+      res.status(500).json({ error: "Failed to fetch checklist tasks" });
     }
   });
 

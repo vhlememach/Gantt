@@ -6,12 +6,14 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import GanttPage from "@/pages/gantt";
 import ChecklistPage from "@/pages/checklist";
+import EvergreenPage from "@/pages/evergreen";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={GanttPage} />
       <Route path="/checklist" component={ChecklistPage} />
+      <Route path="/evergreen" component={EvergreenPage} />
       <Route component={NotFound} />
     </Switch>
   );

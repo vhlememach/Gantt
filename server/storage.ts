@@ -1,4 +1,12 @@
-import { type ReleaseGroup, type InsertReleaseGroup, type Release, type InsertRelease, type AppSettings, type InsertAppSettings, type ChecklistTask, type InsertChecklistTask } from "@shared/schema";
+import { 
+  type ReleaseGroup, type InsertReleaseGroup, 
+  type Release, type InsertRelease, 
+  type AppSettings, type InsertAppSettings, 
+  type ChecklistTask, type InsertChecklistTask,
+  type WaterfallCycle, type InsertWaterfallCycle,
+  type ContentFormatAssignment, type InsertContentFormatAssignment,
+  type EvergreenBox, type InsertEvergreenBox
+} from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -24,22 +32,51 @@ export interface IStorage {
   // Checklist Tasks
   getChecklistTasks(): Promise<ChecklistTask[]>;
   getChecklistTasksByRelease(releaseId: string): Promise<ChecklistTask[]>;
+  getChecklistTasksByEvergreenBox(evergreenBoxId: string): Promise<ChecklistTask[]>;
   getChecklistTasksByMember(assignedTo: string): Promise<ChecklistTask[]>;
   createChecklistTask(task: InsertChecklistTask): Promise<ChecklistTask>;
   updateChecklistTask(id: string, task: Partial<InsertChecklistTask>): Promise<ChecklistTask | undefined>;
   deleteChecklistTask(id: string): Promise<boolean>;
+
+  // Waterfall Cycles
+  getWaterfallCycles(): Promise<WaterfallCycle[]>;
+  getWaterfallCycle(id: string): Promise<WaterfallCycle | undefined>;
+  createWaterfallCycle(cycle: InsertWaterfallCycle): Promise<WaterfallCycle>;
+  updateWaterfallCycle(id: string, cycle: Partial<InsertWaterfallCycle>): Promise<WaterfallCycle | undefined>;
+  deleteWaterfallCycle(id: string): Promise<boolean>;
+
+  // Content Format Assignments
+  getContentFormatAssignments(): Promise<ContentFormatAssignment[]>;
+  getContentFormatAssignment(id: string): Promise<ContentFormatAssignment | undefined>;
+  createContentFormatAssignment(assignment: InsertContentFormatAssignment): Promise<ContentFormatAssignment>;
+  updateContentFormatAssignment(id: string, assignment: Partial<InsertContentFormatAssignment>): Promise<ContentFormatAssignment | undefined>;
+  deleteContentFormatAssignment(id: string): Promise<boolean>;
+
+  // Evergreen Boxes
+  getEvergreenBoxes(): Promise<EvergreenBox[]>;
+  getEvergreenBox(id: string): Promise<EvergreenBox | undefined>;
+  getEvergreenBoxesByGroup(groupId: string): Promise<EvergreenBox[]>;
+  createEvergreenBox(box: InsertEvergreenBox): Promise<EvergreenBox>;
+  updateEvergreenBox(id: string, box: Partial<InsertEvergreenBox>): Promise<EvergreenBox | undefined>;
+  deleteEvergreenBox(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
   private releaseGroups: Map<string, ReleaseGroup>;
   private releases: Map<string, Release>;
   private checklistTasks: Map<string, ChecklistTask>;
+  private waterfallCycles: Map<string, WaterfallCycle>;
+  private contentFormatAssignments: Map<string, ContentFormatAssignment>;
+  private evergreenBoxes: Map<string, EvergreenBox>;
   private appSettings: AppSettings;
 
   constructor() {
     this.releaseGroups = new Map();
     this.releases = new Map();
     this.checklistTasks = new Map();
+    this.waterfallCycles = new Map();
+    this.contentFormatAssignments = new Map();
+    this.evergreenBoxes = new Map();
     this.appSettings = {
       id: randomUUID(),
       headerTitle: "Release Gantt Chart",
@@ -48,6 +85,8 @@ export class MemStorage implements IStorage {
       fontFamily: "Inter",
       buttonColor: "#8B5CF6",
       buttonStyle: "rounded",
+      currentDayLineColor: "#000000",
+      currentDayLineThickness: 2,
       updatedAt: new Date(),
     };
 
@@ -91,6 +130,8 @@ export class MemStorage implements IStorage {
         icon: "fas fa-database",
         responsible: "Sarah Johnson",
         status: "in-progress",
+        highPriority: false,
+        waterfallCycleId: null,
         createdAt: new Date(),
       },
       {
@@ -104,6 +145,8 @@ export class MemStorage implements IStorage {
         icon: "fas fa-mobile-alt",
         responsible: "Mike Chen",
         status: "upcoming",
+        highPriority: false,
+        waterfallCycleId: null,
         createdAt: new Date(),
       },
       {
@@ -117,6 +160,8 @@ export class MemStorage implements IStorage {
         icon: "fas fa-chart-line",
         responsible: "Emily Davis",
         status: "upcoming",
+        highPriority: false,
+        waterfallCycleId: null,
         createdAt: new Date(),
       },
       {
@@ -130,6 +175,8 @@ export class MemStorage implements IStorage {
         icon: "fas fa-cloud",
         responsible: "Alex Turner",
         status: "in-progress",
+        highPriority: false,
+        waterfallCycleId: null,
         createdAt: new Date(),
       },
       {
@@ -143,6 +190,8 @@ export class MemStorage implements IStorage {
         icon: "fas fa-cog",
         responsible: "David Wilson",
         status: "upcoming",
+        highPriority: false,
+        waterfallCycleId: null,
         createdAt: new Date(),
       },
     ];
@@ -151,8 +200,141 @@ export class MemStorage implements IStorage {
       this.releases.set(release.id, release);
     });
 
+    // Initialize sample waterfall cycles
+    this.initializeSampleWaterfallCycles();
+
+    // Initialize sample content format assignments
+    this.initializeSampleContentFormatAssignments();
+
+    // Initialize sample evergreen boxes
+    this.initializeSampleEvergreenBoxes([productGroup, infraGroup]);
+
     // Initialize sample checklist tasks
     this.initializeSampleChecklistTasks(releases);
+  }
+
+  private initializeSampleWaterfallCycles() {
+    const cycles: WaterfallCycle[] = [
+      {
+        id: randomUUID(),
+        name: "Monthly Waterfall Cycle",
+        description: "Comprehensive content creation for major releases",
+        contentRequirements: {
+          article: 1,
+          thread: 1,
+          video: 1,
+          animation: 1,
+          visual: 1
+        },
+        createdAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        name: "Weekly Waterfall Cycle",
+        description: "Regular content creation for ongoing engagement",
+        contentRequirements: {
+          thread: 1,
+          animation: 1,
+          visual: 1
+        },
+        createdAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        name: "Simple Waterfall Cycle",
+        description: "Minimal content creation for quick releases",
+        contentRequirements: {
+          thread: 1,
+          visual: 1
+        },
+        createdAt: new Date(),
+      },
+    ];
+
+    cycles.forEach(cycle => {
+      this.waterfallCycles.set(cycle.id, cycle);
+    });
+  }
+
+  private initializeSampleContentFormatAssignments() {
+    const assignments: ContentFormatAssignment[] = [
+      {
+        id: randomUUID(),
+        formatType: "article",
+        assignedMembers: ["Brian", "Alex"],
+        createdAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        formatType: "thread",
+        assignedMembers: ["Brian", "Alex", "Victor"],
+        createdAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        formatType: "video",
+        assignedMembers: ["Lucas"],
+        createdAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        formatType: "animation",
+        assignedMembers: ["Lucas", "Victor"],
+        createdAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        formatType: "visual",
+        assignedMembers: ["Victor", "Alex"],
+        createdAt: new Date(),
+      },
+    ];
+
+    assignments.forEach(assignment => {
+      this.contentFormatAssignments.set(assignment.id, assignment);
+    });
+  }
+
+  private initializeSampleEvergreenBoxes(groups: ReleaseGroup[]) {
+    const [productGroup, infraGroup] = groups;
+    const cycleIds = Array.from(this.waterfallCycles.keys());
+    
+    const boxes: EvergreenBox[] = [
+      {
+        id: randomUUID(),
+        title: "Social Media Call To Action",
+        description: "Monthly social media engagement campaigns and follow prompts",
+        responsible: "Brian",
+        groupId: productGroup.id,
+        waterfallCycleId: cycleIds[0], // Monthly cycle
+        icon: "lucide-megaphone",
+        createdAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        title: "Community Newsletter",
+        description: "Weekly newsletter content and subscriber engagement",
+        responsible: "Alex",
+        groupId: productGroup.id,
+        waterfallCycleId: cycleIds[1], // Weekly cycle
+        icon: "lucide-mail",
+        createdAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        title: "Technical Blog Posts",
+        description: "Infrastructure insights and technical thought leadership",
+        responsible: "Victor",
+        groupId: infraGroup.id,
+        waterfallCycleId: cycleIds[2], // Simple cycle
+        icon: "lucide-file-text",
+        createdAt: new Date(),
+      },
+    ];
+
+    boxes.forEach(box => {
+      this.evergreenBoxes.set(box.id, box);
+    });
   }
 
   private initializeSampleChecklistTasks(releases: Release[]) {
@@ -178,11 +360,14 @@ export class MemStorage implements IStorage {
           const task: ChecklistTask = {
             id: taskId,
             releaseId: release.id,
+            evergreenBoxId: null,
             assignedTo: member,
             taskTitle: `${sampleTasks[Math.floor(Math.random() * sampleTasks.length)]} - ${release.name}`,
             taskDescription: `${member}'s task for ${release.name}`,
             taskUrl: Math.random() > 0.5 ? `https://docs.example.com/${taskId}` : null,
             priority: false, // Priority is determined by release.highPriority
+            waterfallCycleId: null,
+            contentFormatType: null,
             completed: isCompleted,
             createdAt: new Date(),
             completedAt: isCompleted ? new Date() : null,
@@ -258,6 +443,8 @@ export class MemStorage implements IStorage {
       url: release.url || "",
       responsible: release.responsible || "",
       icon: release.icon || "lucide-rocket",
+      highPriority: release.highPriority || false,
+      waterfallCycleId: release.waterfallCycleId || null,
     };
     this.releases.set(id, newRelease);
     return newRelease;
@@ -308,8 +495,13 @@ export class MemStorage implements IStorage {
     const newTask: ChecklistTask = {
       ...task,
       id,
+      releaseId: task.releaseId || null,
+      evergreenBoxId: task.evergreenBoxId || null,
+      taskDescription: task.taskDescription || null,
       taskUrl: task.taskUrl || null,
       priority: task.priority || false,
+      waterfallCycleId: task.waterfallCycleId || null,
+      contentFormatType: task.contentFormatType || null,
       completed: task.completed || false,
       createdAt: new Date(),
       completedAt: null,
@@ -333,6 +525,118 @@ export class MemStorage implements IStorage {
 
   async deleteChecklistTask(id: string): Promise<boolean> {
     return this.checklistTasks.delete(id);
+  }
+
+  async getChecklistTasksByEvergreenBox(evergreenBoxId: string): Promise<ChecklistTask[]> {
+    return Array.from(this.checklistTasks.values()).filter(task => task.evergreenBoxId === evergreenBoxId);
+  }
+
+  // Waterfall Cycles
+  async getWaterfallCycles(): Promise<WaterfallCycle[]> {
+    return Array.from(this.waterfallCycles.values());
+  }
+
+  async getWaterfallCycle(id: string): Promise<WaterfallCycle | undefined> {
+    return this.waterfallCycles.get(id);
+  }
+
+  async createWaterfallCycle(cycle: InsertWaterfallCycle): Promise<WaterfallCycle> {
+    const id = randomUUID();
+    const newCycle: WaterfallCycle = {
+      ...cycle,
+      id,
+      description: cycle.description || null,
+      createdAt: new Date(),
+    };
+    this.waterfallCycles.set(id, newCycle);
+    return newCycle;
+  }
+
+  async updateWaterfallCycle(id: string, cycle: Partial<InsertWaterfallCycle>): Promise<WaterfallCycle | undefined> {
+    const existing = this.waterfallCycles.get(id);
+    if (!existing) return undefined;
+
+    const updated: WaterfallCycle = { ...existing, ...cycle };
+    this.waterfallCycles.set(id, updated);
+    return updated;
+  }
+
+  async deleteWaterfallCycle(id: string): Promise<boolean> {
+    return this.waterfallCycles.delete(id);
+  }
+
+  // Content Format Assignments
+  async getContentFormatAssignments(): Promise<ContentFormatAssignment[]> {
+    return Array.from(this.contentFormatAssignments.values());
+  }
+
+  async getContentFormatAssignment(id: string): Promise<ContentFormatAssignment | undefined> {
+    return this.contentFormatAssignments.get(id);
+  }
+
+  async createContentFormatAssignment(assignment: InsertContentFormatAssignment): Promise<ContentFormatAssignment> {
+    const id = randomUUID();
+    const newAssignment: ContentFormatAssignment = {
+      ...assignment,
+      id,
+      createdAt: new Date(),
+    };
+    this.contentFormatAssignments.set(id, newAssignment);
+    return newAssignment;
+  }
+
+  async updateContentFormatAssignment(id: string, assignment: Partial<InsertContentFormatAssignment>): Promise<ContentFormatAssignment | undefined> {
+    const existing = this.contentFormatAssignments.get(id);
+    if (!existing) return undefined;
+
+    const updated: ContentFormatAssignment = { ...existing, ...assignment };
+    this.contentFormatAssignments.set(id, updated);
+    return updated;
+  }
+
+  async deleteContentFormatAssignment(id: string): Promise<boolean> {
+    return this.contentFormatAssignments.delete(id);
+  }
+
+  // Evergreen Boxes
+  async getEvergreenBoxes(): Promise<EvergreenBox[]> {
+    return Array.from(this.evergreenBoxes.values());
+  }
+
+  async getEvergreenBox(id: string): Promise<EvergreenBox | undefined> {
+    return this.evergreenBoxes.get(id);
+  }
+
+  async getEvergreenBoxesByGroup(groupId: string): Promise<EvergreenBox[]> {
+    return Array.from(this.evergreenBoxes.values()).filter(box => box.groupId === groupId);
+  }
+
+  async createEvergreenBox(box: InsertEvergreenBox): Promise<EvergreenBox> {
+    const id = randomUUID();
+    const newBox: EvergreenBox = {
+      ...box,
+      id,
+      description: box.description || "",
+      responsible: box.responsible || "",
+      icon: box.icon || "lucide-box",
+      waterfallCycleId: box.waterfallCycleId || null,
+      createdAt: new Date(),
+    };
+    this.evergreenBoxes.set(id, newBox);
+    return newBox;
+  }
+
+  async updateEvergreenBox(id: string, box: Partial<InsertEvergreenBox>): Promise<EvergreenBox | undefined> {
+    const existing = this.evergreenBoxes.get(id);
+    if (!existing) return undefined;
+
+    const updated: EvergreenBox = { ...existing, ...box };
+    this.evergreenBoxes.set(id, updated);
+    return updated;
+  }
+
+  async deleteEvergreenBox(id: string): Promise<boolean> {
+    return this.evergreenBoxes.delete(id);
   }
 }
 
