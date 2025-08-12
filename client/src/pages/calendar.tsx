@@ -5,7 +5,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar as CalendarIcon, CheckCircle, Star, AlertTriangle, ExternalLink, ArrowLeft } from "lucide-react";
+import { Calendar as CalendarIcon, CheckCircle, Star, AlertTriangle, ExternalLink, ArrowLeft, Palette } from "lucide-react";
 import { Link } from "wouter";
 import { Navigation, MobileNavigation } from "@/components/ui/navigation";
 
@@ -43,7 +43,7 @@ export default function CalendarPage() {
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth());
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
   const [draggedTask, setDraggedTask] = useState<CalendarTask | null>(null);
-  const [calendarTasks, setCalendarTasks] = useState<Record<string, CalendarTask[]>>({});
+  const [showColorPicker, setShowColorPicker] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -100,19 +100,16 @@ export default function CalendarPage() {
     return acc;
   }, {} as Record<string, CalendarTask[]>);
   
-  // Build calendar tasks from scheduled tasks
-  useEffect(() => {
-    const calendarData: Record<string, CalendarTask[]> = {};
-    scheduledTasks.forEach(task => {
-      if (task.scheduledDate) {
-        if (!calendarData[task.scheduledDate]) {
-          calendarData[task.scheduledDate] = [];
-        }
-        calendarData[task.scheduledDate].push(task);
+  // Build calendar tasks from scheduled tasks (computed directly)
+  const calendarTasksFromScheduled = scheduledTasks.reduce((acc, task) => {
+    if (task.scheduledDate) {
+      if (!acc[task.scheduledDate]) {
+        acc[task.scheduledDate] = [];
       }
-    });
-    setCalendarTasks(calendarData);
-  }, [scheduledTasks]);
+      acc[task.scheduledDate].push(task);
+    }
+    return acc;
+  }, {} as Record<string, CalendarTask[]>);
 
   const daysInMonth = getDaysInMonth(selectedYear, selectedMonth);
   const firstDayOfMonth = getFirstDayOfMonth(selectedYear, selectedMonth);
@@ -231,7 +228,7 @@ export default function CalendarPage() {
   // Get tasks for a specific day, grouped by release
   const getTasksForDay = (day: number) => {
     const dateKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    const dayTasks = calendarTasks[dateKey] || [];
+    const dayTasks = calendarTasksFromScheduled[dateKey] || [];
     
     // Group by release
     const tasksByRelease = dayTasks.reduce((acc, task) => {
@@ -247,6 +244,16 @@ export default function CalendarPage() {
     }, {} as Record<string, { release?: Release; tasks: CalendarTask[] }>);
 
     return tasksByRelease;
+  };
+
+  // Get releases active on a specific day
+  const getReleasesForDay = (day: number) => {
+    const currentDate = new Date(selectedYear, selectedMonth, day);
+    return releases.filter(release => {
+      const startDate = new Date(release.startDate);
+      const endDate = new Date(release.endDate);
+      return currentDate >= startDate && currentDate <= endDate;
+    });
   };
 
   return (
@@ -330,10 +337,26 @@ export default function CalendarPage() {
           <div className="p-6">
             {/* Calendar Header */}
             <div className="flex items-center justify-between mb-6">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {monthNames[selectedMonth]} {selectedYear}
-              </h1>
+              <div className="flex items-center space-x-4">
+                <Link href="/">
+                  <Button variant="outline" size="sm">
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back to Gantt
+                  </Button>
+                </Link>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {monthNames[selectedMonth]} {selectedYear}
+                </h1>
+              </div>
               <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowColorPicker(!showColorPicker)}
+                >
+                  <Palette className="w-4 h-4 mr-2" />
+                  Colors
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
@@ -351,6 +374,42 @@ export default function CalendarPage() {
               </div>
             </div>
 
+            {/* Color Picker Panel */}
+            {showColorPicker && (
+              <div className="mb-6 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+                <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Release Group Colors</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {releaseGroups.map(group => (
+                    <div key={group.id} className="flex items-center space-x-3">
+                      <div 
+                        className="w-6 h-6 rounded border border-gray-300"
+                        style={{ backgroundColor: group.color }}
+                      />
+                      <span className="text-sm text-gray-700 dark:text-gray-300 flex-1">
+                        {group.name}
+                      </span>
+                      <div className="flex space-x-1">
+                        {['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#F97316'].map(color => (
+                          <button
+                            key={color}
+                            className="w-5 h-5 rounded border border-gray-300 hover:scale-110 transition-transform"
+                            style={{ backgroundColor: color }}
+                            onClick={() => {
+                              // Simple color update - in real app would use mutation
+                              const updatedGroups = releaseGroups.map(g => 
+                                g.id === group.id ? { ...g, color } : g
+                              );
+                              queryClient.setQueryData(["/api/release-groups"], updatedGroups);
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Calendar Grid */}
             <div className="grid grid-cols-7 gap-4">
               {/* Day Headers */}
@@ -367,6 +426,7 @@ export default function CalendarPage() {
                 }
 
                 const tasksForDay = getTasksForDay(day);
+                const releasesForDay = getReleasesForDay(day);
                 const currentDate = new Date();
                 const isToday = 
                   day === currentDate.getDate() && 
@@ -390,31 +450,28 @@ export default function CalendarPage() {
                       </span>
                     </div>
 
-                    {/* Release groups and tasks for this day */}
+                    {/* Release dividers for active releases */}
                     <div className="space-y-2">
-                      {Object.entries(tasksForDay).map(([releaseId, { release, tasks }]) => {
-                        const group = release ? releaseGroups.find(g => g.id === release.groupId) : null;
-                        const releaseDate = new Date(selectedYear, selectedMonth, day);
+                      {releasesForDay.map(release => {
+                        const group = releaseGroups.find(g => g.id === release.groupId);
+                        const releaseTasks = tasksForDay[release.id]?.tasks || [];
                         
-                        // Check if this date is the start of the release
-                        const isReleaseStart = release && 
-                          new Date(release.startDate).toDateString() === releaseDate.toDateString();
-
                         return (
-                          <div key={releaseId} className="space-y-1">
-                            {isReleaseStart && (
-                              <div 
-                                className="text-xs font-medium px-2 py-1 rounded text-white"
-                                style={{ backgroundColor: group?.color || '#6b7280' }}
-                              >
-                                <i className={`${release.icon} mr-1`}></i>
-                                {release.name} Start
-                              </div>
-                            )}
-                            {tasks.map(task => (
+                          <div key={release.id} className="space-y-1">
+                            {/* Release divider box */}
+                            <div 
+                              className="text-xs font-medium px-2 py-1 rounded text-white opacity-80"
+                              style={{ backgroundColor: group?.color || '#6b7280' }}
+                            >
+                              <i className={`${release.icon} mr-1`}></i>
+                              {release.name}
+                            </div>
+                            
+                            {/* Tasks under this release */}
+                            {releaseTasks.map(task => (
                               <div
                                 key={task.id}
-                                className="text-xs p-1 bg-gray-100 dark:bg-gray-600 rounded truncate cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors"
+                                className="text-xs p-1 bg-gray-100 dark:bg-gray-600 rounded truncate cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors ml-2"
                                 title={`${task.taskTitle} - Click to remove`}
                                 onClick={() => handleTaskClick(task)}
                               >
@@ -424,6 +481,28 @@ export default function CalendarPage() {
                           </div>
                         );
                       })}
+                      
+                      {/* Evergreen tasks (tasks without release or with evergreen releaseId) */}
+                      {Object.entries(tasksForDay)
+                        .filter(([releaseId]) => releaseId === 'evergreen' || !releases.find(r => r.id === releaseId))
+                        .map(([releaseId, { tasks }]) => (
+                          <div key={releaseId} className="space-y-1">
+                            <div className="text-xs font-medium px-2 py-1 rounded text-white bg-gray-500">
+                              <i className="fas fa-calendar mr-1"></i>
+                              Evergreen
+                            </div>
+                            {tasks.map(task => (
+                              <div
+                                key={task.id}
+                                className="text-xs p-1 bg-gray-100 dark:bg-gray-600 rounded truncate cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors ml-2"
+                                title={`${task.taskTitle} - Click to remove`}
+                                onClick={() => handleTaskClick(task)}
+                              >
+                                {task.taskTitle}
+                              </div>
+                            ))}
+                          </div>
+                        ))}
                     </div>
                   </div>
                 );
