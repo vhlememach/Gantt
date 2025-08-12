@@ -244,21 +244,30 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
       queryClient.invalidateQueries({ queryKey: ["/api/releases", releaseId] });
       queryClient.refetchQueries({ queryKey: ["/api/releases"] });
       
-      // Clean up existing waterfall tasks for this release to prevent duplicates
+      // Clean up ALL existing tasks for this release to prevent duplicates
       try {
+        console.log("Cleaning up existing tasks for release update...");
         const tasksResponse = await fetch("/api/checklist-tasks");
         const allTasks = await tasksResponse.json();
         
-        // Find and delete all waterfall tasks for this release
+        // Find and delete ALL tasks for this release (not just waterfall)
         const releaseTasks = allTasks.filter((task: any) => 
-          task.releaseId === updatedRelease.id && task.waterfallCycleId
+          task.releaseId === updatedRelease.id
         );
         
+        console.log("Tasks to delete for release update:", releaseTasks.length);
+        
         for (const task of releaseTasks) {
-          await fetch(`/api/checklist-tasks/${task.id}`, {
-            method: "DELETE"
-          });
+          try {
+            await fetch(`/api/checklist-tasks/${task.id}`, { method: "DELETE" });
+            console.log(`Deleted task ${task.id} for release update`);
+          } catch (deleteError) {
+            console.error(`Failed to delete task ${task.id}:`, deleteError);
+          }
         }
+        
+        // Wait for deletions to process
+        await new Promise(resolve => setTimeout(resolve, 500));
       } catch (error) {
         console.error("Failed to cleanup release tasks:", error);
       }
@@ -283,13 +292,51 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
   const deleteReleaseMutation = useMutation({
     mutationFn: async () => {
       if (!releaseId) throw new Error("No release ID provided");
+      
+      // First, clean up all related tasks for this release
+      try {
+        console.log("Starting release deletion cleanup...");
+        const tasksResponse = await fetch("/api/checklist-tasks");
+        const allTasks = await tasksResponse.json();
+        
+        // Find all tasks related to this release
+        const tasksToDelete = allTasks.filter((task: any) => 
+          task.releaseId === releaseId
+        );
+        
+        console.log("Tasks to delete for release:", tasksToDelete.length, tasksToDelete.map((t: any) => ({ 
+          id: t.id, 
+          title: t.taskTitle,
+          releaseId: t.releaseId
+        })));
+        
+        // Delete all related tasks sequentially
+        for (const task of tasksToDelete) {
+          try {
+            const deleteResponse = await fetch(`/api/checklist-tasks/${task.id}`, { method: "DELETE" });
+            console.log(`Deleted task ${task.id} (${task.taskTitle}):`, deleteResponse.status);
+          } catch (deleteError) {
+            console.error(`Failed to delete task ${task.id}:`, deleteError);
+          }
+        }
+        
+        console.log("All related tasks deleted successfully");
+        
+        // Wait for deletions to fully process
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } catch (error) {
+        console.error("Failed to cleanup related tasks:", error);
+      }
+
+      // Now delete the release
       const response = await apiRequest("DELETE", `/api/releases/${releaseId}`);
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/releases"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
       queryClient.refetchQueries({ queryKey: ["/api/releases"] });
-      toast({ title: "Release deleted successfully" });
+      toast({ title: "Release and related tasks deleted successfully" });
       onClose();
     },
     onError: (error) => {
