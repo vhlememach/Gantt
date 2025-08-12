@@ -172,25 +172,34 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
     onSuccess: async (updatedBox) => {
       const waterfallCycleId = form.getValues('waterfallCycleId');
       
-      // If changing to "No Cycle Assigned", clean up existing tasks
-      if (!waterfallCycleId || waterfallCycleId === "none") {
-        try {
-          const tasksResponse = await fetch("/api/checklist-tasks");
-          const allTasks = await tasksResponse.json();
-          
-          // Find and delete all tasks for this evergreen box
-          const boxTasks = allTasks.filter((task: any) => task.evergreenBoxId === updatedBox.id);
-          
-          for (const task of boxTasks) {
-            await fetch(`/api/checklist-tasks/${task.id}`, {
-              method: "DELETE"
-            });
+      // Always clean up existing tasks first to prevent duplicates
+      try {
+        console.log("Cleaning up existing tasks for evergreen box update...");
+        const tasksResponse = await fetch("/api/checklist-tasks");
+        const allTasks = await tasksResponse.json();
+        
+        // Find and delete all tasks for this evergreen box
+        const boxTasks = allTasks.filter((task: any) => task.evergreenBoxId === updatedBox.id);
+        
+        console.log("Tasks to delete for evergreen box update:", boxTasks.length);
+        
+        for (const task of boxTasks) {
+          try {
+            await fetch(`/api/checklist-tasks/${task.id}`, { method: "DELETE" });
+            console.log(`Deleted task ${task.id} for evergreen box update`);
+          } catch (deleteError) {
+            console.error(`Failed to delete task ${task.id}:`, deleteError);
           }
-        } catch (error) {
-          console.error("Failed to cleanup evergreen tasks:", error);
         }
-      } else {
-        // If waterfall cycle is assigned, generate format-based checklist tasks
+        
+        // Wait for deletions to process
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (error) {
+        console.error("Failed to cleanup evergreen tasks:", error);
+      }
+      
+      // If waterfall cycle is assigned, generate new format-based checklist tasks
+      if (waterfallCycleId && waterfallCycleId !== "none") {
         await generateEvergreenTasks(updatedBox.id, waterfallCycleId, updatedBox.title);
       }
       
@@ -208,6 +217,42 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
+      // First, clean up all related tasks for this evergreen box
+      try {
+        console.log("Starting evergreen box deletion cleanup...");
+        const tasksResponse = await fetch("/api/checklist-tasks");
+        const allTasks = await tasksResponse.json();
+        
+        // Find all tasks related to this evergreen box
+        const tasksToDelete = allTasks.filter((task: any) => 
+          task.evergreenBoxId === boxId
+        );
+        
+        console.log("Tasks to delete for evergreen box:", tasksToDelete.length, tasksToDelete.map((t: any) => ({ 
+          id: t.id, 
+          title: t.taskTitle,
+          evergreenBoxId: t.evergreenBoxId
+        })));
+        
+        // Delete all related tasks sequentially
+        for (const task of tasksToDelete) {
+          try {
+            const deleteResponse = await fetch(`/api/checklist-tasks/${task.id}`, { method: "DELETE" });
+            console.log(`Deleted task ${task.id} (${task.taskTitle}):`, deleteResponse.status);
+          } catch (deleteError) {
+            console.error(`Failed to delete task ${task.id}:`, deleteError);
+          }
+        }
+        
+        console.log("All related tasks deleted successfully");
+        
+        // Wait for deletions to fully process
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } catch (error) {
+        console.error("Failed to cleanup related tasks:", error);
+      }
+
+      // Now delete the evergreen box
       const response = await fetch(`/api/evergreen-boxes/${boxId}`, {
         method: "DELETE",
       });
@@ -216,7 +261,8 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/evergreen-boxes"] });
-      toast({ title: "Evergreen box deleted successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
+      toast({ title: "Evergreen box and related tasks deleted successfully" });
       onClose();
     },
     onError: () => {

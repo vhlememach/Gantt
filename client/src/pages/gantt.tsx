@@ -3,9 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
-import { Palette, Ungroup, Download, Plus, ExpandIcon, ChevronDown, Settings, CheckSquare, Megaphone } from "lucide-react";
+import { Palette, Ungroup, Download, Plus, ExpandIcon, ChevronDown, Settings, CheckSquare, Megaphone, Upload } from "lucide-react";
 
 import { Navigation, MobileNavigation } from "@/components/ui/navigation";
 import HeaderCustomizationModal from "@/components/gantt/header-customization-modal";
@@ -32,6 +32,137 @@ export default function GanttPage() {
     queryKey: ["/api/settings"],
   });
 
+  const handleImport = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          try {
+            const data = JSON.parse(event.target?.result as string);
+            
+            if (confirm('This will replace ALL current data. Are you sure you want to import?')) {
+              // Clear all existing data first
+              await Promise.all([
+                fetch('/api/checklist-tasks', { method: 'DELETE' }),
+                fetch('/api/content-format-assignments', { method: 'DELETE' }),
+                fetch('/api/evergreen-boxes', { method: 'DELETE' }),
+                fetch('/api/releases', { method: 'DELETE' }),
+                fetch('/api/release-groups', { method: 'DELETE' }),
+                fetch('/api/waterfall-cycles', { method: 'DELETE' })
+              ]);
+
+              // Import new data
+              const importPromises: Promise<any>[] = [];
+              
+              if (data.groups) {
+                data.groups.forEach((group: any) => {
+                  importPromises.push(
+                    fetch('/api/release-groups', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(group)
+                    })
+                  );
+                });
+              }
+              
+              if (data.waterfallCycles) {
+                data.waterfallCycles.forEach((cycle: any) => {
+                  importPromises.push(
+                    fetch('/api/waterfall-cycles', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(cycle)
+                    })
+                  );
+                });
+              }
+
+              await Promise.all(importPromises);
+
+              // Import releases and evergreen boxes
+              const releasePromises: Promise<any>[] = [];
+              if (data.releases) {
+                data.releases.forEach((release: any) => {
+                  releasePromises.push(
+                    fetch('/api/releases', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(release)
+                    })
+                  );
+                });
+              }
+
+              if (data.evergreenBoxes) {
+                data.evergreenBoxes.forEach((box: any) => {
+                  releasePromises.push(
+                    fetch('/api/evergreen-boxes', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(box)
+                    })
+                  );
+                });
+              }
+
+              await Promise.all(releasePromises);
+
+              // Import assignments and tasks
+              const finalPromises: Promise<any>[] = [];
+              if (data.contentFormatAssignments) {
+                data.contentFormatAssignments.forEach((assignment: any) => {
+                  finalPromises.push(
+                    fetch('/api/content-format-assignments', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(assignment)
+                    })
+                  );
+                });
+              }
+
+              if (data.checklistTasks) {
+                data.checklistTasks.forEach((task: any) => {
+                  finalPromises.push(
+                    fetch('/api/checklist-tasks', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(task)
+                    })
+                  );
+                });
+              }
+
+              await Promise.all(finalPromises);
+
+              // Update settings if present
+              if (data.settings) {
+                await fetch('/api/settings', {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(data.settings)
+                });
+              }
+
+              alert('Data imported successfully! Page will reload.');
+              window.location.reload();
+            }
+          } catch (error) {
+            console.error('Import failed:', error);
+            alert('Import failed. Please check the file format.');
+          }
+        };
+        reader.readAsText(file);
+      }
+    };
+    input.click();
+  };
+
   const handleReleaseEdit = (releaseId: string | null) => {
     console.log('handleReleaseEdit called with:', releaseId);
     setSelectedReleaseId(releaseId);
@@ -50,24 +181,44 @@ export default function GanttPage() {
     }
   };
 
-  const handleExport = (format: 'json' | 'png' | 'pdf' = 'json') => {
+  const handleExport = async (format: 'json' | 'png' | 'pdf' = 'json') => {
     if (format === 'json') {
-      const data = {
-        settings,
-        groups: [], // This would be populated from the groups query
-        releases: [], // This would be populated from the releases query
-        exportDate: new Date().toISOString(),
-      };
-      
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `gantt-chart-export-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      try {
+        // Fetch all data for complete backup
+        const [groupsRes, releasesRes, evergreenRes, waterfallRes, tasksRes, assignmentsRes] = await Promise.all([
+          fetch('/api/release-groups'),
+          fetch('/api/releases'),
+          fetch('/api/evergreen-boxes'),
+          fetch('/api/waterfall-cycles'),
+          fetch('/api/checklist-tasks'),
+          fetch('/api/content-format-assignments')
+        ]);
+
+        const data = {
+          settings,
+          groups: await groupsRes.json(),
+          releases: await releasesRes.json(),
+          evergreenBoxes: await evergreenRes.json(),
+          waterfallCycles: await waterfallRes.json(),
+          checklistTasks: await tasksRes.json(),
+          contentFormatAssignments: await assignmentsRes.json(),
+          exportDate: new Date().toISOString(),
+          version: "1.0"
+        };
+        
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `palmyra-gantt-backup-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error('Export failed:', error);
+        alert('Export failed. Please try again.');
+      }
     } else if (format === 'png') {
       // Export as PNG using html2canvas
       const element = document.querySelector('.gantt-container');
@@ -372,6 +523,10 @@ export default function GanttPage() {
                   <DropdownMenuItem onClick={() => handleExport('json')}>
                     Export as JSON
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleImport}>
+                    Import from JSON
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => handleExport('png')}>
                     Export as PNG
                   </DropdownMenuItem>
