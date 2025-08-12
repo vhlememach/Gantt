@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { BarChart3, CheckSquare, Megaphone } from "lucide-react";
+import { BarChart3, CheckSquare, Megaphone, Calendar } from "lucide-react";
 
 interface NavigationProps {
   className?: string;
@@ -21,6 +21,12 @@ export function Navigation({ className }: NavigationProps) {
       label: "Evergreen",
       icon: Megaphone,
       description: "Monthly recurring content campaigns"
+    },
+    {
+      path: "/calendar",
+      label: "Calendar",
+      icon: Calendar,
+      description: "Schedule completed tasks"
     }
   ];
 
@@ -68,6 +74,11 @@ export function MobileNavigation({ className }: NavigationProps) {
       path: "/evergreen",
       label: "Evergreen",
       icon: Megaphone,
+    },
+    {
+      path: "/calendar",
+      label: "Calendar",
+      icon: Calendar,
     }
   ];
 

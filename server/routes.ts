@@ -244,6 +244,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Schedule task to calendar
+  app.patch("/api/checklist-tasks/:id/schedule", async (req, res) => {
+    try {
+      const { scheduledDate } = req.body;
+      const updatedTask = await storage.updateChecklistTask(req.params.id, { scheduledDate });
+      if (!updatedTask) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+      res.json(updatedTask);
+    } catch (error) {
+      console.error("Error scheduling task:", error);
+      res.status(400).json({ error: "Failed to schedule task" });
+    }
+  });
+
+  // Remove task from calendar
+  app.patch("/api/checklist-tasks/:id/unschedule", async (req, res) => {
+    try {
+      const updatedTask = await storage.updateChecklistTask(req.params.id, { scheduledDate: null });
+      if (!updatedTask) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+      res.json(updatedTask);
+    } catch (error) {
+      console.error("Error unscheduling task:", error);
+      res.status(500).json({ error: "Failed to unschedule task" });
+    }
+  });
+
   // Bulk delete all checklist tasks
   app.delete("/api/checklist-tasks", async (req, res) => {
     try {

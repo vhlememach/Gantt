@@ -87,6 +87,7 @@ export const checklistTasks = pgTable("checklist_tasks", {
   paused: boolean("paused").default(false), // Task is paused due to blocker
   blockerReason: text("blocker_reason"), // Description of blocking issue
   blockerRequestedBy: text("blocker_requested_by"), // Who requested the blocking work
+  scheduledDate: text("scheduled_date"), // Date when task is scheduled in calendar (YYYY-MM-DD)
   createdAt: timestamp("created_at").defaultNow(),
   completedAt: timestamp("completed_at"),
 });
