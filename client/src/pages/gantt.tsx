@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
-import { Palette, Ungroup, Download, Plus, ExpandIcon, ChevronDown, Settings, CheckSquare } from "lucide-react";
+import { Palette, Ungroup, Download, Plus, ExpandIcon, ChevronDown, Settings, CheckSquare, Megaphone } from "lucide-react";
 
 import { Navigation, MobileNavigation } from "@/components/ui/navigation";
 import HeaderCustomizationModal from "@/components/gantt/header-customization-modal";
@@ -13,6 +13,7 @@ import GroupManagementModal from "@/components/gantt/group-management-modal";
 import ReleaseEditorModal from "@/components/gantt/release-editor-modal";
 import StatusColorSettings from "@/components/gantt/status-color-settings";
 import GanttChart from "@/components/gantt/gantt-chart";
+import WaterfallCyclesModal from "@/components/evergreen/waterfall-cycles-modal";
 import type { AppSettings } from "@shared/schema";
 
 export default function GanttPage() {
@@ -25,6 +26,7 @@ export default function GanttPage() {
   const [zoomLevel, setZoomLevel] = useState([100]);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [isStatusColorModalOpen, setIsStatusColorModalOpen] = useState(false);
+  const [isWaterfallModalOpen, setIsWaterfallModalOpen] = useState(false);
 
   const { data: settings } = useQuery<AppSettings>({
     queryKey: ["/api/settings"],
@@ -312,15 +314,6 @@ export default function GanttPage() {
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              <Link href="/checklist">
-                <Button 
-                  variant="secondary" 
-                  className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-0"
-                >
-                  <CheckSquare className="mr-2 h-4 w-4" />
-                  Team Checklist
-                </Button>
-              </Link>
               <Button
                 onClick={() => setIsGroupModalOpen(true)}
                 variant="secondary"
@@ -329,21 +322,37 @@ export default function GanttPage() {
                 <Ungroup className="mr-2 h-4 w-4" />
                 Manage Groups
               </Button>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-0"
+                  >
+                    <Palette className="mr-2 h-4 w-4" />
+                    Customize
+                    <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => setIsHeaderModalOpen(true)}>
+                    <Palette className="mr-2 h-4 w-4" />
+                    Header & Style
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setIsStatusColorModalOpen(true)}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    Status Colors
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
               <Button
-                onClick={() => setIsHeaderModalOpen(true)}
-                variant="secondary"
-                className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-0"
-              >
-                <Palette className="mr-2 h-4 w-4" />
-                Customize
-              </Button>
-              <Button
-                onClick={() => setIsStatusColorModalOpen(true)}
+                onClick={() => setIsWaterfallModalOpen(true)}
                 variant="secondary"
                 className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-0"
               >
                 <Settings className="mr-2 h-4 w-4" />
-                Status Colors
+                Manage Waterfall Cycles
               </Button>
 
               <DropdownMenu>
@@ -470,6 +479,11 @@ export default function GanttPage() {
       <StatusColorSettings
         isOpen={isStatusColorModalOpen}
         onClose={() => setIsStatusColorModalOpen(false)}
+      />
+      
+      <WaterfallCyclesModal
+        isOpen={isWaterfallModalOpen}
+        onClose={() => setIsWaterfallModalOpen(false)}
       />
       
       {/* Mobile Navigation */}

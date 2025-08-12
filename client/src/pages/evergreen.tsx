@@ -78,38 +78,14 @@ export default function EvergreenPage({}: EvergreenPageProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
-              <div className="flex items-center space-x-6">
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                  Evergreen Content
-                </h1>
-                
-                {/* Navigation */}
-                <div className="hidden md:block">
-                  <Navigation />
-                </div>
-              </div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                Evergreen Content
+              </h1>
               <p className="mt-2 text-gray-600 dark:text-gray-300">
                 Monthly recurring content requirements and campaigns
               </p>
             </div>
             <div className="flex items-center space-x-3">
-              <Link href="/">
-                <Button 
-                  variant="outline" 
-                  className="flex items-center space-x-2"
-                >
-                  <Home className="h-4 w-4" />
-                  <span>Back to Gantt</span>
-                </Button>
-              </Link>
-              <Button 
-                variant="outline" 
-                onClick={() => setIsCyclesModalOpen(true)}
-                className="flex items-center space-x-2"
-              >
-                <Settings className="h-4 w-4" />
-                <span>Manage Waterfall Cycles</span>
-              </Button>
               <Button 
                 onClick={handleAddNewBox}
                 className="bg-[#7232d9] hover:bg-[#6028c5] text-white flex items-center space-x-2"

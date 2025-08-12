@@ -321,6 +321,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/content-format-assignments", async (req, res) => {
+    try {
+      // Clear all assignments
+      const assignments = await storage.getContentFormatAssignments();
+      for (const assignment of assignments) {
+        await storage.deleteContentFormatAssignment(assignment.id);
+      }
+      res.status(200).json({ message: "All assignments deleted" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete assignments" });
+    }
+  });
+
   // Evergreen Boxes
   app.get("/api/evergreen-boxes", async (req, res) => {
     try {

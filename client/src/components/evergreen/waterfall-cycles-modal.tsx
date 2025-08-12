@@ -11,11 +11,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit2, Trash2, FileText, MessageSquare, Video, Palette, Image } from "lucide-react";
+import { Plus, Edit2, Trash2, FileText, MessageSquare, Video, Palette, Image, Users } from "lucide-react";
 import type { WaterfallCycle, InsertWaterfallCycle } from "@shared/schema";
 import { insertWaterfallCycleSchema } from "@shared/schema";
+import FormatAssignmentsModal from "./format-assignments-modal";
 
 const formSchema = insertWaterfallCycleSchema.extend({
   name: z.string().min(1, "Name is required"),
@@ -32,6 +34,7 @@ export default function WaterfallCyclesModal({ isOpen, onClose }: WaterfallCycle
   const queryClient = useQueryClient();
   const [isCreating, setIsCreating] = useState(false);
   const [editingCycle, setEditingCycle] = useState<string | null>(null);
+  const [isFormatAssignmentsOpen, setIsFormatAssignmentsOpen] = useState(false);
 
   // Fetch waterfall cycles
   const { data: cycles = [], isLoading } = useQuery<WaterfallCycle[]>({
@@ -161,7 +164,13 @@ export default function WaterfallCyclesModal({ isOpen, onClose }: WaterfallCycle
           <DialogTitle>Manage Waterfall Cycles</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <Tabs defaultValue="cycles" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="cycles">Waterfall Cycles</TabsTrigger>
+            <TabsTrigger value="assignments">Format Assignments</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="cycles" className="space-y-6">
           {/* Create/Edit Form */}
           {(isCreating || editingCycle) && (
             <Card>
@@ -330,7 +339,30 @@ export default function WaterfallCyclesModal({ isOpen, onClose }: WaterfallCycle
               </div>
             )}
           </div>
-        </div>
+          </TabsContent>
+          
+          <TabsContent value="assignments" className="space-y-6">
+            <div className="text-center py-8">
+              <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Content Format Assignments</h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                Manage which team members are responsible for each content format type.
+              </p>
+              <Button
+                onClick={() => setIsFormatAssignmentsOpen(true)}
+                className="bg-[#7232d9] hover:bg-[#6028c5]"
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Manage Team Assignments
+              </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
+        
+        <FormatAssignmentsModal
+          isOpen={isFormatAssignmentsOpen}
+          onClose={() => setIsFormatAssignmentsOpen(false)}
+        />
       </DialogContent>
     </Dialog>
   );

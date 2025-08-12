@@ -44,7 +44,7 @@ export function Navigation({ className }: NavigationProps) {
               "flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
               isActive
                 ? "bg-[#7232d9] text-white"
-                : "text-white/80 hover:text-white hover:bg-white/10"
+                : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
             )}
           >
             <Icon className="h-4 w-4" />

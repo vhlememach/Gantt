@@ -17,6 +17,7 @@ import { insertEvergreenBoxSchema } from "@shared/schema";
 const formSchema = insertEvergreenBoxSchema.extend({
   title: z.string().min(1, "Title is required"),
   groupId: z.string().min(1, "Group is required"),
+  url: z.string().optional(),
 });
 
 interface EvergreenBoxEditorModalProps {
@@ -56,6 +57,7 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
       responsible: "",
       icon: "lucide-megaphone",
       waterfallCycleId: "none",
+      url: "",
     },
   });
 
@@ -69,6 +71,7 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
         responsible: box.responsible || "",
         icon: box.icon,
         waterfallCycleId: box.waterfallCycleId || "none",
+        url: box.url || "",
       });
     } else if (!isEditing) {
       form.reset({
@@ -78,6 +81,7 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
         responsible: "",
         icon: "lucide-megaphone",
         waterfallCycleId: "none",
+        url: "",
       });
     }
   }, [box, isEditing, form]);
@@ -305,6 +309,20 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
                       ))}
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="url"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>URL/Link (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="https://..." {...field} value={field.value || ""} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

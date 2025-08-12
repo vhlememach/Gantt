@@ -67,6 +67,7 @@ export const evergreenBoxes = pgTable("evergreen_boxes", {
   groupId: varchar("group_id").notNull().references(() => releaseGroups.id, { onDelete: "cascade" }),
   waterfallCycleId: varchar("waterfall_cycle_id").references(() => waterfallCycles.id),
   icon: text("icon").notNull().default("lucide-box"),
+  url: text("url"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

@@ -308,6 +308,7 @@ export class MemStorage implements IStorage {
         groupId: productGroup.id,
         waterfallCycleId: cycleIds[0], // Monthly cycle
         icon: "lucide-megaphone",
+        url: "https://social.palmyra.com/campaigns",
         createdAt: new Date(),
       },
       {
@@ -318,6 +319,7 @@ export class MemStorage implements IStorage {
         groupId: productGroup.id,
         waterfallCycleId: cycleIds[1], // Weekly cycle
         icon: "lucide-mail",
+        url: "https://newsletter.palmyra.com",
         createdAt: new Date(),
       },
       {
@@ -328,6 +330,7 @@ export class MemStorage implements IStorage {
         groupId: infraGroup.id,
         waterfallCycleId: cycleIds[2], // Simple cycle
         icon: "lucide-file-text",
+        url: null,
         createdAt: new Date(),
       },
     ];
@@ -620,6 +623,7 @@ export class MemStorage implements IStorage {
       responsible: box.responsible || "",
       icon: box.icon || "lucide-box",
       waterfallCycleId: box.waterfallCycleId || null,
+      url: box.url || null,
       createdAt: new Date(),
     };
     this.evergreenBoxes.set(id, newBox);
