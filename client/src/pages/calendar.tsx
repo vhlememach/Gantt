@@ -45,7 +45,7 @@ export default function CalendarPage() {
   const [draggedTask, setDraggedTask] = useState<CalendarTask | null>(null);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [priorityCells, setPriorityCells] = useState<Set<string>>(new Set());
-  const [editingGroupColor, setEditingGroupColor] = useState<string | null>(null);
+  const [editingReleaseColor, setEditingReleaseColor] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -293,25 +293,28 @@ export default function CalendarPage() {
                 const release = releases.find(r => r.id === releaseId);
                 const group = release ? releaseGroups.find(g => g.id === release.groupId) : null;
                 
+                const releaseColor = release?.color || group?.color || '#6b7280';
+                
                 return (
                   <div key={releaseId} className="border border-gray-200 dark:border-gray-700 rounded-lg">
-                    <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+                    <div 
+                      className="p-3 border-b border-gray-200 dark:border-gray-700 text-white"
+                      style={{ backgroundColor: releaseColor }}
+                    >
                       <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <h3 className="text-sm font-medium text-white">
                           {release?.name || 'Evergreen'}
                         </h3>
-                        {group && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-xs px-2 py-1 h-6"
-                            onClick={() => setEditingGroupColor(editingGroupColor === group.id ? null : group.id)}
-                          >
-                            Change Color
-                          </Button>
-                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs px-2 py-1 h-6 bg-white text-black border-white hover:bg-gray-100"
+                          onClick={() => setEditingReleaseColor(editingReleaseColor === releaseId ? null : releaseId)}
+                        >
+                          Change Color
+                        </Button>
                       </div>
-                      {editingGroupColor === group?.id && (
+                      {editingReleaseColor === releaseId && (
                         <div className="flex space-x-1 mb-2">
                           {['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#F97316', '#6B7280', '#EC4899'].map(color => (
                             <button
@@ -319,27 +322,29 @@ export default function CalendarPage() {
                               className="w-4 h-4 rounded border border-gray-300 hover:scale-110 transition-transform"
                               style={{ backgroundColor: color }}
                               onClick={() => {
-                                const updatedGroups = releaseGroups.map(g => 
-                                  g.id === group.id ? { ...g, color } : g
-                                );
-                                queryClient.setQueryData(["/api/release-groups"], updatedGroups);
-                                setEditingGroupColor(null);
+                                if (release) {
+                                  const updatedReleases = releases.map(r => 
+                                    r.id === releaseId ? { ...r, color } : r
+                                  );
+                                  queryClient.setQueryData(["/api/releases"], updatedReleases);
+                                }
+                                setEditingReleaseColor(null);
                               }}
                             />
                           ))}
                         </div>
                       )}
                     </div>
-                    <div className="p-2 space-y-1">
+                    <div className="p-2 space-y-2">
                       {tasks.map(task => (
                         <div
                           key={task.id}
                           draggable
                           onDragStart={() => handleDragStart(task)}
-                          className="p-2 bg-gray-50 dark:bg-gray-700 rounded text-xs cursor-move hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                          className="p-3 bg-gray-50 dark:bg-gray-700 rounded text-xs cursor-move hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors min-h-[3rem] flex items-center"
                           title={task.taskTitle}
                         >
-                          <div className="truncate font-medium text-gray-900 dark:text-white">
+                          <div className="font-medium text-gray-900 dark:text-white leading-tight break-words">
                             {task.taskTitle}
                           </div>
                         </div>
@@ -449,7 +454,7 @@ export default function CalendarPage() {
               {/* Calendar Days */}
               {calendarDays.map((day, index) => {
                 if (day === null) {
-                  return <div key={`empty-${index}`} className="h-40"></div>;
+                  return <div key={`empty-${index}`} className="h-60"></div>;
                 }
 
                 const tasksForDay = getTasksForDay(day);
@@ -466,7 +471,7 @@ export default function CalendarPage() {
                 return (
                   <div
                     key={day}
-                    className={`min-h-40 p-3 border-2 rounded-lg cursor-pointer transition-colors ${
+                    className={`min-h-60 p-3 border-2 rounded-lg cursor-pointer transition-colors ${
                       isHighPriority 
                         ? 'border-red-400 bg-red-50 dark:bg-red-900/20' 
                         : isToday 
@@ -509,8 +514,8 @@ export default function CalendarPage() {
                           <div key={release.id} className="space-y-1">
                             {/* Release divider box */}
                             <div 
-                              className="text-xs font-medium px-2 py-1 rounded text-white opacity-90"
-                              style={{ backgroundColor: group?.color || '#6b7280' }}
+                              className="text-xs font-medium px-2 py-2 rounded text-white opacity-90"
+                              style={{ backgroundColor: release.color || group?.color || '#6b7280' }}
                             >
                               <i className={`${release.icon} mr-1`}></i>
                               {release.name}
@@ -520,14 +525,14 @@ export default function CalendarPage() {
                             {releaseTasks.map(task => (
                               <div
                                 key={task.id}
-                                className="text-xs p-1 bg-gray-100 dark:bg-gray-600 rounded truncate cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors ml-2"
+                                className="text-xs p-2 bg-gray-100 dark:bg-gray-600 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors ml-2 min-h-[2.5rem] flex items-center leading-tight"
                                 title={`${task.taskTitle} - Click to remove`}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleTaskClick(task);
                                 }}
                               >
-                                {task.taskTitle}
+                                <div className="break-words">{task.taskTitle}</div>
                               </div>
                             ))}
                           </div>
@@ -539,21 +544,21 @@ export default function CalendarPage() {
                         .filter(([releaseId]) => releaseId === 'evergreen' || !releases.find(r => r.id === releaseId))
                         .map(([releaseId, { tasks }]) => (
                           <div key={releaseId} className="space-y-1">
-                            <div className="text-xs font-medium px-2 py-1 rounded text-white bg-gray-500 opacity-90">
+                            <div className="text-xs font-medium px-2 py-2 rounded text-white bg-gray-500 opacity-90">
                               <i className="fas fa-calendar mr-1"></i>
                               Evergreen
                             </div>
                             {tasks.map(task => (
                               <div
                                 key={task.id}
-                                className="text-xs p-1 bg-gray-100 dark:bg-gray-600 rounded truncate cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors ml-2"
+                                className="text-xs p-2 bg-gray-100 dark:bg-gray-600 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors ml-2 min-h-[2.5rem] flex items-center leading-tight"
                                 title={`${task.taskTitle} - Click to remove`}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleTaskClick(task);
                                 }}
                               >
-                                {task.taskTitle}
+                                <div className="break-words">{task.taskTitle}</div>
                               </div>
                             ))}
                           </div>

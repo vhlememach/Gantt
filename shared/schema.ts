@@ -24,6 +24,7 @@ export const releases = pgTable("releases", {
   responsible: text("responsible").default(""),
   status: text("status").notNull().default("upcoming"), // upcoming, in-progress, completed, delayed
   highPriority: boolean("high_priority").default(false).notNull(),
+  color: text("color").default("#6B7280"), // Individual release color
   waterfallCycleId: varchar("waterfall_cycle_id").references(() => waterfallCycles.id),
   createdAt: timestamp("created_at").defaultNow(),
 });
