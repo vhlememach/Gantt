@@ -45,7 +45,7 @@ export default function CalendarPage() {
   const [draggedTask, setDraggedTask] = useState<CalendarTask | null>(null);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [priorityCells, setPriorityCells] = useState<Set<string>>(new Set());
-  const [editingReleaseColor, setEditingReleaseColor] = useState<string | null>(null);
+  const [editingGroupColor, setEditingGroupColor] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -293,28 +293,30 @@ export default function CalendarPage() {
                 const release = releases.find(r => r.id === releaseId);
                 const group = release ? releaseGroups.find(g => g.id === release.groupId) : null;
                 
-                const releaseColor = release?.color || group?.color || '#6b7280';
+                const groupColor = group?.color || '#6b7280';
                 
                 return (
                   <div key={releaseId} className="border border-gray-200 dark:border-gray-700 rounded-lg">
                     <div 
                       className="p-3 border-b border-gray-200 dark:border-gray-700 text-white"
-                      style={{ backgroundColor: releaseColor }}
+                      style={{ backgroundColor: groupColor }}
                     >
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="text-sm font-medium text-white">
                           {release?.name || 'Evergreen'}
                         </h3>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-xs px-2 py-1 h-6 bg-white text-black border-white hover:bg-gray-100"
-                          onClick={() => setEditingReleaseColor(editingReleaseColor === releaseId ? null : releaseId)}
-                        >
-                          Change Color
-                        </Button>
+                        {group && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs px-2 py-1 h-6 bg-white text-black border-white hover:bg-gray-100"
+                            onClick={() => setEditingGroupColor(editingGroupColor === group.id ? null : group.id)}
+                          >
+                            Change Color
+                          </Button>
+                        )}
                       </div>
-                      {editingReleaseColor === releaseId && (
+                      {editingGroupColor === group?.id && (
                         <div className="flex space-x-1 mb-2">
                           {['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#F97316', '#6B7280', '#EC4899'].map(color => (
                             <button
@@ -322,13 +324,11 @@ export default function CalendarPage() {
                               className="w-4 h-4 rounded border border-gray-300 hover:scale-110 transition-transform"
                               style={{ backgroundColor: color }}
                               onClick={() => {
-                                if (release) {
-                                  const updatedReleases = releases.map(r => 
-                                    r.id === releaseId ? { ...r, color } : r
-                                  );
-                                  queryClient.setQueryData(["/api/releases"], updatedReleases);
-                                }
-                                setEditingReleaseColor(null);
+                                const updatedGroups = releaseGroups.map(g => 
+                                  g.id === group.id ? { ...g, color } : g
+                                );
+                                queryClient.setQueryData(["/api/release-groups"], updatedGroups);
+                                setEditingGroupColor(null);
                               }}
                             />
                           ))}
@@ -515,7 +515,7 @@ export default function CalendarPage() {
                             {/* Release divider box */}
                             <div 
                               className="text-xs font-medium px-2 py-2 rounded text-white opacity-90"
-                              style={{ backgroundColor: release.color || group?.color || '#6b7280' }}
+                              style={{ backgroundColor: group?.color || '#6b7280' }}
                             >
                               <i className={`${release.icon} mr-1`}></i>
                               {release.name}
