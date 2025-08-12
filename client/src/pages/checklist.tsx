@@ -8,7 +8,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, User, CheckCircle, Clock, Users, BarChart3, Download, ArrowUpDown, Star, AlertTriangle, ExternalLink, ArrowLeft } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Plus, User, CheckCircle, Clock, Users, BarChart3, Download, ArrowUpDown, Star, AlertTriangle, ExternalLink, ArrowLeft, Pause } from "lucide-react";
 import { Link } from "wouter";
 import { Navigation, MobileNavigation } from "@/components/ui/navigation";
 
@@ -22,6 +25,10 @@ export default function ChecklistPage() {
   const [newTaskUrl, setNewTaskUrl] = useState("");
   const [selectedReleaseId, setSelectedReleaseId] = useState("");
   const [sortBy, setSortBy] = useState<Record<string, SortOption>>({});
+  const [blockerModalOpen, setBlockerModalOpen] = useState(false);
+  const [selectedTaskForBlocker, setSelectedTaskForBlocker] = useState<string | null>(null);
+  const [blockerReason, setBlockerReason] = useState("");
+  const [blockerRequestedBy, setBlockerRequestedBy] = useState("");
   
   const queryClient = useQueryClient();
 
@@ -98,6 +105,28 @@ export default function ChecklistPage() {
     }
   });
 
+  // Report blocker mutation
+  const reportBlockerMutation = useMutation({
+    mutationFn: async ({ id, blockerReason, blockerRequestedBy }: { 
+      id: string, 
+      blockerReason: string, 
+      blockerRequestedBy: string 
+    }) => {
+      return apiRequest('PUT', `/api/checklist-tasks/${id}`, { 
+        paused: true,
+        blockerReason,
+        blockerRequestedBy
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
+      setBlockerModalOpen(false);
+      setSelectedTaskForBlocker(null);
+      setBlockerReason("");
+      setBlockerRequestedBy("");
+    }
+  });
+
   // Create new task
   const createTaskMutation = useMutation({
     mutationFn: async (taskData: { releaseId: string, assignedTo: string, taskTitle: string, taskUrl?: string }) => {
@@ -113,6 +142,21 @@ export default function ChecklistPage() {
 
   const handleTaskToggle = (taskId: string, completed: boolean) => {
     updateTaskMutation.mutate({ id: taskId, completed });
+  };
+
+  const handleReportBlocker = (taskId: string) => {
+    setSelectedTaskForBlocker(taskId);
+    setBlockerModalOpen(true);
+  };
+
+  const handleSubmitBlocker = () => {
+    if (selectedTaskForBlocker && blockerReason && blockerRequestedBy) {
+      reportBlockerMutation.mutate({
+        id: selectedTaskForBlocker,
+        blockerReason,
+        blockerRequestedBy
+      });
+    }
   };
 
   const handleCreateTask = () => {
@@ -236,6 +280,7 @@ export default function ChecklistPage() {
               const release = releases.find(r => r.id === task.releaseId);
               return (release?.highPriority || false) && !task.completed; // Only count incomplete priority tasks
             }).length;
+            const pausedCount = memberTasksCount.filter(task => task.paused).length;
             
             return (
               <TabsTrigger key={member} value={member} className="flex items-center space-x-2">
@@ -249,6 +294,12 @@ export default function ChecklistPage() {
                     <Badge variant="destructive" className="text-xs">
                       <Star className="w-3 h-3 mr-1" />
                       {priorityCount}
+                    </Badge>
+                  )}
+                  {pausedCount > 0 && (
+                    <Badge className="text-xs bg-orange-500 hover:bg-orange-600 text-white">
+                      <AlertTriangle className="w-3 h-3 mr-1" />
+                      {pausedCount}
                     </Badge>
                   )}
                 </div>
@@ -389,6 +440,8 @@ export default function ChecklistPage() {
                             className={`flex items-center space-x-3 p-3 rounded-lg border ${
                               task.completed 
                                 ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800' 
+                                : task.paused
+                                ? 'bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800'
                                 : 'bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700'
                             }`}
                           >
@@ -426,17 +479,35 @@ export default function ChecklistPage() {
                                 </div>
                               )}
                             </div>
-                            {task.completed ? (
-                              <Badge variant="outline" className="bg-green-100 text-green-800">
-                                <CheckCircle className="w-3 h-3 mr-1" />
-                                Done
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline">
-                                <Clock className="w-3 h-3 mr-1" />
-                                Pending
-                              </Badge>
-                            )}
+                            <div className="flex items-center space-x-2">
+                              {!task.completed && !task.paused && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleReportBlocker(task.id)}
+                                  className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                >
+                                  <Pause className="w-3 h-3 mr-1" />
+                                  Report Blocker
+                                </Button>
+                              )}
+                              {task.completed ? (
+                                <Badge variant="outline" className="bg-green-100 text-green-800">
+                                  <CheckCircle className="w-3 h-3 mr-1" />
+                                  Done
+                                </Badge>
+                              ) : task.paused ? (
+                                <Badge className="bg-orange-500 text-white">
+                                  <AlertTriangle className="w-3 h-3 mr-1" />
+                                  Paused
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline">
+                                  <Clock className="w-3 h-3 mr-1" />
+                                  Pending
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -459,6 +530,52 @@ export default function ChecklistPage() {
       </Tabs>
       </div>
       
+      {/* Report Blocker Modal */}
+      <Dialog open={blockerModalOpen} onOpenChange={setBlockerModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Report a Blocker</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="blocker-reason">New Task</Label>
+              <Textarea
+                id="blocker-reason"
+                placeholder="Describe the blocking issue or new task that needs to be handled..."
+                value={blockerReason}
+                onChange={(e) => setBlockerReason(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="blocker-requested-by">Requested By</Label>
+              <Input
+                id="blocker-requested-by"
+                placeholder="Who requested this blocking work?"
+                value={blockerRequestedBy}
+                onChange={(e) => setBlockerRequestedBy(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setBlockerModalOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSubmitBlocker}
+                disabled={!blockerReason || !blockerRequestedBy || reportBlockerMutation.isPending}
+                className="bg-orange-500 hover:bg-orange-600 text-white"
+              >
+                Pause Task
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Mobile Navigation */}
       <div className="fixed bottom-0 left-0 right-0 md:hidden">
         <MobileNavigation />

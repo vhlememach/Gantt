@@ -84,6 +84,9 @@ export const checklistTasks = pgTable("checklist_tasks", {
   waterfallCycleId: varchar("waterfall_cycle_id").references(() => waterfallCycles.id),
   contentFormatType: text("content_format_type"), // article, thread, video, animation, visual
   completed: boolean("completed").default(false),
+  paused: boolean("paused").default(false), // Task is paused due to blocker
+  blockerReason: text("blocker_reason"), // Description of blocking issue
+  blockerRequestedBy: text("blocker_requested_by"), // Who requested the blocking work
   createdAt: timestamp("created_at").defaultNow(),
   completedAt: timestamp("completed_at"),
 });
