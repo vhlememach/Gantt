@@ -86,6 +86,15 @@ export default function EvergreenPage({}: EvergreenPageProps) {
               </p>
             </div>
             <div className="flex items-center space-x-3">
+              <Link href="/">
+                <Button 
+                  variant="outline" 
+                  className="flex items-center space-x-2"
+                >
+                  <Home className="h-4 w-4" />
+                  <span>Back to Gantt Chart</span>
+                </Button>
+              </Link>
               <Button 
                 onClick={handleAddNewBox}
                 className="bg-[#7232d9] hover:bg-[#6028c5] text-white flex items-center space-x-2"

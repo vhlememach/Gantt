@@ -320,7 +320,7 @@ export default function GanttPage() {
                 className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-0"
               >
                 <Ungroup className="mr-2 h-4 w-4" />
-                Manage Groups
+                Groups
               </Button>
               
               <DropdownMenu>
@@ -352,7 +352,7 @@ export default function GanttPage() {
                 className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-0"
               >
                 <Settings className="mr-2 h-4 w-4" />
-                Manage Waterfall Cycles
+                Waterfall Cycles
               </Button>
 
               <DropdownMenu>

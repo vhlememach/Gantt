@@ -31,7 +31,8 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
     icon: "lucide-rocket",
     responsible: "",
     status: "upcoming",
-    highPriority: false
+    highPriority: false,
+    waterfallCycleId: ""
   });
 
   // Debug logging for modal props
@@ -45,6 +46,11 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
   const { data: release, isLoading: releaseLoading, error: releaseError } = useQuery<Release>({
     queryKey: ["/api/releases", releaseId],
     enabled: isOpen && !!releaseId,
+  });
+
+  const { data: waterfallCycles = [] } = useQuery({
+    queryKey: ["/api/waterfall-cycles"],
+    enabled: isOpen,
   });
 
   // Debug logging for query state
@@ -70,7 +76,8 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
         icon: "lucide-rocket",
         responsible: "",
         status: "upcoming",
-        highPriority: false
+        highPriority: false,
+        waterfallCycleId: ""
       });
     }
   }, [isOpen]);
@@ -98,7 +105,8 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
         icon: release.icon || "lucide-rocket",
         responsible: release.responsible || "",
         status: release.status || "upcoming",
-        highPriority: release.highPriority || false
+        highPriority: release.highPriority || false,
+        waterfallCycleId: release.waterfallCycleId || ""
       });
     }
   }, [isOpen, releaseId, release, releaseLoading, releaseError]);
@@ -117,10 +125,56 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
         icon: "lucide-rocket",
         responsible: "",
         status: "upcoming",
-        highPriority: false
+        highPriority: false,
+        waterfallCycleId: ""
       });
     }
   }, [isOpen, releaseId, groups]);
+
+  // Function to generate waterfall tasks based on format assignments
+  const generateWaterfallTasks = async (releaseId: string, waterfallCycleId: string, releaseName: string) => {
+    try {
+      // Get waterfall cycle details
+      const cycleResponse = await apiRequest("GET", `/api/waterfall-cycles/${waterfallCycleId}`);
+      const cycle = await cycleResponse.json();
+
+      // Get format assignments
+      const assignmentsResponse = await apiRequest("GET", "/api/content-format-assignments");
+      const assignments = await assignmentsResponse.json();
+
+      // Generate tasks for each format type based on assignments
+      const taskPromises = assignments.map(async (assignment: any) => {
+        const formatType = assignment.formatType;
+        const requirement = cycle.contentRequirements[formatType] || 0;
+        
+        if (requirement > 0) {
+          // Create tasks for each assigned member
+          return assignment.assignedMembers.map(async (member: string) => {
+            const taskName = `${releaseName} > ${cycle.name} Checklist > ${requirement}x ${formatType.charAt(0).toUpperCase() + formatType.slice(1)}`;
+            
+            const taskPayload = {
+              name: taskName,
+              assignedTo: member,
+              releaseId: releaseId,
+              completed: false
+            };
+
+            return apiRequest("POST", "/api/checklist-tasks", taskPayload);
+          });
+        }
+        return [];
+      });
+
+      await Promise.all(taskPromises.flat());
+      
+      // Invalidate checklist tasks to refresh the UI
+      queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks", "release", releaseId] });
+      
+    } catch (error) {
+      console.error('Error generating waterfall tasks:', error);
+    }
+  };
 
   const createReleaseMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
@@ -137,9 +191,15 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
       const response = await apiRequest("POST", "/api/releases", payload);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async (release) => {
       queryClient.invalidateQueries({ queryKey: ["/api/releases"] });
       queryClient.refetchQueries({ queryKey: ["/api/releases"] });
+      
+      // If waterfall cycle is assigned, generate format-based checklist tasks
+      if (release.waterfallCycleId) {
+        await generateWaterfallTasks(release.id, release.waterfallCycleId, release.name);
+      }
+      
       toast({ title: "Release created successfully" });
       setFormData({
         name: "",
@@ -151,7 +211,8 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
         icon: "lucide-rocket",
         responsible: "",
         status: "upcoming",
-        highPriority: false
+        highPriority: false,
+        waterfallCycleId: ""
       });
       onClose();
     },
@@ -176,10 +237,16 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
       const response = await apiRequest("PUT", `/api/releases/${releaseId}`, payload);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async (updatedRelease) => {
       queryClient.invalidateQueries({ queryKey: ["/api/releases"] });
       queryClient.invalidateQueries({ queryKey: ["/api/releases", releaseId] });
       queryClient.refetchQueries({ queryKey: ["/api/releases"] });
+      
+      // If waterfall cycle assignment changed, regenerate format-based checklist tasks
+      if (updatedRelease.waterfallCycleId && updatedRelease.waterfallCycleId !== (release?.waterfallCycleId || "")) {
+        await generateWaterfallTasks(updatedRelease.id, updatedRelease.waterfallCycleId, updatedRelease.name);
+      }
+      
       toast({ title: "Release updated successfully" });
       onClose();
     },
@@ -326,6 +393,23 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div>
+            <Label htmlFor="waterfallCycleId">Waterfall Cycle (optional)</Label>
+            <Select value={formData.waterfallCycleId} onValueChange={(value) => setFormData(prev => ({ ...prev, waterfallCycleId: value }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a waterfall cycle" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">None</SelectItem>
+                {waterfallCycles.map((cycle: any) => (
+                  <SelectItem key={cycle.id} value={cycle.id}>
+                    {cycle.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

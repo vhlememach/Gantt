@@ -11,12 +11,6 @@ export function Navigation({ className }: NavigationProps) {
 
   const navigationItems = [
     {
-      path: "/",
-      label: "Gantt Chart",
-      icon: BarChart3,
-      description: "Project timeline and release management"
-    },
-    {
       path: "/checklist", 
       label: "Checklist",
       icon: CheckSquare,

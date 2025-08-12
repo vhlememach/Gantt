@@ -40,21 +40,23 @@ export default function FormatAssignmentsModal({ isOpen, onClose }: FormatAssign
 
   // Initialize assignments when data loads
   useEffect(() => {
-    if (currentAssignments.length > 0) {
-      const assignmentMap = currentAssignments.reduce((acc, assignment) => {
-        acc[assignment.formatType] = assignment.assignedMembers;
-        return acc;
-      }, {} as Record<string, string[]>);
-      setAssignments(assignmentMap);
-    } else {
-      // Initialize with empty arrays
-      const emptyAssignments = formatTypes.reduce((acc, format) => {
-        acc[format.type] = [];
-        return acc;
-      }, {} as Record<string, string[]>);
-      setAssignments(emptyAssignments);
+    if (isOpen) {
+      if (currentAssignments.length > 0) {
+        const assignmentMap = currentAssignments.reduce((acc, assignment) => {
+          acc[assignment.formatType] = assignment.assignedMembers;
+          return acc;
+        }, {} as Record<string, string[]>);
+        setAssignments(assignmentMap);
+      } else {
+        // Initialize with empty arrays
+        const emptyAssignments = formatTypes.reduce((acc, format) => {
+          acc[format.type] = [];
+          return acc;
+        }, {} as Record<string, string[]>);
+        setAssignments(emptyAssignments);
+      }
     }
-  }, [currentAssignments]);
+  }, [currentAssignments, isOpen]);
 
   const saveMutation = useMutation({
     mutationFn: async (assignmentData: Record<string, string[]>) => {
