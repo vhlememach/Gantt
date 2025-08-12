@@ -66,26 +66,24 @@ export default function FormatAssignmentsModal({ isOpen, onClose }: FormatAssign
         return acc;
       }, {} as Record<string, string[]>);
 
-      // Clean up tasks for removed members
-      for (const [formatType, newMembers] of Object.entries(assignmentData)) {
-        const oldMembers = oldAssignments[formatType] || [];
-        const removedMembers = oldMembers.filter(member => !newMembers.includes(member));
+      // Clean up ALL existing format-based tasks to prevent duplicates
+      try {
+        const tasksResponse = await fetch("/api/checklist-tasks");
+        const allTasks = await tasksResponse.json();
         
-        // Delete tasks for removed members
-        for (const member of removedMembers) {
-          try {
-            await fetch(`/api/checklist-tasks/cleanup`, {
-              method: "POST", 
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                assignedTo: member,
-                contentFormatType: formatType,
-              }),
-            });
-          } catch (error) {
-            console.error(`Failed to cleanup tasks for ${member} - ${formatType}:`, error);
-          }
+        // Find all tasks that are format-based (have waterfallCycleId and contentFormatType)
+        const formatTasks = allTasks.filter((task: any) => 
+          task.waterfallCycleId && task.contentFormatType
+        );
+        
+        // Delete all format-based tasks
+        for (const task of formatTasks) {
+          await fetch(`/api/checklist-tasks/${task.id}`, {
+            method: "DELETE"
+          });
         }
+      } catch (error) {
+        console.error("Failed to cleanup existing format tasks:", error);
       }
 
       // Clear existing assignments and create new ones

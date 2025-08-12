@@ -286,9 +286,7 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
           width: `${width}%`,
           top: '50%',
           transform: 'translateY(-50%)',
-          background: group.gradientEnabled === "true" 
-            ? `linear-gradient(135deg, ${group.color}, ${group.gradientSecondaryColor || '#FFFFFF'})`
-            : group.color,
+          background: group.color,
           minWidth: '120px',
           outline: release.highPriority ? `2px solid #dc2626` : 'none',
           outlineOffset: release.highPriority ? '2px' : '0'
