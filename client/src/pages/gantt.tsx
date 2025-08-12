@@ -67,8 +67,9 @@ export default function GanttPage() {
                 console.log("Importing groups:", data.groups.length);
                 data.groups.forEach((group: any) => {
                   // Clean up the group data to match schema
+                  // Remove the id field to let the server generate new IDs
+                  // This prevents ID mismatches during import
                   const cleanGroup = {
-                    id: group.id,
                     name: group.name,
                     color: group.color || '#8B5CF6',
                     gradientStart: group.gradientStart || '#8B5CF6',
@@ -93,7 +94,9 @@ export default function GanttPage() {
                     name: cycle.name,
                     description: cycle.description || '',
                     cycleType: cycle.cycleType,
-                    contentRequirements: cycle.contentRequirements || []
+                    contentRequirements: typeof cycle.contentRequirements === 'object' && cycle.contentRequirements !== null
+                      ? cycle.contentRequirements
+                      : {}
                   };
                   importPromises.push(
                     fetch('/api/waterfall-cycles', {
@@ -108,24 +111,37 @@ export default function GanttPage() {
               await Promise.all(importPromises);
               console.log("Groups and cycles imported");
 
+              // Get the newly created groups to map old IDs to new IDs
+              const newGroups = await fetch('/api/release-groups').then(r => r.json());
+              const groupMapping: { [oldId: string]: string } = {};
+              if (data.groups && newGroups) {
+                data.groups.forEach((oldGroup: any, index: number) => {
+                  if (newGroups[index]) {
+                    groupMapping[oldGroup.id] = newGroups[index].id;
+                  }
+                });
+              }
+              console.log("Group ID mapping:", groupMapping);
+
               // Import releases and evergreen boxes
               const releasePromises: Promise<any>[] = [];
               if (data.releases) {
                 console.log("Importing releases:", data.releases.length);
                 data.releases.forEach((release: any) => {
                   // Clean up release data
+                  // Map the old group ID to the new group ID
+                  const newGroupId = groupMapping[release.groupId] || release.groupId;
                   const cleanRelease = {
-                    id: release.id,
                     name: release.name,
                     description: release.description || '',
                     url: release.url || '',
-                    groupId: release.groupId,
+                    groupId: newGroupId,
                     startDate: release.startDate,
                     endDate: release.endDate,
                     icon: release.icon || 'lucide-rocket',
                     responsible: release.responsible || '',
                     status: release.status || 'upcoming',
-                    highPriority: release.highPriority || false,
+                    highPriority: release.highPriority === true || release.highPriority === 'true',
                     waterfallCycleId: release.waterfallCycleId || null
                   };
                   releasePromises.push(
@@ -170,7 +186,9 @@ export default function GanttPage() {
                   const cleanAssignment = {
                     id: assignment.id,
                     formatType: assignment.formatType,
-                    assignedMembers: assignment.assignedMembers || []
+                    assignedMembers: Array.isArray(assignment.assignedMembers) 
+                      ? assignment.assignedMembers 
+                      : []
                   };
                   finalPromises.push(
                     fetch('/api/content-format-assignments', {
@@ -194,7 +212,7 @@ export default function GanttPage() {
                     evergreenBoxId: task.evergreenBoxId || null,
                     waterfallCycleId: task.waterfallCycleId || null,
                     contentFormatType: task.contentFormatType || null,
-                    isCompleted: task.isCompleted || false,
+                    isCompleted: task.isCompleted === true || task.isCompleted === 'true',
                     dueDate: task.dueDate || null,
                     priority: task.priority || 'medium'
                   };
@@ -203,7 +221,15 @@ export default function GanttPage() {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify(cleanTask)
-                    }).then(r => { console.log("Task imported:", r.status); return r; })
+                    }).then(async (r) => { 
+                      if (!r.ok) {
+                        const error = await r.text();
+                        console.error("Task import failed:", r.status, error, cleanTask);
+                      } else {
+                        console.log("Task imported:", r.status);
+                      }
+                      return r; 
+                    })
                   );
                 });
               }
@@ -230,6 +256,9 @@ export default function GanttPage() {
                 console.log("Settings imported");
               }
 
+              // Invalidate all React Query caches to force refetch
+              // Note: We'll rely on the page reload to refresh data
+              
               console.log("Import completed successfully");
               alert('Data imported successfully! Page will reload to show the imported data.');
               window.location.reload();
