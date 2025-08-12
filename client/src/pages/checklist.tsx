@@ -38,7 +38,7 @@ export default function ChecklistPage() {
   // Filter tasks by selected member
   const memberTasks = allTasks.filter(task => task.assignedTo === selectedMember);
 
-  // Group tasks by release and evergreen
+  // Group tasks by release and evergreen - always include evergreen section
   const tasksByRelease = memberTasks.reduce((acc, task) => {
     let groupId;
     if (task.evergreenBoxId) {
@@ -52,6 +52,16 @@ export default function ChecklistPage() {
     acc[groupId].push(task);
     return acc;
   }, {} as Record<string, ChecklistTask[]>);
+
+  // Ensure evergreen section always exists, even if empty
+  if (!tasksByRelease['evergreen']) {
+    tasksByRelease['evergreen'] = [];
+  }
+
+  // Ensure evergreen section always exists, even if empty
+  if (!tasksByRelease['evergreen']) {
+    tasksByRelease['evergreen'] = [];
+  }
 
   // Calculate completion percentage for each release
   const getReleaseProgress = (releaseId: string) => {

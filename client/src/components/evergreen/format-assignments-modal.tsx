@@ -68,32 +68,27 @@ export default function FormatAssignmentsModal({ isOpen, onClose }: FormatAssign
 
       // Clean up ALL existing format-based tasks to prevent duplicates
       try {
+        console.log("Starting complete task cleanup...");
         const tasksResponse = await fetch("/api/checklist-tasks");
         const allTasks = await tasksResponse.json();
         
-        console.log("All tasks before cleanup:", allTasks.length);
-        
-        // Find all tasks that are format-based (have waterfallCycleId and contentFormatType)
-        const formatTasks = allTasks.filter((task: any) => 
-          task.waterfallCycleId && task.contentFormatType
+        // Delete ALL tasks that have either waterfallCycleId OR contentFormatType
+        const tasksToDelete = allTasks.filter((task: any) => 
+          task.waterfallCycleId || task.contentFormatType || task.evergreenBoxId
         );
         
-        console.log("Format tasks to delete:", formatTasks.length, formatTasks.map((t: any) => ({id: t.id, title: t.taskTitle, assignedTo: t.assignedTo})));
+        console.log("Deleting all waterfall/evergreen tasks:", tasksToDelete.length);
         
-        // Delete all format-based tasks sequentially with error handling
-        for (const task of formatTasks) {
-          try {
-            const deleteResponse = await fetch(`/api/checklist-tasks/${task.id}`, {
-              method: "DELETE"
-            });
-            console.log(`Deleted task ${task.id}:`, deleteResponse.status);
-          } catch (deleteError) {
-            console.error(`Failed to delete task ${task.id}:`, deleteError);
-          }
-        }
+        // Delete all tasks in parallel for speed
+        const deletePromises = tasksToDelete.map((task: any) =>
+          fetch(`/api/checklist-tasks/${task.id}`, { method: "DELETE" })
+        );
         
-        // Wait a moment for deletes to complete
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await Promise.all(deletePromises);
+        console.log("All format tasks deleted successfully");
+        
+        // Wait for deletions to fully process
+        await new Promise(resolve => setTimeout(resolve, 1000));
       } catch (error) {
         console.error("Failed to cleanup existing format tasks:", error);
       }
