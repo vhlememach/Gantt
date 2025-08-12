@@ -45,7 +45,10 @@ export default function GanttPage() {
             const data = JSON.parse(event.target?.result as string);
             
             if (confirm('This will replace ALL current data. Are you sure you want to import?')) {
+              console.log("Starting import process...", data);
+              
               // Clear all existing data first
+              console.log("Clearing existing data...");
               await Promise.all([
                 fetch('/api/checklist-tasks', { method: 'DELETE' }),
                 fetch('/api/content-format-assignments', { method: 'DELETE' }),
@@ -55,101 +58,180 @@ export default function GanttPage() {
                 fetch('/api/waterfall-cycles', { method: 'DELETE' })
               ]);
 
-              // Import new data
+              console.log("Data cleared, starting import...");
+
+              // Import new data in proper sequence
               const importPromises: Promise<any>[] = [];
               
               if (data.groups) {
+                console.log("Importing groups:", data.groups.length);
                 data.groups.forEach((group: any) => {
+                  // Clean up the group data to match schema
+                  const cleanGroup = {
+                    id: group.id,
+                    name: group.name,
+                    color: group.color || '#8B5CF6',
+                    gradientStart: group.gradientStart || '#8B5CF6',
+                    gradientEnd: group.gradientEnd || '#3B82F6'
+                  };
                   importPromises.push(
                     fetch('/api/release-groups', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(group)
-                    })
+                      body: JSON.stringify(cleanGroup)
+                    }).then(r => { console.log("Group imported:", r.status); return r; })
                   );
                 });
               }
               
               if (data.waterfallCycles) {
+                console.log("Importing waterfall cycles:", data.waterfallCycles.length);
                 data.waterfallCycles.forEach((cycle: any) => {
+                  // Clean up the cycle data
+                  const cleanCycle = {
+                    id: cycle.id,
+                    name: cycle.name,
+                    description: cycle.description || '',
+                    cycleType: cycle.cycleType,
+                    contentRequirements: cycle.contentRequirements || []
+                  };
                   importPromises.push(
                     fetch('/api/waterfall-cycles', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(cycle)
-                    })
+                      body: JSON.stringify(cleanCycle)
+                    }).then(r => { console.log("Cycle imported:", r.status); return r; })
                   );
                 });
               }
 
               await Promise.all(importPromises);
+              console.log("Groups and cycles imported");
 
               // Import releases and evergreen boxes
               const releasePromises: Promise<any>[] = [];
               if (data.releases) {
+                console.log("Importing releases:", data.releases.length);
                 data.releases.forEach((release: any) => {
+                  // Clean up release data
+                  const cleanRelease = {
+                    id: release.id,
+                    name: release.name,
+                    description: release.description || '',
+                    url: release.url || '',
+                    groupId: release.groupId,
+                    startDate: release.startDate,
+                    endDate: release.endDate,
+                    icon: release.icon || 'lucide-rocket',
+                    responsible: release.responsible || '',
+                    status: release.status || 'upcoming',
+                    highPriority: release.highPriority || false,
+                    waterfallCycleId: release.waterfallCycleId || null
+                  };
                   releasePromises.push(
                     fetch('/api/releases', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(release)
-                    })
+                      body: JSON.stringify(cleanRelease)
+                    }).then(r => { console.log("Release imported:", r.status); return r; })
                   );
                 });
               }
 
               if (data.evergreenBoxes) {
+                console.log("Importing evergreen boxes:", data.evergreenBoxes.length);
                 data.evergreenBoxes.forEach((box: any) => {
+                  // Clean up evergreen box data
+                  const cleanBox = {
+                    id: box.id,
+                    title: box.title,
+                    description: box.description || '',
+                    recurringFrequency: box.recurringFrequency,
+                    waterfallCycleId: box.waterfallCycleId || null
+                  };
                   releasePromises.push(
                     fetch('/api/evergreen-boxes', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(box)
-                    })
+                      body: JSON.stringify(cleanBox)
+                    }).then(r => { console.log("Evergreen box imported:", r.status); return r; })
                   );
                 });
               }
 
               await Promise.all(releasePromises);
+              console.log("Releases and evergreen boxes imported");
 
               // Import assignments and tasks
               const finalPromises: Promise<any>[] = [];
               if (data.contentFormatAssignments) {
+                console.log("Importing format assignments:", data.contentFormatAssignments.length);
                 data.contentFormatAssignments.forEach((assignment: any) => {
+                  const cleanAssignment = {
+                    id: assignment.id,
+                    formatType: assignment.formatType,
+                    assignedMembers: assignment.assignedMembers || []
+                  };
                   finalPromises.push(
                     fetch('/api/content-format-assignments', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(assignment)
-                    })
+                      body: JSON.stringify(cleanAssignment)
+                    }).then(r => { console.log("Assignment imported:", r.status); return r; })
                   );
                 });
               }
 
               if (data.checklistTasks) {
+                console.log("Importing checklist tasks:", data.checklistTasks.length);
                 data.checklistTasks.forEach((task: any) => {
+                  const cleanTask = {
+                    id: task.id,
+                    taskTitle: task.taskTitle,
+                    description: task.description || '',
+                    assignedTo: task.assignedTo,
+                    releaseId: task.releaseId || null,
+                    evergreenBoxId: task.evergreenBoxId || null,
+                    waterfallCycleId: task.waterfallCycleId || null,
+                    contentFormatType: task.contentFormatType || null,
+                    isCompleted: task.isCompleted || false,
+                    dueDate: task.dueDate || null,
+                    priority: task.priority || 'medium'
+                  };
                   finalPromises.push(
                     fetch('/api/checklist-tasks', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(task)
-                    })
+                      body: JSON.stringify(cleanTask)
+                    }).then(r => { console.log("Task imported:", r.status); return r; })
                   );
                 });
               }
 
               await Promise.all(finalPromises);
+              console.log("All data imported successfully");
 
               // Update settings if present
               if (data.settings) {
+                console.log("Importing settings");
+                const cleanSettings = {
+                  id: data.settings.id,
+                  headerTitle: data.settings.headerTitle || 'Palmyra Release Gantt Chart',
+                  headerSubtitle: data.settings.headerSubtitle || 'Internal Release Management',
+                  headerBgColor: data.settings.headerBgColor || '#8B5CF6',
+                  headerTextColor: data.settings.headerTextColor || '#FFFFFF',
+                  statusColors: data.settings.statusColors || {}
+                };
                 await fetch('/api/settings', {
                   method: 'PUT',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(data.settings)
+                  body: JSON.stringify(cleanSettings)
                 });
+                console.log("Settings imported");
               }
 
-              alert('Data imported successfully! Page will reload.');
+              console.log("Import completed successfully");
+              alert('Data imported successfully! Page will reload to show the imported data.');
               window.location.reload();
             }
           } catch (error) {

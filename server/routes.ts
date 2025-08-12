@@ -318,7 +318,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             for (const assignment of assignments) {
               const formatType = assignment.formatType;
-              const requirement = cycle.contentRequirements[formatType] || 0;
+              const requirement = (cycle.contentRequirements as any)?.[formatType] || 0;
               
               if (requirement > 0 && assignment.assignedMembers.length > 0) {
                 // Create ONE task per format, assigned to first member
