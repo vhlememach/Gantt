@@ -200,6 +200,8 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
         await generateWaterfallTasks(release.id, release.waterfallCycleId, release.name);
       }
       
+      queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
+      
       toast({ title: "Release created successfully" });
       setFormData({
         name: "",
@@ -242,10 +244,31 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
       queryClient.invalidateQueries({ queryKey: ["/api/releases", releaseId] });
       queryClient.refetchQueries({ queryKey: ["/api/releases"] });
       
-      // If waterfall cycle assignment changed, regenerate format-based checklist tasks
-      if (updatedRelease.waterfallCycleId && updatedRelease.waterfallCycleId !== (release?.waterfallCycleId || "")) {
+      // Clean up existing waterfall tasks for this release to prevent duplicates
+      try {
+        const tasksResponse = await fetch("/api/checklist-tasks");
+        const allTasks = await tasksResponse.json();
+        
+        // Find and delete all waterfall tasks for this release
+        const releaseTasks = allTasks.filter((task: any) => 
+          task.releaseId === updatedRelease.id && task.waterfallCycleId
+        );
+        
+        for (const task of releaseTasks) {
+          await fetch(`/api/checklist-tasks/${task.id}`, {
+            method: "DELETE"
+          });
+        }
+      } catch (error) {
+        console.error("Failed to cleanup release tasks:", error);
+      }
+      
+      // If waterfall cycle is assigned, generate new format-based checklist tasks
+      if (updatedRelease.waterfallCycleId) {
         await generateWaterfallTasks(updatedRelease.id, updatedRelease.waterfallCycleId, updatedRelease.name);
       }
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
       
       toast({ title: "Release updated successfully" });
       onClose();

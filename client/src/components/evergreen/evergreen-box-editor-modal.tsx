@@ -170,14 +170,33 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
       return response.json();
     },
     onSuccess: async (updatedBox) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/evergreen-boxes"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/evergreen-boxes", boxId] });
-      
-      // If waterfall cycle is assigned, generate format-based checklist tasks
       const waterfallCycleId = form.getValues('waterfallCycleId');
-      if (waterfallCycleId && waterfallCycleId !== "none") {
+      
+      // If changing to "No Cycle Assigned", clean up existing tasks
+      if (!waterfallCycleId || waterfallCycleId === "none") {
+        try {
+          const tasksResponse = await fetch("/api/checklist-tasks");
+          const allTasks = await tasksResponse.json();
+          
+          // Find and delete all tasks for this evergreen box
+          const boxTasks = allTasks.filter((task: any) => task.evergreenBoxId === updatedBox.id);
+          
+          for (const task of boxTasks) {
+            await fetch(`/api/checklist-tasks/${task.id}`, {
+              method: "DELETE"
+            });
+          }
+        } catch (error) {
+          console.error("Failed to cleanup evergreen tasks:", error);
+        }
+      } else {
+        // If waterfall cycle is assigned, generate format-based checklist tasks
         await generateEvergreenTasks(updatedBox.id, waterfallCycleId, updatedBox.title);
       }
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/evergreen-boxes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/evergreen-boxes", boxId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
       
       toast({ title: "Evergreen box updated successfully" });
       onClose();
