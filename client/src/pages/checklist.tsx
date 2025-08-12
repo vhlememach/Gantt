@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ChecklistTask, Release } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
@@ -25,10 +25,31 @@ export default function ChecklistPage() {
   
   const queryClient = useQueryClient();
 
+  // Auto-generate evergreen tasks on initial load if none exist
+  const { data: evergreenBoxes = [] } = useQuery({
+    queryKey: ["/api/evergreen-boxes"],
+  });
+
   // Fetch all checklist tasks
   const { data: allTasks = [], isLoading: tasksLoading } = useQuery<ChecklistTask[]>({
     queryKey: ["/api/checklist-tasks"],
   });
+
+  // Check if we need to generate evergreen tasks
+  useEffect(() => {
+    const evergreenTasks = allTasks.filter(task => task.evergreenBoxId);
+    const boxesWithCycles = evergreenBoxes.filter((box: any) => box.waterfallCycleId);
+    
+    // If we have evergreen boxes with cycles but no evergreen tasks, generate them
+    if (boxesWithCycles.length > 0 && evergreenTasks.length === 0) {
+      console.log("No evergreen tasks found, generating them...");
+      fetch("/api/evergreen-tasks/generate", { method: "POST" })
+        .then(() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
+        })
+        .catch(console.error);
+    }
+  }, [allTasks, evergreenBoxes, queryClient]);
 
   // Fetch all releases for the dropdown
   const { data: releases = [] } = useQuery<Release[]>({
@@ -52,11 +73,6 @@ export default function ChecklistPage() {
     acc[groupId].push(task);
     return acc;
   }, {} as Record<string, ChecklistTask[]>);
-
-  // Ensure evergreen section always exists, even if empty
-  if (!tasksByRelease['evergreen']) {
-    tasksByRelease['evergreen'] = [];
-  }
 
   // Ensure evergreen section always exists, even if empty
   if (!tasksByRelease['evergreen']) {
