@@ -78,7 +78,7 @@ export default function FormatAssignmentsModal({ isOpen, onClose }: FormatAssign
           task.waterfallCycleId && task.contentFormatType
         );
         
-        console.log("Format tasks to delete:", formatTasks.length, formatTasks.map(t => ({id: t.id, title: t.taskTitle, assignedTo: t.assignedTo})));
+        console.log("Format tasks to delete:", formatTasks.length, formatTasks.map((t: any) => ({id: t.id, title: t.taskTitle, assignedTo: t.assignedTo})));
         
         // Delete all format-based tasks sequentially with error handling
         for (const task of formatTasks) {
@@ -140,7 +140,7 @@ export default function FormatAssignmentsModal({ isOpen, onClose }: FormatAssign
         const assignmentsResponse = await fetch("/api/content-format-assignments");
         const assignments = await assignmentsResponse.json();
         
-        // Regenerate tasks for evergreen boxes
+        // Regenerate tasks for evergreen boxes - but only create ONE task per format/box combination
         for (const box of boxes) {
           if (box.waterfallCycleId) {
             const cycle = cycles.find((c: any) => c.id === box.waterfallCycleId);
@@ -149,30 +149,30 @@ export default function FormatAssignmentsModal({ isOpen, onClose }: FormatAssign
                 const formatType = assignment.formatType;
                 const requirement = cycle.contentRequirements[formatType] || 0;
                 
-                if (requirement > 0) {
-                  for (const member of assignment.assignedMembers) {
-                    const taskName = `${box.title} > ${formatType.charAt(0).toUpperCase() + formatType.slice(1)}`;
-                    
-                    await fetch("/api/checklist-tasks", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        taskTitle: taskName,
-                        assignedTo: member,
-                        evergreenBoxId: box.id,
-                        waterfallCycleId: box.waterfallCycleId,
-                        contentFormatType: formatType,
-                        completed: false
-                      }),
-                    });
-                  }
+                if (requirement > 0 && assignment.assignedMembers.length > 0) {
+                  // Create ONE task for this format type, assigned to the first member
+                  const assignedMember = assignment.assignedMembers[0];
+                  const taskName = `${box.title} > ${formatType.charAt(0).toUpperCase() + formatType.slice(1)}`;
+                  
+                  await fetch("/api/checklist-tasks", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      taskTitle: taskName,
+                      assignedTo: assignedMember,
+                      evergreenBoxId: box.id,
+                      waterfallCycleId: box.waterfallCycleId,
+                      contentFormatType: formatType,
+                      completed: false
+                    }),
+                  });
                 }
               }
             }
           }
         }
         
-        // Regenerate tasks for releases
+        // Regenerate tasks for releases - but only create ONE task per format/release combination
         for (const release of releases) {
           if (release.waterfallCycleId) {
             const cycle = cycles.find((c: any) => c.id === release.waterfallCycleId);
@@ -181,23 +181,23 @@ export default function FormatAssignmentsModal({ isOpen, onClose }: FormatAssign
                 const formatType = assignment.formatType;
                 const requirement = cycle.contentRequirements[formatType] || 0;
                 
-                if (requirement > 0) {
-                  for (const member of assignment.assignedMembers) {
-                    const taskName = `${cycle.name} > ${requirement}x ${formatType.charAt(0).toUpperCase() + formatType.slice(1)}`;
-                    
-                    await fetch("/api/checklist-tasks", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        taskTitle: taskName,
-                        assignedTo: member,
-                        releaseId: release.id,
-                        waterfallCycleId: release.waterfallCycleId,
-                        contentFormatType: formatType,
-                        completed: false
-                      }),
-                    });
-                  }
+                if (requirement > 0 && assignment.assignedMembers.length > 0) {
+                  // Create ONE task for this format type, assigned to the first member
+                  const assignedMember = assignment.assignedMembers[0];
+                  const taskName = `${cycle.name} > ${requirement}x ${formatType.charAt(0).toUpperCase() + formatType.slice(1)}`;
+                  
+                  await fetch("/api/checklist-tasks", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      taskTitle: taskName,
+                      assignedTo: assignedMember,
+                      releaseId: release.id,
+                      waterfallCycleId: release.waterfallCycleId,
+                      contentFormatType: formatType,
+                      completed: false
+                    }),
+                  });
                 }
               }
             }
