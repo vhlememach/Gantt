@@ -307,13 +307,15 @@ export default function GanttPage() {
               >
                 {settings?.headerTitle || "Release Gantt Chart"}
               </h1>
-              
+            </div>
+            
+            {/* Center Navigation and Right Buttons */}
+            <div className="flex items-center space-x-3">
               {/* Navigation */}
               <div className="hidden md:block">
                 <Navigation className="text-white" />
               </div>
-            </div>
-            <div className="flex items-center space-x-3">
+              
               <Button
                 onClick={() => setIsGroupModalOpen(true)}
                 variant="secondary"

@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, User, CheckCircle, Clock, Users, BarChart3, Download, ArrowUpDown, Star, AlertTriangle, ExternalLink } from "lucide-react";
+import { Plus, User, CheckCircle, Clock, Users, BarChart3, Download, ArrowUpDown, Star, AlertTriangle, ExternalLink, ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
 import { Navigation, MobileNavigation } from "@/components/ui/navigation";
 
@@ -176,14 +176,15 @@ export default function ChecklistPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center space-x-6">
+              <Link href="/">
+                <Button variant="ghost" className="p-2">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Gantt Chart
+                </Button>
+              </Link>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
                 Team Checklist
               </h1>
-              
-              {/* Navigation */}
-              <div className="hidden md:block">
-                <Navigation />
-              </div>
             </div>
           </div>
         </div>

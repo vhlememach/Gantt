@@ -142,11 +142,7 @@ export default function GroupManagementModal({ isOpen, onClose }: GroupManagemen
                   <div className="flex items-center space-x-3 flex-1">
                     <div 
                       className="w-4 h-4 rounded-full" 
-                      style={{ 
-                        background: group.gradientEnabled === "true" 
-                          ? `linear-gradient(135deg, ${group.color}, ${group.gradientSecondaryColor || '#FFFFFF'})`
-                          : group.color 
-                      }}
+                      style={{ backgroundColor: group.color }}
                     />
                     <Input
                       value={group.name}
@@ -177,62 +173,7 @@ export default function GroupManagementModal({ isOpen, onClose }: GroupManagemen
                   </div>
                 </div>
 
-                {/* Gradient Controls */}
-                <div className="pl-7 border-l-2 border-slate-200">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Label className="text-sm text-slate-600">Gradient Shading</Label>
-                      <button
-                        onClick={() => toggleGradientExpanded(group.id)}
-                        className="text-slate-400 hover:text-slate-600"
-                      >
-                        {expandedGradients.has(group.id) ? (
-                          <ChevronDown className="h-3 w-3" />
-                        ) : (
-                          <ChevronRight className="h-3 w-3" />
-                        )}
-                      </button>
-                    </div>
-                    <Switch
-                      checked={group.gradientEnabled === "true"}
-                      onCheckedChange={(enabled) => handleGradientToggle(group.id, enabled)}
-                    />
-                  </div>
-                  
-                  {group.gradientEnabled === "true" && expandedGradients.has(group.id) && (
-                    <div className="mt-3 space-y-3">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                          <Label className="text-sm text-slate-600">Primary Color</Label>
-                          <input
-                            type="color"
-                            value={group.color}
-                            onChange={(e) => handleColorChange(group.id, e.target.value)}
-                            className="w-full h-8 border border-slate-300 rounded cursor-pointer"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-sm text-slate-600">Secondary Color</Label>
-                          <input
-                            type="color"
-                            value={group.gradientSecondaryColor || '#FFFFFF'}
-                            onChange={(e) => handleGradientSecondaryColor(group.id, e.target.value)}
-                            className="w-full h-8 border border-slate-300 rounded cursor-pointer"
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <div className="text-xs text-slate-500">Preview:</div>
-                        <div 
-                          className="h-6 rounded border"
-                          style={{ 
-                            background: `linear-gradient(135deg, ${group.color}, ${group.gradientSecondaryColor || '#FFFFFF'})`
-                          }}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
+
               </div>
             ))
           )}
