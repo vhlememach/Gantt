@@ -510,7 +510,7 @@ export default function ChecklistPage() {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => handleUnpauseTask(task.id)}
+                                    onClick={() => handleViewBlockerDetails(task)}
                                     className="text-green-600 hover:text-green-700 hover:bg-green-50"
                                   >
                                     <CheckCircle className="w-3 h-3 mr-1" />
