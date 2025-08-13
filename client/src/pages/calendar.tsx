@@ -92,13 +92,26 @@ export default function CalendarPage() {
     enabled: true
   });
 
-  // Load social media data into state
+  // Load social media data into state - prevent infinite loops
   useEffect(() => {
+    if (!allTaskSocialMedia || (allTaskSocialMedia as any[]).length === 0) return;
+    
     const socialMediaMap = new Map<string, string[]>();
     (allTaskSocialMedia as any[]).forEach((sm: any) => {
-      socialMediaMap.set(sm.taskId, sm.platforms || []);
+      if (sm?.taskId && sm?.platforms) {
+        socialMediaMap.set(sm.taskId, sm.platforms);
+      }
     });
-    setTaskSocialMedia(socialMediaMap);
+    
+    // Only update if data has actually changed
+    const currentKeys = Array.from(taskSocialMedia.keys()).sort();
+    const newKeys = Array.from(socialMediaMap.keys()).sort();
+    const hasChanged = currentKeys.length !== newKeys.length || 
+                      currentKeys.some((key, i) => key !== newKeys[i]);
+    
+    if (hasChanged) {
+      setTaskSocialMedia(socialMediaMap);
+    }
   }, [allTaskSocialMedia]);
 
   // Social media mutation for saving platforms
@@ -226,8 +239,15 @@ export default function CalendarPage() {
     calendarDays.push(day);
   }
 
-  // Transform tasks for calendar use - use direct filtering instead of manual deduplication
-  const tasks: CalendarTask[] = allTasks.map(task => ({
+  // First deduplicate the raw tasks by ID to ensure no duplicates from the API
+  const uniqueTasksMap = new Map<string, ChecklistTask>();
+  allTasks.forEach(task => {
+    uniqueTasksMap.set(task.id, task);
+  });
+  const deduplicatedTasks = Array.from(uniqueTasksMap.values());
+  
+  // Transform deduplicated tasks for calendar use
+  const tasks: CalendarTask[] = deduplicatedTasks.map(task => ({
     id: task.id,
     taskTitle: task.taskTitle,
     taskDescription: task.taskDescription,
@@ -249,21 +269,15 @@ export default function CalendarPage() {
   const scheduledTasks = tasks.filter(task => task.scheduledDate);
   const unscheduledTasks = tasks.filter(task => !task.scheduledDate);
 
-  // Group unscheduled tasks by release with proper structure and deduplication
+  // Group unscheduled tasks by release - tasks are already deduplicated
   const tasksByRelease = unscheduledTasks.reduce((acc, task) => {
     const releaseId = task.releaseId || 'evergreen';
     if (!acc[releaseId]) {
-      acc[releaseId] = { tasks: [], taskIds: new Set<string>() };
+      acc[releaseId] = { tasks: [] };
     }
-    
-    // Only add task if it's not already in this release group
-    if (!acc[releaseId].taskIds.has(task.id)) {
-      acc[releaseId].tasks.push(task);
-      acc[releaseId].taskIds.add(task.id);
-    }
-    
+    acc[releaseId].tasks.push(task);
     return acc;
-  }, {} as Record<string, { tasks: CalendarTask[], taskIds: Set<string> }>);
+  }, {} as Record<string, { tasks: CalendarTask[] }>);
 
   const handleDragStart = (task: CalendarTask) => {
     console.log('Drag started for task:', task.taskTitle);
@@ -389,7 +403,7 @@ export default function CalendarPage() {
                     return null;
                   }
                   
-                  // Tasks are already deduplicated in the grouping logic
+                  // Use tasks directly - they're already deduplicated
                   const uniqueTasks = releaseData.tasks;
                   const release = releases.find(r => r.id === releaseId);
                   const group = release ? releaseGroups.find(g => g.id === release.groupId) : null;
