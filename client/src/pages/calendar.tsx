@@ -71,6 +71,22 @@ export default function CalendarPage() {
     queryKey: ["/api/release-groups"]
   });
 
+  // Generate random accent colors for releases on mount
+  useEffect(() => {
+    const colors = ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#F97316', '#6B7280', '#EC4899'];
+    const newAccentColors = new Map<string, string>();
+    
+    releases.forEach((release, index) => {
+      if (!releaseAccentColors.has(release.id)) {
+        newAccentColors.set(release.id, colors[index % colors.length]);
+      }
+    });
+    
+    if (newAccentColors.size > 0) {
+      setReleaseAccentColors(prev => new Map([...prev, ...newAccentColors]));
+    }
+  }, [releases, releaseAccentColors]);
+
   // Schedule task mutation
   const scheduleTaskMutation = useMutation({
     mutationFn: async ({ taskId, date }: { taskId: string; date: string }) => {
@@ -178,6 +194,21 @@ export default function CalendarPage() {
   const handleDrop = (e: React.DragEvent, day?: number) => {
     e.preventDefault();
     if (draggedTask && day) {
+      // Check if the task has a release and if the day is within the release date range
+      const release = releases.find(r => r.id === draggedTask.releaseId);
+      const targetDate = new Date(selectedYear, selectedMonth, day);
+      
+      if (release && draggedTask.releaseId !== 'evergreen') {
+        const startDate = new Date(release.startDate);
+        const endDate = new Date(release.endDate);
+        
+        if (targetDate < startDate || targetDate > endDate) {
+          alert(`Cannot schedule task outside of release date range (${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()})`);
+          setDraggedTask(null);
+          return;
+        }
+      }
+      
       const dateString = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       scheduleTaskMutation.mutate({ taskId: draggedTask.id, date: dateString });
       setDraggedTask(null);
@@ -227,18 +258,6 @@ export default function CalendarPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Sidebar Toggle Button */}
-      <div className="fixed top-4 left-4 z-50">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setSidebarVisible(!sidebarVisible)}
-          className="bg-white dark:bg-gray-800 shadow-lg"
-        >
-          <i className={`fas ${sidebarVisible ? 'fa-chevron-left' : 'fa-chevron-right'} text-sm`}></i>
-        </Button>
-      </div>
-
       <div className="flex h-screen">
         {/* Left Sidebar - Completed Tasks */}
         {sidebarVisible && (
@@ -254,9 +273,20 @@ export default function CalendarPage() {
             }}
           >
             <div className="p-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                Completed Tasks
-              </h2>
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Completed Tasks
+                </h2>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSidebarVisible(false)}
+                  className="w-8 h-8 p-0"
+                  title="Hide sidebar"
+                >
+                  <i className="fas fa-chevron-left text-sm"></i>
+                </Button>
+              </div>
               <div className="mb-6">
                 <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
                   {unscheduledTasks.length} unscheduled
@@ -295,21 +325,37 @@ export default function CalendarPage() {
                               className="w-4 h-4 rounded border border-gray-300 hover:scale-110 transition-transform bg-white flex items-center justify-center"
                               onClick={() => setEditingReleaseAccent(release?.id || releaseId)}
                             >
-                              <i className="fas fa-paint-brush text-xs text-gray-600"></i>
+                              <i className="fas fa-wrench text-xs text-gray-600"></i>
                             </button>
-                            {editingReleaseAccent === release?.id && (
-                              <input
-                                type="color"
-                                className="absolute mt-6 w-8 h-8 rounded border border-gray-300 cursor-pointer z-10"
-                                value={releaseAccentColors.get(release?.id || releaseId) || '#3B82F6'}
-                                onChange={(e) => {
-                                  const newAccentColors = new Map(releaseAccentColors);
-                                  newAccentColors.set(release?.id || releaseId, e.target.value);
-                                  setReleaseAccentColors(newAccentColors);
-                                }}
-                                onBlur={() => setEditingReleaseAccent(null)}
-                                autoFocus
-                              />
+                            {editingReleaseAccent === (release?.id || releaseId) && (
+                              <div className="absolute mt-6 left-0 bg-white dark:bg-gray-800 p-2 rounded shadow-lg border z-20">
+                                <div className="flex space-x-2 mb-2">
+                                  {['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#F97316', '#6B7280', '#EC4899'].map(color => (
+                                    <button
+                                      key={color}
+                                      className="w-6 h-6 rounded border hover:scale-110 transition-transform"
+                                      style={{ backgroundColor: color }}
+                                      onClick={() => {
+                                        const newAccentColors = new Map(releaseAccentColors);
+                                        newAccentColors.set(release?.id || releaseId, color);
+                                        setReleaseAccentColors(newAccentColors);
+                                        setEditingReleaseAccent(null);
+                                      }}
+                                    />
+                                  ))}
+                                </div>
+                                <input
+                                  type="color"
+                                  className="w-full h-8 rounded border border-gray-300 cursor-pointer"
+                                  value={releaseAccentColors.get(release?.id || releaseId) || '#3B82F6'}
+                                  onChange={(e) => {
+                                    const newAccentColors = new Map(releaseAccentColors);
+                                    newAccentColors.set(release?.id || releaseId, e.target.value);
+                                    setReleaseAccentColors(newAccentColors);
+                                  }}
+                                  onBlur={() => setEditingReleaseAccent(null)}
+                                />
+                              </div>
                             )}
                           </div>
                         </div>
@@ -350,6 +396,17 @@ export default function CalendarPage() {
             {/* Calendar Header */}
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-4">
+                {!sidebarVisible && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSidebarVisible(true)}
+                    title="Show sidebar"
+                  >
+                    <i className="fas fa-chevron-right text-sm mr-2"></i>
+                    Tasks
+                  </Button>
+                )}
                 <Link href="/">
                   <Button variant="outline" size="sm">
                     <ArrowLeft className="w-4 h-4 mr-2" />
