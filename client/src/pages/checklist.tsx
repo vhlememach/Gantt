@@ -599,20 +599,6 @@ export default function ChecklistPage() {
                                 )}
                               </div>
                               <div className="flex items-center space-x-2">
-                                {/* Wrench icon for editing */}
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                  onClick={() => {
-                                    setEditingTask(task);
-                                    setEditTitle(task.taskTitle);
-                                    setEditUrl(task.taskUrl || "");
-                                  }}
-                                >
-                                  <Settings className="w-3 h-3 text-gray-500" />
-                                </Button>
-                                
                                 {/* Top badges - Done, Pending, Paused only */}
                                 {task.completed ? (
                                   <Badge variant="outline" className="bg-green-100 text-green-800 text-xs">
@@ -637,72 +623,106 @@ export default function ChecklistPage() {
                             </div>
                             
                             {/* Bottom action buttons section - separated from main content */}
-                            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 flex items-center space-x-2 flex-wrap">
-                              {/* Blocker button */}
-                              {!task.completed && !task.paused && (
-                                <Badge 
-                                  className="bg-orange-500 text-white cursor-pointer hover:bg-orange-600 transition-colors text-xs"
-                                  onClick={() => handleReportBlocker(task.id)}
-                                >
-                                  <AlertTriangle className="w-3 h-3" />
-                                </Badge>
-                              )}
+                            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                              <div className="flex items-center space-x-2 flex-wrap">
+                                {/* For General tasks: Wrench to the left of blocker icon */}
+                                {task.releaseId === 'general' && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                    onClick={() => {
+                                      setEditingTask(task);
+                                      setEditTitle(task.taskTitle);
+                                      setEditUrl(task.taskUrl || "");
+                                    }}
+                                  >
+                                    <Settings className="w-3 h-3 text-gray-500" />
+                                  </Button>
+                                )}
+                                
+                                {/* Blocker button */}
+                                {!task.completed && !task.paused && (
+                                  <Badge 
+                                    className="bg-orange-500 text-white cursor-pointer hover:bg-orange-600 transition-colors text-xs"
+                                    onClick={() => handleReportBlocker(task.id)}
+                                  >
+                                    <AlertTriangle className="w-3 h-3" />
+                                  </Badge>
+                                )}
+                                
+                                {/* Add to Calendar button */}
+                                {task.completed && (
+                                  <Badge 
+                                    className="bg-blue-500 text-white cursor-pointer hover:bg-blue-600 transition-colors text-xs"
+                                    onClick={() => {
+                                      toast({
+                                        title: "Added to Calendar",
+                                        description: "Task has been successfully added to your calendar.",
+                                      });
+                                    }}
+                                  >
+                                    <Calendar className="w-3 h-3 mr-1" />
+                                    Added to Calendar
+                                  </Badge>
+                                )}
+                                
+                                {/* Unpause button */}
+                                {task.paused && (
+                                  <Badge 
+                                    className="bg-green-500 text-white cursor-pointer hover:bg-green-600 transition-colors text-xs"
+                                    onClick={() => handleViewBlockerDetails(task)}
+                                  >
+                                    <CheckCircle className="w-3 h-3 mr-1" />
+                                    Unpause
+                                  </Badge>
+                                )}
+                                
+                                {/* Request Approval button */}
+                                {!task.completed && !task.paused && task.reviewStatus !== "requested" && (
+                                  <Badge
+                                    className="bg-purple-500 text-white cursor-pointer hover:bg-purple-600 transition-colors text-xs"
+                                    onClick={() => handleRequestReview(task)}
+                                  >
+                                    Request Approval
+                                  </Badge>
+                                )}
+                                
+                                {/* Submit review button */}
+                                {task.reviewStatus === "requested" && !task.reviewSubmissionUrl && task.assignedTo === selectedMember && (
+                                  <Badge
+                                    className="bg-blue-500 text-white cursor-pointer hover:bg-blue-600 transition-colors text-xs"
+                                    onClick={() => handleSubmitReview(task)}
+                                  >
+                                    Submit V{task.currentVersion || 2}
+                                  </Badge>
+                                )}
+                                
+                                {/* Approve review button */}
+                                {task.reviewStatus === "requested" && task.reviewSubmissionUrl && (
+                                  <Badge
+                                    className="bg-green-500 text-white cursor-pointer hover:bg-green-600 transition-colors text-xs"
+                                    onClick={() => handleApproveReview(task)}
+                                  >
+                                    Approve
+                                  </Badge>
+                                )}
+                              </div>
                               
-                              {/* Add to Calendar button */}
-                              {task.completed && (
-                                <Badge 
-                                  className="bg-blue-500 text-white cursor-pointer hover:bg-blue-600 transition-colors text-xs"
+                              {/* Wrench icon for non-General tasks - bottom right */}
+                              {task.releaseId !== 'general' && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
                                   onClick={() => {
-                                    toast({
-                                      title: "Added to Calendar",
-                                      description: "Task has been successfully added to your calendar.",
-                                    });
+                                    setEditingTask(task);
+                                    setEditTitle(task.taskTitle);
+                                    setEditUrl(task.taskUrl || "");
                                   }}
                                 >
-                                  <Calendar className="w-3 h-3 mr-1" />
-                                  Added to Calendar
-                                </Badge>
-                              )}
-                              
-                              {/* Unpause button */}
-                              {task.paused && (
-                                <Badge 
-                                  className="bg-green-500 text-white cursor-pointer hover:bg-green-600 transition-colors text-xs"
-                                  onClick={() => handleViewBlockerDetails(task)}
-                                >
-                                  <CheckCircle className="w-3 h-3 mr-1" />
-                                  Unpause
-                                </Badge>
-                              )}
-                              
-                              {/* Request Approval button */}
-                              {!task.completed && !task.paused && task.reviewStatus !== "requested" && (
-                                <Badge
-                                  className="bg-purple-500 text-white cursor-pointer hover:bg-purple-600 transition-colors text-xs"
-                                  onClick={() => handleRequestReview(task)}
-                                >
-                                  Request Approval
-                                </Badge>
-                              )}
-                              
-                              {/* Submit review button */}
-                              {task.reviewStatus === "requested" && !task.reviewSubmissionUrl && task.assignedTo === selectedMember && (
-                                <Badge
-                                  className="bg-blue-500 text-white cursor-pointer hover:bg-blue-600 transition-colors text-xs"
-                                  onClick={() => handleSubmitReview(task)}
-                                >
-                                  Submit V{task.currentVersion || 2}
-                                </Badge>
-                              )}
-                              
-                              {/* Approve review button */}
-                              {task.reviewStatus === "requested" && task.reviewSubmissionUrl && (
-                                <Badge
-                                  className="bg-green-500 text-white cursor-pointer hover:bg-green-600 transition-colors text-xs"
-                                  onClick={() => handleApproveReview(task)}
-                                >
-                                  Approve
-                                </Badge>
+                                  <Settings className="w-3 h-3 text-gray-500" />
+                                </Button>
                               )}
                             </div>
                           </div>

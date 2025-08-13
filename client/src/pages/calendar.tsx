@@ -851,11 +851,15 @@ export default function CalendarPage() {
                                     ))}
                                   </div>
                                 )}
-                                {/* Link - positioned below social media */}
-                                {taskSocialMediaUrls.get(task.id) && (
+                                {/* Links - positioned below social media */}
+                                {(taskSocialMediaUrls.get(task.id) || task.taskUrl) && (
                                   <div className="flex items-center gap-1 mt-1">
                                     <a 
-                                      href={taskSocialMediaUrls.get(task.id)?.startsWith("http") ? taskSocialMediaUrls.get(task.id) : `https://${taskSocialMediaUrls.get(task.id)}`} 
+                                      href={
+                                        taskSocialMediaUrls.get(task.id)
+                                          ? (taskSocialMediaUrls.get(task.id)?.startsWith("http") ? taskSocialMediaUrls.get(task.id) : `https://${taskSocialMediaUrls.get(task.id)}`)
+                                          : task.taskUrl?.startsWith("http") ? task.taskUrl : `https://${task.taskUrl}`
+                                      } 
                                       target="_blank" 
                                       rel="noopener noreferrer"
                                       className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-500 hover:bg-blue-600 text-white text-xs transition-colors"
@@ -931,11 +935,15 @@ export default function CalendarPage() {
                                     ))}
                                   </div>
                                 )}
-                                {/* Link - positioned below social media */}
-                                {taskSocialMediaUrls.get(task.id) && (
+                                {/* Links - positioned below social media */}
+                                {(taskSocialMediaUrls.get(task.id) || task.taskUrl) && (
                                   <div className="flex items-center gap-1 mt-1">
                                     <a 
-                                      href={taskSocialMediaUrls.get(task.id)?.startsWith("http") ? taskSocialMediaUrls.get(task.id) : `https://${taskSocialMediaUrls.get(task.id)}`} 
+                                      href={
+                                        taskSocialMediaUrls.get(task.id)
+                                          ? (taskSocialMediaUrls.get(task.id)?.startsWith("http") ? taskSocialMediaUrls.get(task.id) : `https://${taskSocialMediaUrls.get(task.id)}`)
+                                          : task.taskUrl?.startsWith("http") ? task.taskUrl : `https://${task.taskUrl}`
+                                      } 
                                       target="_blank" 
                                       rel="noopener noreferrer"
                                       className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-500 hover:bg-blue-600 text-white text-xs transition-colors"
