@@ -23,6 +23,7 @@ interface CalendarTask {
   releaseIcon?: string;
   priority: boolean | null;
   scheduledDate?: string | null;
+  completed: boolean;
 }
 
 const getDaysInMonth = (year: number, month: number) => {
@@ -279,7 +280,7 @@ export default function CalendarPage() {
     const deduplicatedTasks = Array.from(uniqueTasksMap.values());
     console.log('After deduplication:', deduplicatedTasks.length);
     
-    // Transform tasks
+    // Transform tasks - include completion status
     const processedTasks: CalendarTask[] = deduplicatedTasks.map(task => ({
       id: task.id,
       taskTitle: task.taskTitle,
@@ -296,10 +297,12 @@ export default function CalendarPage() {
         : undefined,
       releaseIcon: releases.find(r => r.id === task.releaseId)?.icon,
       priority: task.priority,
-      scheduledDate: task.scheduledDate
+      scheduledDate: task.scheduledDate,
+      completed: task.completed // Add completion status
     }));
     
-    const scheduled = processedTasks.filter(task => task.scheduledDate);
+    // Only show scheduled tasks that are actually completed
+    const scheduled = processedTasks.filter(task => task.scheduledDate && task.completed);
     const unscheduled = processedTasks.filter(task => !task.scheduledDate);
     console.log('Scheduled:', scheduled.length, 'Unscheduled:', unscheduled.length);
 
