@@ -818,31 +818,21 @@ export default function ChecklistPage() {
                                       )}
                                     </div>
                                     <div className="flex items-center space-x-2">
-                                      {task.completed ? (
+                                      {task.paused ? (
                                         <Badge 
-                                          className="bg-blue-500 text-white cursor-pointer hover:bg-blue-600 transition-colors text-xs"
-                                          onClick={() => window.location.href = '/calendar'}
+                                          className="bg-green-500 text-white cursor-pointer hover:bg-green-600 transition-colors text-xs"
+                                          onClick={() => handleViewBlockerDetails(task)}
                                         >
-                                          <Calendar className="w-3 h-3 mr-1" />
-                                          Add to Calendar
+                                          <CheckCircle className="w-3 h-3 mr-1" />
+                                          Unpause
                                         </Badge>
-                                      ) : (
-                                        task.paused ? (
-                                          <Badge 
-                                            className="bg-green-500 text-white cursor-pointer hover:bg-green-600 transition-colors text-xs"
-                                            onClick={() => handleViewBlockerDetails(task)}
-                                          >
-                                            <CheckCircle className="w-3 h-3 mr-1" />
-                                            Unpause
-                                          </Badge>
-                                        ) : (
-                                          <Badge 
-                                            className="bg-orange-500 text-white cursor-pointer hover:bg-orange-600 transition-colors text-xs"
-                                            onClick={() => handleReportBlocker(task.id)}
-                                          >
-                                            <AlertTriangle className="w-3 h-3" />
-                                          </Badge>
-                                        )
+                                      ) : !task.completed && (
+                                        <Badge 
+                                          className="bg-orange-500 text-white cursor-pointer hover:bg-orange-600 transition-colors text-xs"
+                                          onClick={() => handleReportBlocker(task.id)}
+                                        >
+                                          <AlertTriangle className="w-3 h-3" />
+                                        </Badge>
                                       )}
                                       {task.completed ? (
                                         <Badge variant="outline" className="bg-green-100 text-green-800 text-xs">
