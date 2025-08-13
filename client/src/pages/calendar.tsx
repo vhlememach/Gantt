@@ -97,8 +97,8 @@ export default function CalendarPage() {
   const scheduleTaskMutation = useMutation({
     mutationFn: async ({ taskId, date }: { taskId: string; date: string }) => {
       console.log('Making API request to schedule task:', taskId, 'on date:', date);
-      const response = await apiRequest(`/api/checklist-tasks/${taskId}/schedule`, 'PATCH', { scheduledDate: date });
-      return response;
+      const response = await apiRequest('PATCH', `/api/checklist-tasks/${taskId}/schedule`, { scheduledDate: date });
+      return await response.json();
     },
     onSuccess: () => {
       console.log('Task scheduled successfully, invalidating cache');
@@ -115,8 +115,8 @@ export default function CalendarPage() {
   const unscheduleTaskMutation = useMutation({
     mutationFn: async (taskId: string) => {
       console.log('Making API request to unschedule task:', taskId);
-      const response = await apiRequest(`/api/checklist-tasks/${taskId}/unschedule`, 'PATCH');
-      return response;
+      const response = await apiRequest('PATCH', `/api/checklist-tasks/${taskId}/unschedule`, {});
+      return await response.json();
     },
     onSuccess: () => {
       console.log('Task unscheduled successfully, invalidating cache');
