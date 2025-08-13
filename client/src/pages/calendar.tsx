@@ -306,7 +306,9 @@ export default function CalendarPage() {
       if (!task.scheduledDate) return false;
       // Find the current completion status from the original task data
       const originalTask = deduplicatedTasks.find(t => t.id === task.id);
-      return originalTask?.completed === true;
+      const isCompleted = originalTask?.completed === true;
+      console.log(`Task "${task.taskTitle}" (${task.id}): scheduled=${!!task.scheduledDate}, completed=${isCompleted}, originalCompleted=${originalTask?.completed}`);
+      return isCompleted;
     });
     const unscheduled = processedTasks.filter(task => !task.scheduledDate);
     console.log('Scheduled:', scheduled.length, 'Unscheduled:', unscheduled.length);
