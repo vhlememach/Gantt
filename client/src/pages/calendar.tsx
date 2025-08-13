@@ -83,6 +83,7 @@ export default function CalendarPage() {
   const [showSocialMediaModal, setShowSocialMediaModal] = useState<string | null>(null);
   const [taskSocialMedia, setTaskSocialMedia] = useState<Map<string, string[]>>(new Map());
   const [taskSocialMediaUrls, setTaskSocialMediaUrls] = useState<Map<string, string>>(new Map());
+  const [taskSocialMediaTimes, setTaskSocialMediaTimes] = useState<Map<string, string>>(new Map());
   const [sidebarVisible, setSidebarVisible] = useState(true);
 
   const queryClient = useQueryClient();
@@ -285,7 +286,7 @@ export default function CalendarPage() {
       taskDescription: task.taskDescription,
       taskUrl: task.taskUrl,
       assignedTo: task.assignedTo,
-      releaseId: task.releaseId || 'evergreen',
+      releaseId: task.releaseId || (task.evergreenBoxId ? 'evergreen' : 'general'),
       releaseName: releases.find(r => r.id === task.releaseId)?.name,
       releaseGroup: releases.find(r => r.id === task.releaseId) 
         ? releaseGroups.find(g => g.id === releases.find(r => r.id === task.releaseId)?.groupId)?.name 
@@ -473,11 +474,17 @@ export default function CalendarPage() {
                   }
                   const group = release ? releaseGroups.find(g => g.id === release.groupId) : null;
                   
+                  // Define accent colors for special groups
+                  let accentColor = '#6B7280'; // Default gray
+                  if (releaseId === 'evergreen') {
+                    accentColor = '#10B981'; // Green for evergreen
+                  } else if (releaseId === 'general') {
+                    accentColor = '#8B5CF6'; // Purple for general tasks
+                  } else if (group) {
+                    accentColor = group.color || '#6B7280';
+                  }
+                  
                   const groupColor = group?.color || '#6b7280';
-                  // For evergreen tasks, use a special accent color handling
-                  const accentColor = releaseId === 'evergreen' 
-                    ? releaseAccentColors.get('evergreen') || '#10B981'  // Default green for evergreen
-                    : release ? releaseAccentColors.get(release.id) || '#ffffff' : '#ffffff';
                   
                   return (
                     <div key={releaseId} className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
@@ -492,7 +499,7 @@ export default function CalendarPage() {
                           <div className="flex items-center space-x-2">
                             <i className={`${release?.icon || 'fas fa-calendar'} text-sm`}></i>
                             <span className="text-sm font-medium">
-                              {release ? release.name : 'Evergreen'}
+                              {release ? release.name : (releaseId === 'evergreen' ? 'Evergreen' : 'General Tasks')}
                             </span>
                           </div>
                           <div className="flex items-center space-x-1">
@@ -786,6 +793,12 @@ export default function CalendarPage() {
                                   handleTaskClick(task, 'remove');
                                 }}
                               >
+                                {/* Time display above task title */}
+                                {taskSocialMediaTimes.get(task.id) && (
+                                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 font-medium">
+                                    {taskSocialMediaTimes.get(task.id)}
+                                  </div>
+                                )}
                                 <div className="flex items-center justify-between">
                                   <div className="break-words flex-1">{task.taskTitle}</div>
                                   <Button
@@ -860,6 +873,12 @@ export default function CalendarPage() {
                                   handleTaskClick(task, 'remove');
                                 }}
                               >
+                                {/* Time display above task title */}
+                                {taskSocialMediaTimes.get(task.id) && (
+                                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 font-medium">
+                                    {taskSocialMediaTimes.get(task.id)}
+                                  </div>
+                                )}
                                 <div className="flex items-center justify-between">
                                   <div className="break-words flex-1">{task.taskTitle}</div>
                                   <Button
@@ -1096,6 +1115,29 @@ export default function CalendarPage() {
                     newUrls.delete(showSocialMediaModal);
                   }
                   setTaskSocialMediaUrls(newUrls);
+                }}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white bg-white dark:bg-gray-700 text-sm"
+              />
+            </div>
+            
+            {/* Time Field */}
+            <div className="mb-6">
+              <div className="flex items-center space-x-2 mb-2">
+                <i className="fas fa-clock text-gray-500"></i>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Time (Optional)</label>
+              </div>
+              <input
+                type="text"
+                placeholder="9:30 AM NY"
+                value={taskSocialMediaTimes.get(showSocialMediaModal) || ''}
+                onChange={(e) => {
+                  const newTimes = new Map(taskSocialMediaTimes);
+                  if (e.target.value) {
+                    newTimes.set(showSocialMediaModal, e.target.value);
+                  } else {
+                    newTimes.delete(showSocialMediaModal);
+                  }
+                  setTaskSocialMediaTimes(newTimes);
                 }}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white bg-white dark:bg-gray-700 text-sm"
               />

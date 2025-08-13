@@ -47,7 +47,7 @@ export default function ChecklistPage() {
   // Check if we need to generate evergreen tasks
   useEffect(() => {
     const evergreenTasks = allTasks.filter(task => task.evergreenBoxId);
-    const boxesWithCycles = evergreenBoxes.filter((box: any) => box.waterfallCycleId);
+    const boxesWithCycles = evergreenBoxes.filter((box: {waterfallCycleId?: string}) => box.waterfallCycleId);
     
     // If we have evergreen boxes with cycles but no evergreen tasks, generate them
     if (boxesWithCycles.length > 0 && evergreenTasks.length === 0) {
@@ -66,7 +66,11 @@ export default function ChecklistPage() {
   });
 
   // Fetch all release groups for accent colors
-  const { data: groups = [] } = useQuery({
+  const { data: groups = [] } = useQuery<Array<{
+    id: string;
+    name: string;
+    color: string;
+  }>>({
     queryKey: ["/api/release-groups"],
   });
 
@@ -432,7 +436,7 @@ export default function ChecklistPage() {
                               className="w-1 h-6 rounded-full mr-3"
                               style={{ 
                                 backgroundColor: release?.groupId 
-                                  ? groups.find(g => g.id === release.groupId)?.accentColor || '#6B7280'
+                                  ? groups.find((g: any) => g.id === release.groupId)?.color || '#6B7280'
                                   : '#6B7280' 
                               }}
                             />
@@ -544,8 +548,7 @@ export default function ChecklistPage() {
                                     className="bg-orange-500 text-white cursor-pointer hover:bg-orange-600 transition-colors text-xs"
                                     onClick={() => handleReportBlocker(task.id)}
                                   >
-                                    <AlertTriangle className="w-3 h-3 mr-1" />
-                                    Blocker
+                                    <AlertTriangle className="w-3 h-3" />
                                   </Badge>
                                 )
                               )}
@@ -693,8 +696,7 @@ export default function ChecklistPage() {
                                           className="bg-orange-500 text-white cursor-pointer hover:bg-orange-600 transition-colors text-xs"
                                           onClick={() => handleReportBlocker(task.id)}
                                         >
-                                          <AlertTriangle className="w-3 h-3 mr-1" />
-                                          Blocker
+                                          <AlertTriangle className="w-3 h-3" />
                                         </Badge>
                                       )
                                     )}
@@ -838,8 +840,7 @@ export default function ChecklistPage() {
                                             className="bg-orange-500 text-white cursor-pointer hover:bg-orange-600 transition-colors text-xs"
                                             onClick={() => handleReportBlocker(task.id)}
                                           >
-                                            <AlertTriangle className="w-3 h-3 mr-1" />
-                                            Blocker
+                                            <AlertTriangle className="w-3 h-3" />
                                           </Badge>
                                         )
                                       )}
