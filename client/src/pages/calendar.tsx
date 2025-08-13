@@ -307,7 +307,9 @@ export default function CalendarPage() {
       // Find the current completion status from the original task data
       const originalTask = deduplicatedTasks.find(t => t.id === task.id);
       const isCompleted = originalTask?.completed === true;
-      console.log(`Task "${task.taskTitle}" (${task.id}): scheduled=${!!task.scheduledDate}, completed=${isCompleted}, originalCompleted=${originalTask?.completed}`);
+      if (task.scheduledDate) {
+        console.log(`Task "${task.taskTitle}" (${task.id}): scheduled=${!!task.scheduledDate}, completed=${isCompleted}, originalCompleted=${originalTask?.completed}`);
+      }
       return isCompleted;
     });
     const unscheduled = processedTasks.filter(task => !task.scheduledDate);
@@ -392,15 +394,26 @@ export default function CalendarPage() {
     }
   };
 
-  // Get tasks for a specific day
+  // Get tasks for a specific day - only show tasks that are both scheduled AND currently completed
   const getTasksForDay = (day: number) => {
     const dateString = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     
-    const dayTasks = scheduledTasks.filter(task => {
+    // Get all tasks that have a scheduled date for this day
+    const dayTasks = tasks.filter(task => {
       if (!task.scheduledDate) return false;
       const taskDate = new Date(task.scheduledDate);
       const checkDate = new Date(selectedYear, selectedMonth, day);
-      return taskDate.toDateString() === checkDate.toDateString();
+      const isSameDay = taskDate.toDateString() === checkDate.toDateString();
+      
+      if (isSameDay) {
+        // Double-check completion status from original task data
+        const originalTask = allTasks.find(t => t.id === task.id);
+        const isCurrentlyCompleted = originalTask?.completed === true;
+        console.log(`Task "${task.taskTitle}" for day ${day}: completed=${isCurrentlyCompleted}, originalCompleted=${originalTask?.completed}`);
+        return isCurrentlyCompleted;
+      }
+      
+      return false;
     });
 
     // Group by release
