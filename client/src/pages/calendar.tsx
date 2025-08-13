@@ -56,7 +56,7 @@ export default function CalendarPage() {
 
   const queryClient = useQueryClient();
 
-  // Fetch tasks data
+  // Fetch tasks data - use only main endpoint to avoid duplicates
   const { data: allTasks = [] } = useQuery<ChecklistTask[]>({
     queryKey: ["/api/checklist-tasks"]
   });
@@ -155,8 +155,13 @@ export default function CalendarPage() {
     calendarDays.push(day);
   }
 
-  // Transform tasks for calendar use
-  const tasks: CalendarTask[] = allTasks.map(task => ({
+  // Transform tasks for calendar use - ensure no duplicates from start
+  const uniqueTasksMap = new Map<string, ChecklistTask>();
+  allTasks.forEach(task => {
+    uniqueTasksMap.set(task.id, task);
+  });
+  
+  const tasks: CalendarTask[] = Array.from(uniqueTasksMap.values()).map(task => ({
     id: task.id,
     taskTitle: task.taskTitle,
     taskDescription: task.taskDescription,
@@ -174,14 +179,9 @@ export default function CalendarPage() {
     priority: task.priority,
     scheduledDate: task.scheduledDate
   }));
-
-  // Separate tasks - ensure no duplicates by using unique IDs
-  const uniqueTasks = tasks.filter((task, index, self) => 
-    index === self.findIndex(t => t.id === task.id)
-  );
   
-  const scheduledTasks = uniqueTasks.filter(task => task.scheduledDate);
-  const unscheduledTasks = uniqueTasks.filter(task => !task.scheduledDate);
+  const scheduledTasks = tasks.filter(task => task.scheduledDate);
+  const unscheduledTasks = tasks.filter(task => !task.scheduledDate);
 
   // Group unscheduled tasks by release
   const tasksByRelease = unscheduledTasks.reduce((acc, task) => {
@@ -194,6 +194,7 @@ export default function CalendarPage() {
   }, {} as Record<string, CalendarTask[]>);
 
   const handleDragStart = (task: CalendarTask) => {
+    console.log('Drag started for task:', task.taskTitle);
     setDraggedTask(task);
   };
 
@@ -203,6 +204,8 @@ export default function CalendarPage() {
 
   const handleDrop = (e: React.DragEvent, day?: number) => {
     e.preventDefault();
+    console.log('Drop event on day:', day, 'draggedTask:', draggedTask?.taskTitle);
+    
     if (draggedTask && day) {
       // Check if the task has a release and if the day is within the release date range
       const release = releases.find(r => r.id === draggedTask.releaseId);
@@ -220,8 +223,21 @@ export default function CalendarPage() {
       }
       
       const dateString = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      scheduleTaskMutation.mutate({ taskId: draggedTask.id, date: dateString });
-      setDraggedTask(null);
+      console.log('Scheduling task to:', dateString);
+      
+      scheduleTaskMutation.mutate(
+        { taskId: draggedTask.id, date: dateString },
+        {
+          onSuccess: () => {
+            console.log('Task scheduled successfully');
+            setDraggedTask(null);
+          },
+          onError: (error) => {
+            console.error('Failed to schedule task:', error);
+            setDraggedTask(null);
+          }
+        }
+      );
     }
   };
 
@@ -388,8 +404,14 @@ export default function CalendarPage() {
                           <div
                             key={task.id}
                             draggable
-                            onDragStart={() => handleDragStart(task)}
-                            onDragEnd={() => setDraggedTask(null)}
+                            onDragStart={(e) => {
+                              console.log('onDragStart called for:', task.taskTitle);
+                              handleDragStart(task);
+                            }}
+                            onDragEnd={(e) => {
+                              console.log('onDragEnd called');
+                              setDraggedTask(null);
+                            }}
                             className="p-3 bg-gray-50 dark:bg-gray-700 rounded text-xs cursor-move hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors min-h-[3rem] flex items-center"
                             title={`Drag to schedule: ${task.taskTitle}`}
                           >
