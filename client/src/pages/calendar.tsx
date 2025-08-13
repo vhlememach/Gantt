@@ -96,22 +96,34 @@ export default function CalendarPage() {
   // Schedule task mutation
   const scheduleTaskMutation = useMutation({
     mutationFn: async ({ taskId, date }: { taskId: string; date: string }) => {
+      console.log('Making API request to schedule task:', taskId, 'on date:', date);
       const response = await apiRequest(`/api/checklist-tasks/${taskId}/schedule`, 'PATCH', { scheduledDate: date });
       return response;
     },
     onSuccess: () => {
+      console.log('Task scheduled successfully, invalidating cache');
       queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
+      setDraggedTask(null);
+    },
+    onError: (error) => {
+      console.error('Schedule task mutation error:', error);
+      setDraggedTask(null);
     }
   });
 
   // Unschedule task mutation
   const unscheduleTaskMutation = useMutation({
     mutationFn: async (taskId: string) => {
+      console.log('Making API request to unschedule task:', taskId);
       const response = await apiRequest(`/api/checklist-tasks/${taskId}/unschedule`, 'PATCH');
       return response;
     },
     onSuccess: () => {
+      console.log('Task unscheduled successfully, invalidating cache');
       queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
+    },
+    onError: (error) => {
+      console.error('Unschedule task mutation error:', error);
     }
   });
 
@@ -225,19 +237,7 @@ export default function CalendarPage() {
       const dateString = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       console.log('Scheduling task to:', dateString);
       
-      scheduleTaskMutation.mutate(
-        { taskId: draggedTask.id, date: dateString },
-        {
-          onSuccess: () => {
-            console.log('Task scheduled successfully');
-            setDraggedTask(null);
-          },
-          onError: (error) => {
-            console.error('Failed to schedule task:', error);
-            setDraggedTask(null);
-          }
-        }
-      );
+      scheduleTaskMutation.mutate({ taskId: draggedTask.id, date: dateString });
     }
   };
 
@@ -294,7 +294,6 @@ export default function CalendarPage() {
               e.preventDefault();
               if (draggedTask && draggedTask.scheduledDate) {
                 unscheduleTaskMutation.mutate(draggedTask.id);
-                setDraggedTask(null);
               }
             }}
           >
