@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, User, CheckCircle, Clock, Users, BarChart3, Download, ArrowUpDown, Star, AlertTriangle, ExternalLink, ArrowLeft, Pause, Calendar, Loader2 } from "lucide-react";
+import { Plus, User, CheckCircle, Clock, Users, BarChart3, Download, ArrowUpDown, Star, AlertTriangle, ExternalLink, ArrowLeft, Pause, Calendar, Loader2, Settings } from "lucide-react";
 import { Link } from "wouter";
 import { Navigation, MobileNavigation } from "@/components/ui/navigation";
 import { ReviewModal } from "@/components/checklist/review-modal";
@@ -36,6 +36,9 @@ export default function ChecklistPage() {
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [selectedTaskForReview, setSelectedTaskForReview] = useState<ChecklistTask | null>(null);
   const [reviewMode, setReviewMode] = useState<"request" | "submit" | "approve">("request");
+  const [editingTask, setEditingTask] = useState<ChecklistTask | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editUrl, setEditUrl] = useState("");
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -171,6 +174,23 @@ export default function ChecklistPage() {
     }
   });
 
+  // Edit task mutation
+  const editTaskMutation = useMutation({
+    mutationFn: async ({ id, taskTitle, taskUrl }: { id: string, taskTitle: string, taskUrl?: string }) => {
+      return apiRequest('PUT', `/api/checklist-tasks/${id}`, { taskTitle, taskUrl });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
+      setEditingTask(null);
+      setEditTitle("");
+      setEditUrl("");
+      toast({
+        title: "Task updated",
+        description: "Task has been successfully updated.",
+      });
+    }
+  });
+
   const handleTaskToggle = (taskId: string, completed: boolean) => {
     updateTaskMutation.mutate({ id: taskId, completed });
   };
@@ -224,6 +244,16 @@ export default function ChecklistPage() {
         assignedTo: selectedMember,
         taskTitle: newTaskTitle,
         taskUrl: newTaskUrl || undefined
+      });
+    }
+  };
+
+  const handleEditTask = () => {
+    if (editingTask && editTitle) {
+      editTaskMutation.mutate({
+        id: editingTask.id,
+        taskTitle: editTitle,
+        taskUrl: editUrl || undefined
       });
     }
   };
@@ -539,7 +569,12 @@ export default function ChecklistPage() {
                                 <div className={`font-medium flex items-center space-x-2 ${
                                   task.completed ? 'line-through text-gray-500' : 'text-gray-900 dark:text-white'
                                 }`}>
-                                  <span>{task.taskTitle}</span>
+                                  <span>
+                                    {task.evergreenBoxId 
+                                      ? `${task.assignedTo} > ${task.taskTitle}`
+                                      : task.taskTitle
+                                    }
+                                  </span>
                                   {isTaskHighPriority(task) && (
                                     <Star className="w-4 h-4 text-yellow-500 fill-current" />
                                   )}
@@ -564,6 +599,20 @@ export default function ChecklistPage() {
                                 )}
                               </div>
                               <div className="flex items-center space-x-2">
+                                {/* Wrench icon for editing */}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                  onClick={() => {
+                                    setEditingTask(task);
+                                    setEditTitle(task.taskTitle);
+                                    setEditUrl(task.taskUrl || "");
+                                  }}
+                                >
+                                  <Settings className="w-3 h-3 text-gray-500" />
+                                </Button>
+                                
                                 {/* Top badges - Done, Pending, Paused only */}
                                 {task.completed ? (
                                   <Badge variant="outline" className="bg-green-100 text-green-800 text-xs">
@@ -611,7 +660,7 @@ export default function ChecklistPage() {
                                   }}
                                 >
                                   <Calendar className="w-3 h-3 mr-1" />
-                                  Add to Calendar
+                                  Added to Calendar
                                 </Badge>
                               )}
                               
@@ -1148,6 +1197,58 @@ export default function ChecklistPage() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Task Modal */}
+      <Dialog open={!!editingTask} onOpenChange={(open) => !open && setEditingTask(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Task</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit-title">Task Title</Label>
+              <Input
+                id="edit-title"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                placeholder="Enter task title..."
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-url">Link/URL (optional)</Label>
+              <Input
+                id="edit-url"
+                value={editUrl}
+                onChange={(e) => setEditUrl(e.target.value)}
+                placeholder="Enter task URL..."
+                className="mt-1"
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setEditingTask(null)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleEditTask}
+                disabled={!editTitle || editTaskMutation.isPending}
+              >
+                {editTaskMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save Changes'
+                )}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
