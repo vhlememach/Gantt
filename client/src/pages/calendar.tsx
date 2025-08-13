@@ -52,6 +52,8 @@ export default function CalendarPage() {
   const [selectedColor, setSelectedColor] = useState('#3B82F6');
   const [selectedIcon, setSelectedIcon] = useState('fas fa-star');
   const [dividerName, setDividerName] = useState('');
+  const [showSocialMediaModal, setShowSocialMediaModal] = useState<string | null>(null);
+  const [taskSocialMedia, setTaskSocialMedia] = useState<Map<string, string[]>>(new Map());
 
   const queryClient = useQueryClient();
 
@@ -360,12 +362,17 @@ export default function CalendarPage() {
                               }}
                             />
                           ))}
-                          <button
-                            className="w-4 h-4 rounded border border-gray-300 hover:scale-110 transition-transform bg-white flex items-center justify-center"
-                            onClick={() => setShowColorPicker(release.id)}
-                          >
-                            <i className="fas fa-paint-brush text-xs text-gray-600"></i>
-                          </button>
+                          <input
+                            type="color"
+                            className="w-4 h-4 rounded border border-gray-300 cursor-pointer"
+                            value={releaseAccentColors.get(release.id) || '#3B82F6'}
+                            onChange={(e) => {
+                              const newAccentColors = new Map(releaseAccentColors);
+                              newAccentColors.set(release.id, e.target.value);
+                              setReleaseAccentColors(newAccentColors);
+                              setEditingReleaseAccent(null);
+                            }}
+                          />
                         </div>
                       )}
                     </div>
@@ -510,7 +517,7 @@ export default function CalendarPage() {
                     onClick={(e) => {
                       e.preventDefault();
                       if (draggedTask) {
-                        handleDrop(day);
+                        handleDrop(e, day);
                       }
                     }}
                   >
@@ -562,7 +569,7 @@ export default function CalendarPage() {
                               <div
                                 key={task.id}
                                 draggable
-                                className="text-xs p-2 bg-gray-100 dark:bg-gray-600 rounded cursor-move hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors ml-2 min-h-[2.5rem] flex items-center leading-tight"
+                                className="text-xs p-2 bg-gray-100 dark:bg-gray-600 rounded cursor-move hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors ml-2 min-h-[2.5rem] flex flex-col space-y-1"
                                 title={`${task.taskTitle} - Drag to move or click to remove`}
                                 onDragStart={(e) => {
                                   e.stopPropagation();
@@ -573,7 +580,36 @@ export default function CalendarPage() {
                                   handleTaskClick(task);
                                 }}
                               >
-                                <div className="break-words">{task.taskTitle}</div>
+                                <div className="flex items-center justify-between">
+                                  <div className="break-words flex-1">{task.taskTitle}</div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="w-4 h-4 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 ml-1"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setShowSocialMediaModal(task.id);
+                                    }}
+                                  >
+                                    <i className="fas fa-plus text-xs"></i>
+                                  </Button>
+                                </div>
+                                {/* Social Media Icons */}
+                                {taskSocialMedia.get(task.id) && (
+                                  <div className="flex space-x-1 mt-1">
+                                    {taskSocialMedia.get(task.id)?.map((platform, index) => (
+                                      <div key={index} className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs">
+                                        {platform === 'X' ? '𝕏' : 
+                                         platform === 'LinkedIn' ? 'Li' :
+                                         platform === 'Youtube' ? 'Yt' :
+                                         platform === 'Instagram' ? 'Ig' :
+                                         platform === 'TikTok' ? 'Tk' :
+                                         platform === 'Facebook' ? 'Fb' :
+                                         platform === 'Reddit' ? 'Rd' : platform[0]}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
@@ -592,7 +628,7 @@ export default function CalendarPage() {
                             {tasks.map(task => (
                               <div
                                 key={task.id}
-                                className="text-xs p-2 bg-gray-100 dark:bg-gray-600 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors ml-2 min-h-[2.5rem] flex items-center leading-tight"
+                                className="text-xs p-2 bg-gray-100 dark:bg-gray-600 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors ml-2 min-h-[2.5rem] flex flex-col space-y-1"
                                 title={`${task.taskTitle} - Click to remove`}
                                 draggable
                                 onDragStart={(e) => {
@@ -605,7 +641,36 @@ export default function CalendarPage() {
                                   handleTaskClick(task);
                                 }}
                               >
-                                <div className="break-words">{task.taskTitle}</div>
+                                <div className="flex items-center justify-between">
+                                  <div className="break-words flex-1">{task.taskTitle}</div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="w-4 h-4 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 ml-1"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setShowSocialMediaModal(task.id);
+                                    }}
+                                  >
+                                    <i className="fas fa-plus text-xs"></i>
+                                  </Button>
+                                </div>
+                                {/* Social Media Icons */}
+                                {taskSocialMedia.get(task.id) && (
+                                  <div className="flex space-x-1 mt-1">
+                                    {taskSocialMedia.get(task.id)?.map((platform, index) => (
+                                      <div key={index} className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs">
+                                        {platform === 'X' ? '𝕏' : 
+                                         platform === 'LinkedIn' ? 'Li' :
+                                         platform === 'Youtube' ? 'Yt' :
+                                         platform === 'Instagram' ? 'Ig' :
+                                         platform === 'TikTok' ? 'Tk' :
+                                         platform === 'Facebook' ? 'Fb' :
+                                         platform === 'Reddit' ? 'Rd' : platform[0]}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
@@ -737,30 +802,92 @@ export default function CalendarPage() {
               </Button>
               <Button
                 onClick={() => {
-                  if (dividerName.trim() && showCustomDividerModal) {
+                  if (showCustomDividerModal) {
                     const { day, month, year } = showCustomDividerModal;
                     const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                     
-                    const newDividers = new Map(customDividers);
-                    const existingDividers = newDividers.get(dateKey) || [];
-                    existingDividers.push({
-                      name: dividerName.trim(),
-                      color: selectedColor,
-                      icon: selectedIcon
-                    });
-                    newDividers.set(dateKey, existingDividers);
-                    setCustomDividers(newDividers);
+                    // Only add divider if name is provided
+                    if (dividerName.trim()) {
+                      const newDividers = new Map(customDividers);
+                      const existingDividers = newDividers.get(dateKey) || [];
+                      existingDividers.push({
+                        name: dividerName.trim(),
+                        color: selectedColor,
+                        icon: selectedIcon
+                      });
+                      newDividers.set(dateKey, existingDividers);
+                      setCustomDividers(newDividers);
+                    }
                     
-                    // Reset form
+                    // Reset form and close modal
                     setDividerName('');
                     setSelectedColor('#3B82F6');
                     setSelectedIcon('fas fa-star');
                     setShowCustomDividerModal(null);
                   }
                 }}
-                disabled={!dividerName.trim()}
               >
-                Add Divider
+                Save
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Social Media Selection Modal */}
+      {showSocialMediaModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-96">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Select Social Media Platforms
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              {['X', 'LinkedIn', 'Youtube', 'Instagram', 'TikTok', 'Facebook', 'Reddit'].map(platform => {
+                const isSelected = taskSocialMedia.get(showSocialMediaModal)?.includes(platform) || false;
+                return (
+                  <button
+                    key={platform}
+                    className={`p-3 rounded border-2 transition-colors ${
+                      isSelected 
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' 
+                        : 'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    }`}
+                    onClick={() => {
+                      const currentPlatforms = taskSocialMedia.get(showSocialMediaModal) || [];
+                      const newTaskSocialMedia = new Map(taskSocialMedia);
+                      
+                      if (isSelected) {
+                        // Remove platform
+                        const updatedPlatforms = currentPlatforms.filter(p => p !== platform);
+                        if (updatedPlatforms.length === 0) {
+                          newTaskSocialMedia.delete(showSocialMediaModal);
+                        } else {
+                          newTaskSocialMedia.set(showSocialMediaModal, updatedPlatforms);
+                        }
+                      } else {
+                        // Add platform
+                        newTaskSocialMedia.set(showSocialMediaModal, [...currentPlatforms, platform]);
+                      }
+                      
+                      setTaskSocialMedia(newTaskSocialMedia);
+                    }}
+                  >
+                    <div className="text-sm font-medium">{platform}</div>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex justify-end space-x-3 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => setShowSocialMediaModal(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => setShowSocialMediaModal(null)}
+              >
+                Save
               </Button>
             </div>
           </div>
