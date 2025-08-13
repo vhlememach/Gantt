@@ -15,6 +15,7 @@ import { Plus, User, CheckCircle, Clock, Users, BarChart3, Download, ArrowUpDown
 import { Link } from "wouter";
 import { Navigation, MobileNavigation } from "@/components/ui/navigation";
 import { ReviewModal } from "@/components/checklist/review-modal";
+import { useToast } from "@/hooks/use-toast";
 
 const teamMembers = ["Brian", "Alex", "Lucas", "Victor"];
 
@@ -37,9 +38,10 @@ export default function ChecklistPage() {
   const [reviewMode, setReviewMode] = useState<"request" | "submit" | "approve">("request");
   
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   // Auto-generate evergreen tasks on initial load if none exist
-  const { data: evergreenBoxes = [] } = useQuery({
+  const { data: evergreenBoxes = [] } = useQuery<Array<{waterfallCycleId?: string}>>({
     queryKey: ["/api/evergreen-boxes"],
   });
 
@@ -51,7 +53,7 @@ export default function ChecklistPage() {
   // Check if we need to generate evergreen tasks
   useEffect(() => {
     const evergreenTasks = allTasks.filter(task => task.evergreenBoxId);
-    const boxesWithCycles = evergreenBoxes.filter((box: {waterfallCycleId?: string}) => box.waterfallCycleId);
+    const boxesWithCycles = evergreenBoxes.filter(box => box.waterfallCycleId);
     
     // If we have evergreen boxes with cycles but no evergreen tasks, generate them
     if (boxesWithCycles.length > 0 && evergreenTasks.length === 0) {
@@ -513,7 +515,9 @@ export default function ChecklistPage() {
                           <div
                             key={task.id}
                             className={`p-3 rounded-lg border ${
-                              task.completed 
+                              task.reviewStatus === "requested" && !task.reviewSubmissionUrl && task.assignedTo === selectedMember
+                                ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800'
+                                : task.completed 
                                 ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800' 
                                 : task.paused
                                 ? 'bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800'
@@ -596,7 +600,12 @@ export default function ChecklistPage() {
                               {task.completed && (
                                 <Badge 
                                   className="bg-blue-500 text-white cursor-pointer hover:bg-blue-600 transition-colors text-xs"
-                                  onClick={() => window.location.href = '/calendar'}
+                                  onClick={() => {
+                                    toast({
+                                      title: "Added to Calendar",
+                                      description: "Task has been successfully added to your calendar.",
+                                    });
+                                  }}
                                 >
                                   <Calendar className="w-3 h-3 mr-1" />
                                   Add to Calendar
@@ -713,7 +722,9 @@ export default function ChecklistPage() {
                                 <div
                                   key={task.id}
                                   className={`p-3 rounded-lg border ${
-                                    task.completed 
+                                    task.reviewStatus === "requested" && !task.reviewSubmissionUrl && task.assignedTo === selectedMember
+                                      ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800'
+                                      : task.completed 
                                       ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800' 
                                       : task.paused
                                       ? 'bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800'
@@ -793,7 +804,12 @@ export default function ChecklistPage() {
                                     {task.completed && (
                                       <Badge 
                                         className="bg-blue-500 text-white cursor-pointer hover:bg-blue-600 transition-colors text-xs"
-                                        onClick={() => window.location.href = '/calendar'}
+                                        onClick={() => {
+                                          toast({
+                                            title: "Added to Calendar",
+                                            description: "Task has been successfully added to your calendar.",
+                                          });
+                                        }}
                                       >
                                         <Calendar className="w-3 h-3 mr-1" />
                                         Add to Calendar

@@ -108,37 +108,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Validated data:', validatedData);
       const release = await storage.createRelease(validatedData);
       
-      // Auto-generate standard checklist tasks for new release
-      const teamMembers = ["Brian", "Alex", "Lucas", "Victor"];
-      const standardTasks = [
-        "Design UI mockups",
-        "Write technical documentation",
-        "Set up development environment", 
-        "Create test cases",
-        "Review code implementation",
-        "Perform quality assurance testing",
-        "Update user documentation",
-        "Deploy to staging environment"
-      ];
-
-      let taskIndex = 0;
-      for (const member of teamMembers) {
-        // Create 2 tasks per member
-        for (let i = 0; i < 2; i++) {
-          if (taskIndex < standardTasks.length) {
-            const taskTitle = `${standardTasks[taskIndex]} - ${release.name}`;
-            await storage.createChecklistTask({
-              releaseId: release.id,
-              assignedTo: member,
-              taskTitle,
-              completed: false,
-              priority: false,
-              paused: false
-            });
-            taskIndex++;
-          }
-        }
-      }
+      // Note: No dummy tasks are generated for new releases
+      // Users can manually add tasks as needed
       
       res.json(release);
     } catch (error) {
