@@ -298,11 +298,16 @@ export default function CalendarPage() {
       releaseIcon: releases.find(r => r.id === task.releaseId)?.icon,
       priority: task.priority,
       scheduledDate: task.scheduledDate,
-      completed: task.completed // Add completion status
+      completed: task.completed || false // Add completion status, handle null
     }));
     
-    // Only show scheduled tasks that are actually completed
-    const scheduled = processedTasks.filter(task => task.scheduledDate && task.completed);
+    // Only show scheduled tasks that are actually completed in Team Checklist
+    const scheduled = processedTasks.filter(task => {
+      if (!task.scheduledDate) return false;
+      // Find the current completion status from the original task data
+      const originalTask = deduplicatedTasks.find(t => t.id === task.id);
+      return originalTask?.completed === true;
+    });
     const unscheduled = processedTasks.filter(task => !task.scheduledDate);
     console.log('Scheduled:', scheduled.length, 'Unscheduled:', unscheduled.length);
 
