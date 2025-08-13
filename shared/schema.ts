@@ -97,6 +97,10 @@ export const checklistTasks = pgTable("checklist_tasks", {
   blockerReason: text("blocker_reason"), // Description of blocking issue
   blockerRequestedBy: text("blocker_requested_by"), // Who requested the blocking work
   scheduledDate: text("scheduled_date"), // Date when task is scheduled in calendar (YYYY-MM-DD)
+  reviewStatus: text("review_status").default("none"), // none, requested, approved
+  currentVersion: integer("current_version").default(1), // v1, v2, v3, v4, etc.
+  reviewChanges: text("review_changes"), // Changes requested for review
+  reviewSubmissionUrl: text("review_submission_url"), // URL submitted by team member for review
   createdAt: timestamp("created_at").defaultNow(),
   completedAt: timestamp("completed_at"),
 });

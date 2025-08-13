@@ -479,7 +479,8 @@ export default function CalendarPage() {
                   if (releaseId === 'evergreen') {
                     accentColor = '#10B981'; // Green for evergreen
                   } else if (releaseId === 'general') {
-                    accentColor = '#8B5CF6'; // Purple for general tasks
+                    // Don't show general tasks in calendar
+                    return null;
                   } else if (group) {
                     accentColor = group.color || '#6B7280';
                   }

@@ -107,6 +107,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertReleaseSchema.parse(req.body);
       console.log('Validated data:', validatedData);
       const release = await storage.createRelease(validatedData);
+      
+      // Auto-generate standard checklist tasks for new release
+      const teamMembers = ["Brian", "Alex", "Lucas", "Victor"];
+      const standardTasks = [
+        "Design UI mockups",
+        "Write technical documentation",
+        "Set up development environment", 
+        "Create test cases",
+        "Review code implementation",
+        "Perform quality assurance testing",
+        "Update user documentation",
+        "Deploy to staging environment"
+      ];
+
+      let taskIndex = 0;
+      for (const member of teamMembers) {
+        // Create 2 tasks per member
+        for (let i = 0; i < 2; i++) {
+          if (taskIndex < standardTasks.length) {
+            const taskTitle = `${standardTasks[taskIndex]} - ${release.name}`;
+            await storage.createChecklistTask({
+              releaseId: release.id,
+              assignedTo: member,
+              taskTitle,
+              completed: false,
+              priority: false,
+              paused: false
+            });
+            taskIndex++;
+          }
+        }
+      }
+      
       res.json(release);
     } catch (error) {
       console.error('Release creation error:', error);
@@ -242,6 +275,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating checklist task:", error);
       res.status(400).json({ error: "Invalid task data" });
+    }
+  });
+
+  // Review system routes
+  app.post("/api/checklist-tasks/:id/request-review", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { changes } = req.body;
+      const task = await storage.getChecklistTask(id);
+      if (!task) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+      
+      const updatedTask = await storage.updateChecklistTask(id, {
+        reviewStatus: "requested",
+        currentVersion: (task.currentVersion || 1) + 1,
+        reviewChanges: changes,
+        reviewSubmissionUrl: null // Clear previous submission URL
+      });
+      
+      res.json(updatedTask);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to request review" });
+    }
+  });
+
+  app.post("/api/checklist-tasks/:id/submit-review", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { submissionUrl } = req.body;
+      const task = await storage.getChecklistTask(id);
+      if (!task) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+      
+      const updatedTask = await storage.updateChecklistTask(id, {
+        reviewSubmissionUrl: submissionUrl
+      });
+      
+      res.json(updatedTask);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to submit review" });
+    }
+  });
+
+  app.post("/api/checklist-tasks/:id/approve-review", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updatedTask = await storage.updateChecklistTask(id, {
+        reviewStatus: "approved",
+        completed: true
+      });
+      
+      if (!updatedTask) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+      
+      res.json(updatedTask);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to approve review" });
     }
   });
 

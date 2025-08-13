@@ -32,6 +32,7 @@ export interface IStorage {
   
   // Checklist Tasks
   getChecklistTasks(): Promise<ChecklistTask[]>;
+  getChecklistTask(id: string): Promise<ChecklistTask | undefined>;
   getChecklistTasksByRelease(releaseId: string): Promise<ChecklistTask[]>;
   getChecklistTasksByEvergreenBox(evergreenBoxId: string): Promise<ChecklistTask[]>;
   getChecklistTasksByMember(assignedTo: string): Promise<ChecklistTask[]>;
@@ -512,6 +513,10 @@ export class MemStorage implements IStorage {
   // Checklist Tasks
   async getChecklistTasks(): Promise<ChecklistTask[]> {
     return Array.from(this.checklistTasks.values());
+  }
+
+  async getChecklistTask(id: string): Promise<ChecklistTask | undefined> {
+    return this.checklistTasks.get(id);
   }
 
   async getChecklistTasksByRelease(releaseId: string): Promise<ChecklistTask[]> {

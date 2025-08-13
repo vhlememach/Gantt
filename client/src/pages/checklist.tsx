@@ -11,9 +11,10 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, User, CheckCircle, Clock, Users, BarChart3, Download, ArrowUpDown, Star, AlertTriangle, ExternalLink, ArrowLeft, Pause, Calendar } from "lucide-react";
+import { Plus, User, CheckCircle, Clock, Users, BarChart3, Download, ArrowUpDown, Star, AlertTriangle, ExternalLink, ArrowLeft, Pause, Calendar, Loader2 } from "lucide-react";
 import { Link } from "wouter";
 import { Navigation, MobileNavigation } from "@/components/ui/navigation";
+import { ReviewModal } from "@/components/checklist/review-modal";
 
 const teamMembers = ["Brian", "Alex", "Lucas", "Victor"];
 
@@ -31,6 +32,9 @@ export default function ChecklistPage() {
   const [blockerRequestedBy, setBlockerRequestedBy] = useState("");
   const [blockerDetailsModalOpen, setBlockerDetailsModalOpen] = useState(false);
   const [selectedTaskForDetails, setSelectedTaskForDetails] = useState<ChecklistTask | null>(null);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [selectedTaskForReview, setSelectedTaskForReview] = useState<ChecklistTask | null>(null);
+  const [reviewMode, setReviewMode] = useState<"request" | "submit" | "approve">("request");
   
   const queryClient = useQueryClient();
 
@@ -191,6 +195,24 @@ export default function ChecklistPage() {
         blockerRequestedBy
       });
     }
+  };
+
+  const handleRequestReview = (task: ChecklistTask) => {
+    setSelectedTaskForReview(task);
+    setReviewMode("request");
+    setReviewModalOpen(true);
+  };
+
+  const handleSubmitReview = (task: ChecklistTask) => {
+    setSelectedTaskForReview(task);
+    setReviewMode("submit");
+    setReviewModalOpen(true);
+  };
+
+  const handleApproveReview = (task: ChecklistTask) => {
+    setSelectedTaskForReview(task);
+    setReviewMode("approve");
+    setReviewModalOpen(true);
   };
 
   const handleCreateTask = () => {
@@ -552,6 +574,13 @@ export default function ChecklistPage() {
                                   </Badge>
                                 )
                               )}
+                              {/* Review status indicator */}
+                              {task.reviewStatus === "requested" && (
+                                <Badge className="bg-blue-500 text-white text-xs">
+                                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                  Review
+                                </Badge>
+                              )}
                               {task.completed ? (
                                 <Badge variant="outline" className="bg-green-100 text-green-800 text-xs">
                                   <CheckCircle className="w-3 h-3 mr-1" />
@@ -572,6 +601,44 @@ export default function ChecklistPage() {
                                 </Badge>
                               )}
                             </div>
+                            {/* Request Approval Section */}
+                            {!task.completed && !task.paused && task.reviewStatus !== "requested" && (
+                              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full text-purple-600 hover:text-purple-700 hover:bg-purple-50 border-purple-200"
+                                  onClick={() => handleRequestReview(task)}
+                                >
+                                  Request Approval
+                                </Button>
+                              </div>
+                            )}
+                            {/* Review actions for team members */}
+                            {task.reviewStatus === "requested" && task.reviewSubmissionUrl && (
+                              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                                <Button
+                                  size="sm"
+                                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                                  onClick={() => handleApproveReview(task)}
+                                >
+                                  Approve & Complete
+                                </Button>
+                              </div>
+                            )}
+                            {/* Submit review URL */}
+                            {task.reviewStatus === "requested" && !task.reviewSubmissionUrl && task.assignedTo === selectedMember && (
+                              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200"
+                                  onClick={() => handleSubmitReview(task)}
+                                >
+                                  Submit V{task.currentVersion || 2}
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -700,6 +767,13 @@ export default function ChecklistPage() {
                                         </Badge>
                                       )
                                     )}
+                                    {/* Review status indicator */}
+                                    {task.reviewStatus === "requested" && (
+                                      <Badge className="bg-blue-500 text-white text-xs">
+                                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                        Review
+                                      </Badge>
+                                    )}
                                     {task.completed ? (
                                       <Badge variant="outline" className="bg-green-100 text-green-800 text-xs">
                                         <CheckCircle className="w-3 h-3 mr-1" />
@@ -720,6 +794,44 @@ export default function ChecklistPage() {
                                       </Badge>
                                     )}
                                   </div>
+                                  {/* Request Approval Section for Evergreen */}
+                                  {!task.completed && !task.paused && task.reviewStatus !== "requested" && (
+                                    <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="w-full text-purple-600 hover:text-purple-700 hover:bg-purple-50 border-purple-200"
+                                        onClick={() => handleRequestReview(task)}
+                                      >
+                                        Request Approval
+                                      </Button>
+                                    </div>
+                                  )}
+                                  {/* Review actions for team members */}
+                                  {task.reviewStatus === "requested" && task.reviewSubmissionUrl && (
+                                    <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                                      <Button
+                                        size="sm"
+                                        className="w-full bg-green-600 hover:bg-green-700 text-white"
+                                        onClick={() => handleApproveReview(task)}
+                                      >
+                                        Approve & Complete
+                                      </Button>
+                                    </div>
+                                  )}
+                                  {/* Submit review URL */}
+                                  {task.reviewStatus === "requested" && !task.reviewSubmissionUrl && task.assignedTo === selectedMember && (
+                                    <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="w-full text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200"
+                                        onClick={() => handleSubmitReview(task)}
+                                      >
+                                        Submit V{task.currentVersion || 2}
+                                      </Button>
+                                    </div>
+                                  )}
                                 </div>
                               ))}
                             </div>
@@ -1009,6 +1121,14 @@ export default function ChecklistPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Review Modal */}
+      <ReviewModal
+        isOpen={reviewModalOpen}
+        onClose={() => setReviewModalOpen(false)}
+        task={selectedTaskForReview}
+        mode={reviewMode}
+      />
 
       {/* Mobile Navigation */}
       <div className="fixed bottom-0 left-0 right-0 md:hidden">
