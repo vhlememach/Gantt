@@ -45,8 +45,9 @@ export default function CalendarPage() {
   const [draggedTask, setDraggedTask] = useState<CalendarTask | null>(null);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [priorityCells, setPriorityCells] = useState<Set<string>>(new Set());
-  const [editingGroupAccent, setEditingGroupAccent] = useState<string | null>(null);
-  const [groupAccentColors, setGroupAccentColors] = useState<Map<string, string>>(new Map());
+  const [editingReleaseAccent, setEditingReleaseAccent] = useState<string | null>(null);
+  const [releaseAccentColors, setReleaseAccentColors] = useState<Map<string, string>>(new Map());
+  const [showCustomDividerModal, setShowCustomDividerModal] = useState<{ day: number; month: number; year: number } | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -276,7 +277,7 @@ export default function CalendarPage() {
         <Navigation />
       </div>
 
-      <div className="flex h-screen pt-14">
+      <div className="flex h-screen pt-12">
         {/* Left Sidebar - Completed Tasks */}
         <div className="w-1/6 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
           <div className="p-6">
@@ -295,10 +296,10 @@ export default function CalendarPage() {
                 const group = release ? releaseGroups.find(g => g.id === release.groupId) : null;
                 
                 const groupColor = group?.color || '#6b7280';
-                const accentColor = group ? groupAccentColors.get(group.id) || '#ffffff' : '#ffffff';
+                const accentColor = release ? releaseAccentColors.get(release.id) || '#ffffff' : '#ffffff';
                 
                 return (
-                  <div key={releaseId} className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
+                  <div key={releaseId} className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
                     <div 
                       className="p-3 border-b border-gray-200 dark:border-gray-700 text-white relative"
                       style={{ 
@@ -310,18 +311,18 @@ export default function CalendarPage() {
                         <h3 className="text-sm font-medium text-white">
                           {release?.name || 'Evergreen'}
                         </h3>
-                        {group && (
+                        {release && (
                           <Button
                             variant="outline"
                             size="sm"
-                            className="text-xs px-2 py-1 h-6 bg-white text-black border-white hover:bg-gray-100"
-                            onClick={() => setEditingGroupAccent(editingGroupAccent === group.id ? null : group.id)}
+                            className="text-xs px-1 py-1 h-6 w-6 bg-white text-black border-white hover:bg-gray-100 flex items-center justify-center"
+                            onClick={() => setEditingReleaseAccent(editingReleaseAccent === release.id ? null : release.id)}
                           >
-                            Color
+                            <i className="fas fa-wrench text-xs"></i>
                           </Button>
                         )}
                       </div>
-                      {editingGroupAccent === group?.id && (
+                      {editingReleaseAccent === release?.id && (
                         <div className="flex space-x-1 mb-2">
                           {['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#F97316', '#6B7280', '#EC4899'].map(color => (
                             <button
@@ -329,10 +330,10 @@ export default function CalendarPage() {
                               className="w-4 h-4 rounded border border-gray-300 hover:scale-110 transition-transform"
                               style={{ backgroundColor: color }}
                               onClick={() => {
-                                const newAccentColors = new Map(groupAccentColors);
-                                newAccentColors.set(group.id, color);
-                                setGroupAccentColors(newAccentColors);
-                                setEditingGroupAccent(null);
+                                const newAccentColors = new Map(releaseAccentColors);
+                                newAccentColors.set(release.id, color);
+                                setReleaseAccentColors(newAccentColors);
+                                setEditingReleaseAccent(null);
                               }}
                             />
                           ))}
@@ -385,14 +386,7 @@ export default function CalendarPage() {
                 </h1>
               </div>
               <div className="flex items-center space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowColorPicker(!showColorPicker)}
-                >
-                  <Palette className="w-4 h-4 mr-2" />
-                  Colors
-                </Button>
+
                 <Button
                   variant="outline"
                   size="sm"
@@ -501,16 +495,29 @@ export default function CalendarPage() {
                       }`}>
                         {day}
                       </span>
-                      {isHighPriority && (
-                        <span className="text-xs text-red-600 dark:text-red-400 font-medium">
-                          HIGH PRIORITY
-                        </span>
-                      )}
-                      {isToday && !isHighPriority && (
-                        <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-                          CURRENT DAY
-                        </span>
-                      )}
+                      <div className="flex items-center space-x-2">
+                        {isHighPriority && (
+                          <span className="text-xs text-red-600 dark:text-red-400 font-medium">
+                            HIGH PRIORITY
+                          </span>
+                        )}
+                        {isToday && !isHighPriority && (
+                          <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                            CURRENT DAY
+                          </span>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-6 h-6 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowCustomDividerModal({ day, month: selectedMonth, year: selectedYear });
+                          }}
+                        >
+                          <i className="fas fa-plus text-xs"></i>
+                        </Button>
+                      </div>
                     </div>
 
                     {/* Release dividers for active releases */}
@@ -526,7 +533,7 @@ export default function CalendarPage() {
                               className="text-xs font-medium px-2 py-2 rounded text-white opacity-90 border-l-4"
                               style={{ 
                                 backgroundColor: group?.color || '#6b7280',
-                                borderLeftColor: group ? groupAccentColors.get(group.id) || 'transparent' : 'transparent'
+                                borderLeftColor: release ? releaseAccentColors.get(release.id) || 'transparent' : 'transparent'
                               }}
                             >
                               <i className={`${release.icon} mr-1`}></i>
@@ -593,6 +600,74 @@ export default function CalendarPage() {
       <div className="fixed bottom-0 left-0 right-0 md:hidden">
         <MobileNavigation />
       </div>
+
+      {/* Custom Divider Modal */}
+      {showCustomDividerModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-96">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Add Custom Divider
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Name
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+                  placeholder="Enter divider name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Color
+                </label>
+                <div className="flex space-x-2">
+                  {['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#F97316', '#6B7280', '#EC4899'].map(color => (
+                    <button
+                      key={color}
+                      className="w-8 h-8 rounded border border-gray-300 hover:scale-110 transition-transform"
+                      style={{ backgroundColor: color }}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Icon
+                </label>
+                <div className="grid grid-cols-6 gap-2">
+                  {['fas fa-star', 'fas fa-flag', 'fas fa-bell', 'fas fa-heart', 'fas fa-check', 'fas fa-exclamation'].map(icon => (
+                    <button
+                      key={icon}
+                      className="w-8 h-8 border border-gray-300 dark:border-gray-600 rounded flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      <i className={`${icon} text-gray-600 dark:text-gray-400`}></i>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end space-x-3 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => setShowCustomDividerModal(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  // TODO: Add custom divider logic
+                  setShowCustomDividerModal(null);
+                }}
+              >
+                Add Divider
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
