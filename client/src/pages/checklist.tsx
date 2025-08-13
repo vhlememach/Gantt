@@ -512,7 +512,7 @@ export default function ChecklistPage() {
                         {sortedTasks.map(task => (
                           <div
                             key={task.id}
-                            className={`flex items-center space-x-3 p-3 rounded-lg border ${
+                            className={`p-3 rounded-lg border ${
                               task.completed 
                                 ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800' 
                                 : task.paused
@@ -520,65 +520,68 @@ export default function ChecklistPage() {
                                 : 'bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700'
                             }`}
                           >
-                            <Checkbox
-                              checked={task.completed || false}
-                              onCheckedChange={(checked) => 
-                                handleTaskToggle(task.id, !!checked)
-                              }
-                            />
-                            <div className="flex-1">
-                              <div className={`font-medium flex items-center space-x-2 ${
-                                task.completed ? 'line-through text-gray-500' : 'text-gray-900 dark:text-white'
-                              }`}>
-                                <span>{task.taskTitle}</span>
-                                {isTaskHighPriority(task) && (
-                                  <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                            {/* Main task content */}
+                            <div className="flex items-center space-x-3">
+                              <Checkbox
+                                checked={task.completed || false}
+                                onCheckedChange={(checked) => 
+                                  handleTaskToggle(task.id, !!checked)
+                                }
+                              />
+                              <div className="flex-1">
+                                <div className={`font-medium flex items-center space-x-2 ${
+                                  task.completed ? 'line-through text-gray-500' : 'text-gray-900 dark:text-white'
+                                }`}>
+                                  <span>{task.taskTitle}</span>
+                                  {isTaskHighPriority(task) && (
+                                    <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                                  )}
+                                </div>
+                                {task.taskDescription && (
+                                  <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                    {task.taskDescription}
+                                  </div>
+                                )}
+                                {task.taskUrl && (
+                                  <div className="mt-2">
+                                    <a 
+                                      href={task.taskUrl} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="text-blue-600 hover:text-blue-800 text-sm flex items-center space-x-1"
+                                    >
+                                      <ExternalLink className="w-3 h-3" />
+                                      <span>View Link</span>
+                                    </a>
+                                  </div>
                                 )}
                               </div>
-                              {task.taskDescription && (
-                                <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                  {task.taskDescription}
-                                </div>
-                              )}
-                              {task.taskUrl && (
-                                <div className="mt-2">
-                                  <a 
-                                    href={task.taskUrl} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    className="text-blue-600 hover:text-blue-800 text-sm flex items-center space-x-1"
+                              <div className="flex items-center space-x-2">
+                                {/* Top badges - Done, Pending, Paused only */}
+                                {task.completed ? (
+                                  <Badge variant="outline" className="bg-green-100 text-green-800 text-xs">
+                                    <CheckCircle className="w-3 h-3 mr-1" />
+                                    Done
+                                  </Badge>
+                                ) : task.paused ? (
+                                  <Badge 
+                                    className="bg-red-500 text-white cursor-pointer hover:bg-red-600 transition-colors text-xs"
+                                    onClick={() => handleViewBlockerDetails(task)}
                                   >
-                                    <ExternalLink className="w-3 h-3" />
-                                    <span>View Link</span>
-                                  </a>
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              {/* Top badges - Done, Pending, Paused only */}
-                              {task.completed ? (
-                                <Badge variant="outline" className="bg-green-100 text-green-800 text-xs">
-                                  <CheckCircle className="w-3 h-3 mr-1" />
-                                  Done
-                                </Badge>
-                              ) : task.paused ? (
-                                <Badge 
-                                  className="bg-red-500 text-white cursor-pointer hover:bg-red-600 transition-colors text-xs"
-                                  onClick={() => handleViewBlockerDetails(task)}
-                                >
-                                  <AlertTriangle className="w-3 h-3 mr-1" />
-                                  Paused
-                                </Badge>
-                              ) : (
-                                <Badge variant="outline" className="text-xs">
-                                  <Clock className="w-3 h-3 mr-1" />
-                                  Pending
-                                </Badge>
-                              )}
+                                    <AlertTriangle className="w-3 h-3 mr-1" />
+                                    Paused
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-xs">
+                                    <Clock className="w-3 h-3 mr-1" />
+                                    Pending
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
                             
-                            {/* Bottom action buttons section */}
-                            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 flex items-center space-x-2">
+                            {/* Bottom action buttons section - separated from main content */}
+                            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 flex items-center space-x-2 flex-wrap">
                               {/* Blocker button */}
                               {!task.completed && !task.paused && (
                                 <Badge 
@@ -709,7 +712,7 @@ export default function ChecklistPage() {
                               {sortedTasks.map(task => (
                                 <div
                                   key={task.id}
-                                  className={`flex items-center space-x-3 p-3 rounded-lg border ${
+                                  className={`p-3 rounded-lg border ${
                                     task.completed 
                                       ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800' 
                                       : task.paused
@@ -717,6 +720,8 @@ export default function ChecklistPage() {
                                       : 'bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700'
                                   }`}
                                 >
+                                  {/* Main task content */}
+                                  <div className="flex items-center space-x-3">
                                   <Checkbox
                                     checked={task.completed || false}
                                     onCheckedChange={(checked) => 
@@ -735,9 +740,15 @@ export default function ChecklistPage() {
                                       </div>
                                     )}
                                     {task.taskUrl && (
-                                      <div className="text-sm text-blue-600 hover:text-blue-800 mt-1">
-                                        <a href={task.taskUrl} target="_blank" rel="noopener noreferrer">
-                                          View Link
+                                      <div className="mt-2">
+                                        <a 
+                                          href={task.taskUrl} 
+                                          target="_blank" 
+                                          rel="noopener noreferrer"
+                                          className="text-blue-600 hover:text-blue-800 text-sm flex items-center space-x-1"
+                                        >
+                                          <ExternalLink className="w-3 h-3" />
+                                          <span>View Link</span>
                                         </a>
                                       </div>
                                     )}
@@ -764,9 +775,10 @@ export default function ChecklistPage() {
                                       </Badge>
                                     )}
                                   </div>
+                                  </div>
                                   
-                                  {/* Bottom action buttons section */}
-                                  <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 flex items-center space-x-2">
+                                  {/* Bottom action buttons section - separated from main content */}
+                                  <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 flex items-center space-x-2 flex-wrap">
                                     {/* Blocker button */}
                                     {!task.completed && !task.paused && (
                                       <Badge 
@@ -829,31 +841,6 @@ export default function ChecklistPage() {
                                       </Badge>
                                     )}
                                   </div>
-                                  {/* Review actions for team members */}
-                                  {task.reviewStatus === "requested" && task.reviewSubmissionUrl && (
-                                    <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                                      <Button
-                                        size="sm"
-                                        className="w-full bg-green-600 hover:bg-green-700 text-white"
-                                        onClick={() => handleApproveReview(task)}
-                                      >
-                                        Approve & Complete
-                                      </Button>
-                                    </div>
-                                  )}
-                                  {/* Submit review URL */}
-                                  {task.reviewStatus === "requested" && !task.reviewSubmissionUrl && task.assignedTo === selectedMember && (
-                                    <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="w-full text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200"
-                                        onClick={() => handleSubmitReview(task)}
-                                      >
-                                        Submit V{task.currentVersion || 2}
-                                      </Button>
-                                    </div>
-                                  )}
                                 </div>
                               ))}
                             </div>
