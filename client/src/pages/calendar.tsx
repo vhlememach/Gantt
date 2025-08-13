@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ChecklistTask, Release, ReleaseGroup } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
@@ -239,45 +239,72 @@ export default function CalendarPage() {
     calendarDays.push(day);
   }
 
-  // First deduplicate the raw tasks by ID to ensure no duplicates from the API
-  const uniqueTasksMap = new Map<string, ChecklistTask>();
-  allTasks.forEach(task => {
-    uniqueTasksMap.set(task.id, task);
-  });
-  const deduplicatedTasks = Array.from(uniqueTasksMap.values());
-  
-  // Transform deduplicated tasks for calendar use
-  const tasks: CalendarTask[] = deduplicatedTasks.map(task => ({
-    id: task.id,
-    taskTitle: task.taskTitle,
-    taskDescription: task.taskDescription,
-    taskUrl: task.taskUrl,
-    assignedTo: task.assignedTo,
-    releaseId: task.releaseId || 'evergreen',
-    releaseName: releases.find(r => r.id === task.releaseId)?.name,
-    releaseGroup: releases.find(r => r.id === task.releaseId) 
-      ? releaseGroups.find(g => g.id === releases.find(r => r.id === task.releaseId)?.groupId)?.name 
-      : undefined,
-    releaseColor: releases.find(r => r.id === task.releaseId) 
-      ? releaseGroups.find(g => g.id === releases.find(r => r.id === task.releaseId)?.groupId)?.color 
-      : undefined,
-    releaseIcon: releases.find(r => r.id === task.releaseId)?.icon,
-    priority: task.priority,
-    scheduledDate: task.scheduledDate
-  }));
-  
-  const scheduledTasks = tasks.filter(task => task.scheduledDate);
-  const unscheduledTasks = tasks.filter(task => !task.scheduledDate);
+  // Use useMemo to prevent re-computation and ensure stable task grouping
+  const { tasks, scheduledTasks, unscheduledTasks, tasksByRelease } = useMemo(() => {
+    console.log('Processing tasks - Raw count:', allTasks.length);
+    
+    // Deduplicate tasks by ID first
+    const uniqueTasksMap = new Map<string, ChecklistTask>();
+    allTasks.forEach(task => {
+      uniqueTasksMap.set(task.id, task);
+    });
+    const deduplicatedTasks = Array.from(uniqueTasksMap.values());
+    console.log('After deduplication:', deduplicatedTasks.length);
+    
+    // Transform tasks
+    const processedTasks: CalendarTask[] = deduplicatedTasks.map(task => ({
+      id: task.id,
+      taskTitle: task.taskTitle,
+      taskDescription: task.taskDescription,
+      taskUrl: task.taskUrl,
+      assignedTo: task.assignedTo,
+      releaseId: task.releaseId || 'evergreen',
+      releaseName: releases.find(r => r.id === task.releaseId)?.name,
+      releaseGroup: releases.find(r => r.id === task.releaseId) 
+        ? releaseGroups.find(g => g.id === releases.find(r => r.id === task.releaseId)?.groupId)?.name 
+        : undefined,
+      releaseColor: releases.find(r => r.id === task.releaseId) 
+        ? releaseGroups.find(g => g.id === releases.find(r => r.id === task.releaseId)?.groupId)?.color 
+        : undefined,
+      releaseIcon: releases.find(r => r.id === task.releaseId)?.icon,
+      priority: task.priority,
+      scheduledDate: task.scheduledDate
+    }));
+    
+    const scheduled = processedTasks.filter(task => task.scheduledDate);
+    const unscheduled = processedTasks.filter(task => !task.scheduledDate);
+    console.log('Scheduled:', scheduled.length, 'Unscheduled:', unscheduled.length);
 
-  // Group unscheduled tasks by release - tasks are already deduplicated
-  const tasksByRelease = unscheduledTasks.reduce((acc, task) => {
-    const releaseId = task.releaseId || 'evergreen';
-    if (!acc[releaseId]) {
-      acc[releaseId] = { tasks: [] };
-    }
-    acc[releaseId].tasks.push(task);
-    return acc;
-  }, {} as Record<string, { tasks: CalendarTask[] }>);
+    // Group unscheduled tasks by release with strict deduplication
+    const groupedTasks = unscheduled.reduce((acc, task) => {
+      const releaseId = task.releaseId || 'evergreen';
+      if (!acc[releaseId]) {
+        acc[releaseId] = { tasks: [], seenIds: new Set<string>() };
+      }
+      
+      // Only add if not already seen
+      if (!acc[releaseId].seenIds.has(task.id)) {
+        acc[releaseId].tasks.push(task);
+        acc[releaseId].seenIds.add(task.id);
+      }
+      
+      return acc;
+    }, {} as Record<string, { tasks: CalendarTask[], seenIds: Set<string> }>);
+
+    // Clean up the structure for return
+    const cleanGroupedTasks: Record<string, { tasks: CalendarTask[] }> = {};
+    Object.entries(groupedTasks).forEach(([releaseId, data]) => {
+      cleanGroupedTasks[releaseId] = { tasks: data.tasks };
+      console.log(`Release ${releaseId}: ${data.tasks.length} unique tasks`);
+    });
+
+    return {
+      tasks: processedTasks,
+      scheduledTasks: scheduled,
+      unscheduledTasks: unscheduled,
+      tasksByRelease: cleanGroupedTasks
+    };
+  }, [allTasks, releases, releaseGroups]);
 
   const handleDragStart = (task: CalendarTask) => {
     console.log('Drag started for task:', task.taskTitle);
@@ -399,12 +426,11 @@ export default function CalendarPage() {
 
               <div className="space-y-3">
                 {Object.entries(tasksByRelease).map(([releaseId, releaseData]) => {
-                  if (!releaseData || !releaseData.tasks || releaseData.tasks.length === 0) {
+                  if (!releaseData?.tasks?.length) {
                     return null;
                   }
                   
-                  // Use tasks directly - they're already deduplicated
-                  const uniqueTasks = releaseData.tasks;
+                  const taskList = releaseData.tasks;
                   const release = releases.find(r => r.id === releaseId);
                   const group = release ? releaseGroups.find(g => g.id === release.groupId) : null;
                   
@@ -429,7 +455,7 @@ export default function CalendarPage() {
                           </div>
                           <div className="flex items-center space-x-1">
                             <span className="text-xs bg-black bg-opacity-20 px-2 py-1 rounded">
-                              {uniqueTasks.length}
+                              {taskList.length}
                             </span>
                             <button
                               className="w-4 h-4 rounded border border-gray-300 hover:scale-110 transition-transform bg-white flex items-center justify-center"
@@ -499,7 +525,7 @@ export default function CalendarPage() {
                         </div>
                       </div>
                       <div className="p-2 space-y-2">
-                        {uniqueTasks.map(task => (
+                        {taskList.map(task => (
                           <div
                             key={task.id}
                             draggable
