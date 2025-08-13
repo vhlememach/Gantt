@@ -69,6 +69,22 @@ export function ReviewModal({ isOpen, onClose, task, mode }: ReviewModalProps) {
     }
   });
 
+  const requestNextVersionMutation = useMutation({
+    mutationFn: async ({ taskId, changes }: { taskId: string; changes: string }) => {
+      const response = await apiRequest('POST', `/api/checklist-tasks/${taskId}/request-review`, { changes });
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
+      toast({ title: "Next version requested successfully" });
+      onClose();
+      setChanges("");
+    },
+    onError: () => {
+      toast({ title: "Failed to request next version", variant: "destructive" });
+    }
+  });
+
   const handleSubmit = () => {
     if (!task) return;
 
@@ -85,7 +101,13 @@ export function ReviewModal({ isOpen, onClose, task, mode }: ReviewModalProps) {
       }
       submitReviewMutation.mutate({ taskId: task.id, submissionUrl });
     } else if (mode === "approve") {
-      approveReviewMutation.mutate(task.id);
+      if (changes.trim() && (task?.currentVersion || 2) < 10) {
+        // Request next version instead of approving
+        requestNextVersionMutation.mutate({ taskId: task.id, changes });
+      } else {
+        // Approve and complete
+        approveReviewMutation.mutate(task.id);
+      }
     }
   };
 
@@ -109,7 +131,7 @@ export function ReviewModal({ isOpen, onClose, task, mode }: ReviewModalProps) {
       case "submit":
         return "Submit for Approval";
       case "approve":
-        return "Approve & Complete";
+        return "Approve";
       default:
         return "Save";
     }
@@ -207,6 +229,23 @@ export function ReviewModal({ isOpen, onClose, task, mode }: ReviewModalProps) {
                   </div>
                 </div>
               )}
+
+              {/* Option to request next version instead of approving */}
+              {(task?.currentVersion || 2) < 10 && (
+                <div>
+                  <Label htmlFor="nextVersionChanges" className="text-sm font-medium">
+                    Or request V{(task?.currentVersion || 2) + 1} (optional):
+                  </Label>
+                  <Textarea
+                    id="nextVersionChanges"
+                    value={changes}
+                    onChange={(e) => setChanges(e.target.value)}
+                    placeholder="Describe additional changes needed for next version..."
+                    className="mt-1"
+                    rows={3}
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -215,12 +254,22 @@ export function ReviewModal({ isOpen, onClose, task, mode }: ReviewModalProps) {
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button 
-            onClick={handleSubmit}
-            disabled={requestReviewMutation.isPending || submitReviewMutation.isPending || approveReviewMutation.isPending}
-          >
-            {getButtonText()}
-          </Button>
+          {mode === "approve" && changes.trim() && (task?.currentVersion || 2) < 10 ? (
+            <Button 
+              onClick={handleSubmit}
+              disabled={requestReviewMutation.isPending || submitReviewMutation.isPending || approveReviewMutation.isPending || requestNextVersionMutation.isPending}
+              className="bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              Request V{(task?.currentVersion || 2) + 1}
+            </Button>
+          ) : (
+            <Button 
+              onClick={handleSubmit}
+              disabled={requestReviewMutation.isPending || submitReviewMutation.isPending || approveReviewMutation.isPending || requestNextVersionMutation.isPending}
+            >
+              {getButtonText()}
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>

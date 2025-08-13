@@ -339,6 +339,7 @@ export default function ChecklistPage() {
               return (release?.highPriority || false) && !task.completed; // Only count incomplete priority tasks
             }).length;
             const pausedCount = memberTasksCount.filter(task => task.paused).length;
+            const reviewCount = memberTasksCount.filter(task => task.reviewStatus === "requested").length;
             
             return (
               <TabsTrigger key={member} value={member} className="flex items-center space-x-2">
@@ -358,6 +359,12 @@ export default function ChecklistPage() {
                     <Badge className="text-xs bg-orange-500 hover:bg-orange-600 text-white">
                       <AlertTriangle className="w-3 h-3 mr-1" />
                       {pausedCount}
+                    </Badge>
+                  )}
+                  {reviewCount > 0 && (
+                    <Badge className="text-xs bg-blue-500 hover:bg-blue-600 text-white">
+                      <Loader2 className="w-3 h-3 mr-1" />
+                      {reviewCount}
                     </Badge>
                   )}
                 </div>
@@ -520,6 +527,13 @@ export default function ChecklistPage() {
                               }
                             />
                             <div className="flex-1">
+                              {/* Review status indicator - above title */}
+                              {task.reviewStatus === "requested" && (
+                                <div className="flex items-center mb-1">
+                                  <Loader2 className="w-3 h-3 mr-1 animate-spin text-blue-500" />
+                                  <span className="text-xs text-blue-600 font-medium">Under Review</span>
+                                </div>
+                              )}
                               <div className={`font-medium flex items-center space-x-2 ${
                                 task.completed ? 'line-through text-gray-500' : 'text-gray-900 dark:text-white'
                               }`}>
@@ -574,13 +588,6 @@ export default function ChecklistPage() {
                                   </Badge>
                                 )
                               )}
-                              {/* Review status indicator */}
-                              {task.reviewStatus === "requested" && (
-                                <Badge className="bg-blue-500 text-white text-xs">
-                                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                                  Review
-                                </Badge>
-                              )}
                               {task.completed ? (
                                 <Badge variant="outline" className="bg-green-100 text-green-800 text-xs">
                                   <CheckCircle className="w-3 h-3 mr-1" />
@@ -601,17 +608,15 @@ export default function ChecklistPage() {
                                 </Badge>
                               )}
                             </div>
-                            {/* Request Approval Section */}
+                            {/* Request Approval Section - same size as blocker button */}
                             {!task.completed && !task.paused && task.reviewStatus !== "requested" && (
                               <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="w-full text-purple-600 hover:text-purple-700 hover:bg-purple-50 border-purple-200"
+                                <Badge
+                                  className="bg-purple-500 text-white cursor-pointer hover:bg-purple-600 transition-colors text-xs"
                                   onClick={() => handleRequestReview(task)}
                                 >
                                   Request Approval
-                                </Button>
+                                </Badge>
                               </div>
                             )}
                             {/* Review actions for team members */}
@@ -722,6 +727,13 @@ export default function ChecklistPage() {
                                     }
                                   />
                                   <div className="flex-1">
+                                    {/* Review status indicator - above title */}
+                                    {task.reviewStatus === "requested" && (
+                                      <div className="flex items-center mb-1">
+                                        <Loader2 className="w-3 h-3 mr-1 animate-spin text-blue-500" />
+                                        <span className="text-xs text-blue-600 font-medium">Under Review</span>
+                                      </div>
+                                    )}
                                     <div className={`font-medium ${
                                       task.completed ? 'line-through text-gray-500' : 'text-gray-900 dark:text-white'
                                     }`}>
@@ -767,13 +779,6 @@ export default function ChecklistPage() {
                                         </Badge>
                                       )
                                     )}
-                                    {/* Review status indicator */}
-                                    {task.reviewStatus === "requested" && (
-                                      <Badge className="bg-blue-500 text-white text-xs">
-                                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                                        Review
-                                      </Badge>
-                                    )}
                                     {task.completed ? (
                                       <Badge variant="outline" className="bg-green-100 text-green-800 text-xs">
                                         <CheckCircle className="w-3 h-3 mr-1" />
@@ -794,17 +799,15 @@ export default function ChecklistPage() {
                                       </Badge>
                                     )}
                                   </div>
-                                  {/* Request Approval Section for Evergreen */}
+                                  {/* Request Approval Section for Evergreen - same size as blocker button */}
                                   {!task.completed && !task.paused && task.reviewStatus !== "requested" && (
                                     <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="w-full text-purple-600 hover:text-purple-700 hover:bg-purple-50 border-purple-200"
+                                      <Badge
+                                        className="bg-purple-500 text-white cursor-pointer hover:bg-purple-600 transition-colors text-xs"
                                         onClick={() => handleRequestReview(task)}
                                       >
                                         Request Approval
-                                      </Button>
+                                      </Badge>
                                     </div>
                                   )}
                                   {/* Review actions for team members */}

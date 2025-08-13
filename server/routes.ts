@@ -288,9 +288,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Task not found" });
       }
       
+      const nextVersion = (task.currentVersion || 1) + 1;
+      if (nextVersion > 10) {
+        return res.status(400).json({ message: "Maximum version limit (v10) reached" });
+      }
+      
       const updatedTask = await storage.updateChecklistTask(id, {
         reviewStatus: "requested",
-        currentVersion: (task.currentVersion || 1) + 1,
+        currentVersion: nextVersion,
         reviewChanges: changes,
         reviewSubmissionUrl: null // Clear previous submission URL
       });
