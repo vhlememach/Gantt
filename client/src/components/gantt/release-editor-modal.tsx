@@ -387,12 +387,12 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{releaseId ? "Edit Release" : "Add Release"}</DialogTitle>
+          <DialogTitle>{releaseId ? "Edit Project" : "Add Project"}</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="name">Release Name</Label>
+            <Label htmlFor="name">Project Name</Label>
             <Input
               id="name"
               value={formData.name}

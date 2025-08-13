@@ -1,6 +1,6 @@
 # Overview
 
-Palmyra Release Gantt Chart is a modern web application for managing internal releases with visual timeline representation. The application provides a comprehensive Gantt chart interface with group organization, customizable styling, and minimal design. Built as a full-stack solution with a React frontend and Express backend, it enables teams to track releases across different groups with drag-and-drop functionality, visual customization options, real-time updates, and high-quality export capabilities. The application supports extended timelines up to 2026+ with proper quarter calculations, accurate week counting up to 24 weeks, and improved text rendering in exports with higher resolution scaling.
+Palmyra Project Gantt Chart is a modern web application for managing internal projects with visual timeline representation. The application provides a comprehensive Gantt chart interface with group organization, customizable styling, and minimal design. Built as a full-stack solution with a React frontend and Express backend, it enables teams to track projects across different groups with drag-and-drop functionality, visual customization options, real-time updates, and high-quality export capabilities. The application supports extended timelines up to 2026+ with proper quarter calculations, accurate week counting up to 24 weeks, improved text rendering in exports with higher resolution scaling, and a reorganized Team Checklist with 2-column layout separating project tasks from evergreen content.
 
 # User Preferences
 

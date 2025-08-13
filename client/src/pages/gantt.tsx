@@ -728,7 +728,7 @@ export default function GanttPage() {
             <span>Timeline: <strong>Jan 2025 - Jul 2025</strong></span>
           </div>
           <div className="flex items-center space-x-2 text-sm text-slate-500">
-            <span>Click and drag to resize bars • Double-click to edit</span>
+
           </div>
         </div>
       </div>

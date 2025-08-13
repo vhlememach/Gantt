@@ -17,7 +17,7 @@ import { Navigation, MobileNavigation } from "@/components/ui/navigation";
 
 const teamMembers = ["Brian", "Alex", "Lucas", "Victor"];
 
-type SortOption = "completed" | "to-complete" | "priority";
+type SortOption = "completed" | "to-complete" | "priority" | "paused";
 
 export default function ChecklistPage() {
   const [selectedMember, setSelectedMember] = useState(teamMembers[0]);
@@ -211,6 +211,8 @@ export default function ChecklistPage() {
           return (a.completed ? 1 : 0) - (b.completed ? 1 : 0);
         case "priority":
           return (isTaskHighPriority(b) ? 1 : 0) - (isTaskHighPriority(a) ? 1 : 0);
+        case "paused":
+          return (b.paused ? 1 : 0) - (a.paused ? 1 : 0);
         default:
           return 0;
       }
@@ -292,7 +294,7 @@ export default function ChecklistPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
           <p className="text-gray-600 dark:text-gray-300">
-            Track task completion for all team members across releases
+            Track task completion for all team members across projects
           </p>
         </div>
 
@@ -388,16 +390,21 @@ export default function ChecklistPage() {
                 </CardContent>
               </Card>
 
-              {/* Tasks by Release - sorted by priority */}
-              {Object.entries(tasksByRelease)
-                .sort(([releaseIdA], [releaseIdB]) => {
-                  const releaseA = releases.find(r => r.id === releaseIdA);
-                  const releaseB = releases.find(r => r.id === releaseIdB);
-                  const priorityA = releaseA?.highPriority ? 1 : 0;
-                  const priorityB = releaseB?.highPriority ? 1 : 0;
-                  return priorityB - priorityA; // High priority first
-                })
-                .map(([releaseId, tasks]) => {
+              {/* Two-Column Layout */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Column 1: Project Checklists */}
+                <div className="space-y-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b pb-2">Project Checklists</h3>
+                  {Object.entries(tasksByRelease)
+                    .filter(([releaseId]) => releaseId !== 'evergreen' && releases.find(r => r.id === releaseId))
+                    .sort(([releaseIdA], [releaseIdB]) => {
+                      const releaseA = releases.find(r => r.id === releaseIdA);
+                      const releaseB = releases.find(r => r.id === releaseIdB);
+                      const priorityA = releaseA?.highPriority ? 1 : 0;
+                      const priorityB = releaseB?.highPriority ? 1 : 0;
+                      return priorityB - priorityA; // High priority first
+                    })
+                    .map(([releaseId, tasks]) => {
                 const release = releases.find(r => r.id === releaseId);
                 const releaseProgress = getReleaseProgress(releaseId);
                 const memberSortOption = sortBy[member] || "priority";
@@ -440,16 +447,10 @@ export default function ChecklistPage() {
                               <option value="priority">Priority</option>
                               <option value="completed">Completed</option>
                               <option value="to-complete">To Complete</option>
+                              <option value="paused">Paused</option>
                             </select>
                           </div>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => exportChecklist(member)}
-                          >
-                            <Download className="w-4 h-4 mr-2" />
-                            Export
-                          </Button>
+
                           <div className="flex items-center space-x-2 text-sm text-gray-500">
                             <CheckCircle className="w-4 h-4" />
                             <span>{tasks.filter(t => t.completed).length}/{tasks.length} completed</span>
@@ -563,8 +564,155 @@ export default function ChecklistPage() {
                       </div>
                     </CardContent>
                   </Card>
-                );
-              })}
+                    );
+                  })}
+                </div>
+
+                {/* Column 2: Evergreen and General */}
+                <div className="space-y-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b pb-2">Other Tasks</h3>
+                  
+                  {/* Evergreen Content */}
+                  {Object.entries(tasksByRelease)
+                    .filter(([releaseId]) => releaseId === 'evergreen')
+                    .map(([releaseId, tasks]) => {
+                      const memberSortOption = sortBy[member] || "priority";
+                      const sortedTasks = getSortedTasks(tasks, memberSortOption);
+                      
+                      return (
+                        <Card key={releaseId}>
+                          <CardHeader>
+                            <CardTitle className="flex items-center justify-between">
+                              <div className="flex items-center space-x-3">
+                                <span>Evergreen Content</span>
+                                <Badge variant="secondary" className="text-xs">
+                                  {Math.round((tasks.filter(t => t.completed).length / tasks.length) * 100)}% Complete
+                                </Badge>
+                              </div>
+                              <div className="flex items-center space-x-4">
+                                <div className="flex items-center space-x-2">
+                                  <ArrowUpDown className="w-4 h-4 text-gray-500" />
+                                  <select 
+                                    className="text-sm border border-gray-300 rounded px-2 py-1"
+                                    value={memberSortOption}
+                                    onChange={(e) => setSortBy(prev => ({ 
+                                      ...prev, 
+                                      [member]: e.target.value as SortOption 
+                                    }))}
+                                  >
+                                    <option value="priority">Priority</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="to-complete">To Complete</option>
+                                    <option value="paused">Paused</option>
+                                  </select>
+                                </div>
+                                <div className="flex items-center space-x-2 text-sm text-gray-500">
+                                  <CheckCircle className="w-4 h-4" />
+                                  <span>{tasks.filter(t => t.completed).length}/{tasks.length} completed</span>
+                                </div>
+                              </div>
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-3">
+                              {sortedTasks.map(task => (
+                                <div
+                                  key={task.id}
+                                  className={`flex items-center space-x-3 p-3 rounded-lg border ${
+                                    task.completed 
+                                      ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800' 
+                                      : task.paused
+                                      ? 'bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800'
+                                      : 'bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700'
+                                  }`}
+                                >
+                                  <Checkbox
+                                    checked={task.completed || false}
+                                    onCheckedChange={(checked) => 
+                                      handleTaskToggle(task.id, !!checked)
+                                    }
+                                  />
+                                  <div className="flex-1">
+                                    <div className={`font-medium ${
+                                      task.completed ? 'line-through text-gray-500' : 'text-gray-900 dark:text-white'
+                                    }`}>
+                                      {task.taskTitle}
+                                    </div>
+                                    {task.taskDescription && (
+                                      <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                        {task.taskDescription}
+                                      </div>
+                                    )}
+                                    {task.taskUrl && (
+                                      <div className="text-sm text-blue-600 hover:text-blue-800 mt-1">
+                                        <a href={task.taskUrl} target="_blank" rel="noopener noreferrer">
+                                          View Link
+                                        </a>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    {!task.completed && !task.paused && (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleReportBlocker(task.id)}
+                                        className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                      >
+                                        <AlertTriangle className="w-4 h-4 mr-1" />
+                                        Pause
+                                      </Button>
+                                    )}
+                                    {task.completed ? (
+                                      <Badge className="bg-green-500 text-white">
+                                        <CheckCircle className="w-3 h-3 mr-1" />
+                                        Done
+                                      </Badge>
+                                    ) : task.paused ? (
+                                      <Badge 
+                                        className="bg-orange-500 text-white cursor-pointer hover:bg-orange-600 transition-colors"
+                                        onClick={() => handleViewBlockerDetails(task)}
+                                      >
+                                        <AlertTriangle className="w-3 h-3 mr-1" />
+                                        Paused
+                                      </Badge>
+                                    ) : (
+                                      <Badge variant="outline">
+                                        <Clock className="w-3 h-3 mr-1" />
+                                        Pending
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+
+                  {/* General Checklist */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <span>General Tasks</span>
+                          <Badge variant="secondary" className="text-xs">
+                            Non-project tasks
+                          </Badge>
+                        </div>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-center py-8 text-gray-500">
+                        <Users className="w-12 h-12 mx-auto mb-4" />
+                        <p>General tasks will appear here</p>
+                        <p className="text-sm">For tasks outside of projects and evergreen content</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
 
               {memberTasks.length === 0 && (
                 <Card>
