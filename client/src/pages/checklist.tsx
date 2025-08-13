@@ -527,13 +527,6 @@ export default function ChecklistPage() {
                               }
                             />
                             <div className="flex-1">
-                              {/* Review status indicator - above title */}
-                              {task.reviewStatus === "requested" && (
-                                <div className="flex items-center mb-1">
-                                  <Loader2 className="w-3 h-3 mr-1 animate-spin text-blue-500" />
-                                  <span className="text-xs text-blue-600 font-medium">Under Review</span>
-                                </div>
-                              )}
                               <div className={`font-medium flex items-center space-x-2 ${
                                 task.completed ? 'line-through text-gray-500' : 'text-gray-900 dark:text-white'
                               }`}>
@@ -562,32 +555,7 @@ export default function ChecklistPage() {
                               )}
                             </div>
                             <div className="flex items-center space-x-2">
-                              {task.completed ? (
-                                <Badge 
-                                  className="bg-blue-500 text-white cursor-pointer hover:bg-blue-600 transition-colors text-xs"
-                                  onClick={() => window.location.href = '/calendar'}
-                                >
-                                  <Calendar className="w-3 h-3 mr-1" />
-                                  Add to Calendar
-                                </Badge>
-                              ) : (
-                                task.paused ? (
-                                  <Badge 
-                                    className="bg-green-500 text-white cursor-pointer hover:bg-green-600 transition-colors text-xs"
-                                    onClick={() => handleViewBlockerDetails(task)}
-                                  >
-                                    <CheckCircle className="w-3 h-3 mr-1" />
-                                    Unpause
-                                  </Badge>
-                                ) : (
-                                  <Badge 
-                                    className="bg-orange-500 text-white cursor-pointer hover:bg-orange-600 transition-colors text-xs"
-                                    onClick={() => handleReportBlocker(task.id)}
-                                  >
-                                    <AlertTriangle className="w-3 h-3" />
-                                  </Badge>
-                                )
-                              )}
+                              {/* Top badges - Done, Pending, Paused only */}
                               {task.completed ? (
                                 <Badge variant="outline" className="bg-green-100 text-green-800 text-xs">
                                   <CheckCircle className="w-3 h-3 mr-1" />
@@ -608,17 +576,51 @@ export default function ChecklistPage() {
                                 </Badge>
                               )}
                             </div>
-                            {/* Request Approval Section - same size as blocker button */}
-                            {!task.completed && !task.paused && task.reviewStatus !== "requested" && (
-                              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                            
+                            {/* Bottom action buttons section */}
+                            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 flex items-center space-x-2">
+                              {/* Blocker button */}
+                              {!task.completed && !task.paused && (
+                                <Badge 
+                                  className="bg-orange-500 text-white cursor-pointer hover:bg-orange-600 transition-colors text-xs"
+                                  onClick={() => handleReportBlocker(task.id)}
+                                >
+                                  <AlertTriangle className="w-3 h-3" />
+                                </Badge>
+                              )}
+                              
+                              {/* Add to Calendar button */}
+                              {task.completed && (
+                                <Badge 
+                                  className="bg-blue-500 text-white cursor-pointer hover:bg-blue-600 transition-colors text-xs"
+                                  onClick={() => window.location.href = '/calendar'}
+                                >
+                                  <Calendar className="w-3 h-3 mr-1" />
+                                  Add to Calendar
+                                </Badge>
+                              )}
+                              
+                              {/* Unpause button */}
+                              {task.paused && (
+                                <Badge 
+                                  className="bg-green-500 text-white cursor-pointer hover:bg-green-600 transition-colors text-xs"
+                                  onClick={() => handleViewBlockerDetails(task)}
+                                >
+                                  <CheckCircle className="w-3 h-3 mr-1" />
+                                  Unpause
+                                </Badge>
+                              )}
+                              
+                              {/* Request Approval button */}
+                              {!task.completed && !task.paused && task.reviewStatus !== "requested" && (
                                 <Badge
                                   className="bg-purple-500 text-white cursor-pointer hover:bg-purple-600 transition-colors text-xs"
                                   onClick={() => handleRequestReview(task)}
                                 >
                                   Request Approval
                                 </Badge>
-                              </div>
-                            )}
+                              )}
+                            </div>
                             {/* Review actions for team members */}
                             {task.reviewStatus === "requested" && task.reviewSubmissionUrl && (
                               <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
@@ -727,13 +729,6 @@ export default function ChecklistPage() {
                                     }
                                   />
                                   <div className="flex-1">
-                                    {/* Review status indicator - above title */}
-                                    {task.reviewStatus === "requested" && (
-                                      <div className="flex items-center mb-1">
-                                        <Loader2 className="w-3 h-3 mr-1 animate-spin text-blue-500" />
-                                        <span className="text-xs text-blue-600 font-medium">Under Review</span>
-                                      </div>
-                                    )}
                                     <div className={`font-medium ${
                                       task.completed ? 'line-through text-gray-500' : 'text-gray-900 dark:text-white'
                                     }`}>
@@ -753,32 +748,7 @@ export default function ChecklistPage() {
                                     )}
                                   </div>
                                   <div className="flex items-center space-x-2">
-                                    {task.completed ? (
-                                      <Badge 
-                                        className="bg-blue-500 text-white cursor-pointer hover:bg-blue-600 transition-colors text-xs"
-                                        onClick={() => window.location.href = '/calendar'}
-                                      >
-                                        <Calendar className="w-3 h-3 mr-1" />
-                                        Add to Calendar
-                                      </Badge>
-                                    ) : (
-                                      task.paused ? (
-                                        <Badge 
-                                          className="bg-green-500 text-white cursor-pointer hover:bg-green-600 transition-colors text-xs"
-                                          onClick={() => handleViewBlockerDetails(task)}
-                                        >
-                                          <CheckCircle className="w-3 h-3 mr-1" />
-                                          Unpause
-                                        </Badge>
-                                      ) : (
-                                        <Badge 
-                                          className="bg-orange-500 text-white cursor-pointer hover:bg-orange-600 transition-colors text-xs"
-                                          onClick={() => handleReportBlocker(task.id)}
-                                        >
-                                          <AlertTriangle className="w-3 h-3" />
-                                        </Badge>
-                                      )
-                                    )}
+                                    {/* Top badges - Done, Pending, Paused only */}
                                     {task.completed ? (
                                       <Badge variant="outline" className="bg-green-100 text-green-800 text-xs">
                                         <CheckCircle className="w-3 h-3 mr-1" />
@@ -799,17 +769,51 @@ export default function ChecklistPage() {
                                       </Badge>
                                     )}
                                   </div>
-                                  {/* Request Approval Section for Evergreen - same size as blocker button */}
-                                  {!task.completed && !task.paused && task.reviewStatus !== "requested" && (
-                                    <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                                  
+                                  {/* Bottom action buttons section */}
+                                  <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 flex items-center space-x-2">
+                                    {/* Blocker button */}
+                                    {!task.completed && !task.paused && (
+                                      <Badge 
+                                        className="bg-orange-500 text-white cursor-pointer hover:bg-orange-600 transition-colors text-xs"
+                                        onClick={() => handleReportBlocker(task.id)}
+                                      >
+                                        <AlertTriangle className="w-3 h-3" />
+                                      </Badge>
+                                    )}
+                                    
+                                    {/* Add to Calendar button */}
+                                    {task.completed && (
+                                      <Badge 
+                                        className="bg-blue-500 text-white cursor-pointer hover:bg-blue-600 transition-colors text-xs"
+                                        onClick={() => window.location.href = '/calendar'}
+                                      >
+                                        <Calendar className="w-3 h-3 mr-1" />
+                                        Add to Calendar
+                                      </Badge>
+                                    )}
+                                    
+                                    {/* Unpause button */}
+                                    {task.paused && (
+                                      <Badge 
+                                        className="bg-green-500 text-white cursor-pointer hover:bg-green-600 transition-colors text-xs"
+                                        onClick={() => handleViewBlockerDetails(task)}
+                                      >
+                                        <CheckCircle className="w-3 h-3 mr-1" />
+                                        Unpause
+                                      </Badge>
+                                    )}
+                                    
+                                    {/* Request Approval button */}
+                                    {!task.completed && !task.paused && task.reviewStatus !== "requested" && (
                                       <Badge
                                         className="bg-purple-500 text-white cursor-pointer hover:bg-purple-600 transition-colors text-xs"
                                         onClick={() => handleRequestReview(task)}
                                       >
                                         Request Approval
                                       </Badge>
-                                    </div>
-                                  )}
+                                    )}
+                                  </div>
                                   {/* Review actions for team members */}
                                   {task.reviewStatus === "requested" && task.reviewSubmissionUrl && (
                                     <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
