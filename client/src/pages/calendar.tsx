@@ -45,7 +45,8 @@ export default function CalendarPage() {
   const [draggedTask, setDraggedTask] = useState<CalendarTask | null>(null);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [priorityCells, setPriorityCells] = useState<Set<string>>(new Set());
-  const [editingGroupColor, setEditingGroupColor] = useState<string | null>(null);
+  const [editingGroupAccent, setEditingGroupAccent] = useState<string | null>(null);
+  const [groupAccentColors, setGroupAccentColors] = useState<Map<string, string>>(new Map());
 
   const queryClient = useQueryClient();
 
@@ -275,15 +276,15 @@ export default function CalendarPage() {
         <Navigation />
       </div>
 
-      <div className="flex h-screen pt-16">
+      <div className="flex h-screen pt-14">
         {/* Left Sidebar - Completed Tasks */}
         <div className="w-1/6 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
           <div className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Completed Tasks
-              </h2>
-              <Badge variant="secondary">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              Completed Tasks
+            </h2>
+            <div className="mb-6">
+              <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
                 {unscheduledTasks.length} unscheduled
               </Badge>
             </div>
@@ -294,12 +295,16 @@ export default function CalendarPage() {
                 const group = release ? releaseGroups.find(g => g.id === release.groupId) : null;
                 
                 const groupColor = group?.color || '#6b7280';
+                const accentColor = group ? groupAccentColors.get(group.id) || '#ffffff' : '#ffffff';
                 
                 return (
-                  <div key={releaseId} className="border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <div key={releaseId} className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
                     <div 
-                      className="p-3 border-b border-gray-200 dark:border-gray-700 text-white"
-                      style={{ backgroundColor: groupColor }}
+                      className="p-3 border-b border-gray-200 dark:border-gray-700 text-white relative"
+                      style={{ 
+                        backgroundColor: groupColor,
+                        borderLeft: `4px solid ${accentColor}`
+                      }}
                     >
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="text-sm font-medium text-white">
@@ -310,13 +315,13 @@ export default function CalendarPage() {
                             variant="outline"
                             size="sm"
                             className="text-xs px-2 py-1 h-6 bg-white text-black border-white hover:bg-gray-100"
-                            onClick={() => setEditingGroupColor(editingGroupColor === group.id ? null : group.id)}
+                            onClick={() => setEditingGroupAccent(editingGroupAccent === group.id ? null : group.id)}
                           >
-                            Change Color
+                            Color
                           </Button>
                         )}
                       </div>
-                      {editingGroupColor === group?.id && (
+                      {editingGroupAccent === group?.id && (
                         <div className="flex space-x-1 mb-2">
                           {['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#F97316', '#6B7280', '#EC4899'].map(color => (
                             <button
@@ -324,11 +329,10 @@ export default function CalendarPage() {
                               className="w-4 h-4 rounded border border-gray-300 hover:scale-110 transition-transform"
                               style={{ backgroundColor: color }}
                               onClick={() => {
-                                const updatedGroups = releaseGroups.map(g => 
-                                  g.id === group.id ? { ...g, color } : g
-                                );
-                                queryClient.setQueryData(["/api/release-groups"], updatedGroups);
-                                setEditingGroupColor(null);
+                                const newAccentColors = new Map(groupAccentColors);
+                                newAccentColors.set(group.id, color);
+                                setGroupAccentColors(newAccentColors);
+                                setEditingGroupAccent(null);
                               }}
                             />
                           ))}
@@ -475,7 +479,7 @@ export default function CalendarPage() {
                       isHighPriority 
                         ? 'border-red-400 bg-red-50 dark:bg-red-900/20' 
                         : isToday 
-                          ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-300' 
+                          ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-400' 
                           : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
                     } hover:bg-gray-50 dark:hover:bg-gray-700`}
                     onDragOver={handleDragOver}
@@ -502,6 +506,11 @@ export default function CalendarPage() {
                           HIGH PRIORITY
                         </span>
                       )}
+                      {isToday && !isHighPriority && (
+                        <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                          CURRENT DAY
+                        </span>
+                      )}
                     </div>
 
                     {/* Release dividers for active releases */}
@@ -514,8 +523,11 @@ export default function CalendarPage() {
                           <div key={release.id} className="space-y-1">
                             {/* Release divider box */}
                             <div 
-                              className="text-xs font-medium px-2 py-2 rounded text-white opacity-90"
-                              style={{ backgroundColor: group?.color || '#6b7280' }}
+                              className="text-xs font-medium px-2 py-2 rounded text-white opacity-90 border-l-4"
+                              style={{ 
+                                backgroundColor: group?.color || '#6b7280',
+                                borderLeftColor: group ? groupAccentColors.get(group.id) || 'transparent' : 'transparent'
+                              }}
                             >
                               <i className={`${release.icon} mr-1`}></i>
                               {release.name}
@@ -525,8 +537,13 @@ export default function CalendarPage() {
                             {releaseTasks.map(task => (
                               <div
                                 key={task.id}
-                                className="text-xs p-2 bg-gray-100 dark:bg-gray-600 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors ml-2 min-h-[2.5rem] flex items-center leading-tight"
-                                title={`${task.taskTitle} - Click to remove`}
+                                draggable
+                                className="text-xs p-2 bg-gray-100 dark:bg-gray-600 rounded cursor-move hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors ml-2 min-h-[2.5rem] flex items-center leading-tight"
+                                title={`${task.taskTitle} - Drag to move or click to remove`}
+                                onDragStart={(e) => {
+                                  e.stopPropagation();
+                                  setDraggedTask(task);
+                                }}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleTaskClick(task);
