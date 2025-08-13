@@ -65,6 +65,11 @@ export default function ChecklistPage() {
     queryKey: ["/api/releases"],
   });
 
+  // Fetch all release groups for accent colors
+  const { data: groups = [] } = useQuery({
+    queryKey: ["/api/release-groups"],
+  });
+
   // Filter tasks by selected member
   const memberTasks = allTasks.filter(task => task.assignedTo === selectedMember);
 
@@ -422,7 +427,15 @@ export default function ChecklistPage() {
                       <CardTitle>
                         {/* Project Title */}
                         <div className="mb-3">
-                          <span className="text-lg font-semibold">
+                          <span className="text-xl font-bold flex items-center">
+                            <div 
+                              className="w-1 h-6 rounded-full mr-3"
+                              style={{ 
+                                backgroundColor: release?.groupId 
+                                  ? groups.find(g => g.id === release.groupId)?.accentColor || '#6B7280'
+                                  : '#6B7280' 
+                              }}
+                            />
                             {release?.name || 'Unassigned Tasks'}
                           </span>
                         </div>
@@ -532,7 +545,7 @@ export default function ChecklistPage() {
                                     onClick={() => handleReportBlocker(task.id)}
                                   >
                                     <AlertTriangle className="w-3 h-3 mr-1" />
-                                    Report Blocker
+                                    Blocker
                                   </Badge>
                                 )
                               )}
@@ -579,14 +592,27 @@ export default function ChecklistPage() {
                       return (
                         <Card key={releaseId}>
                           <CardHeader>
-                            <CardTitle className="flex items-center justify-between">
-                              <div className="flex items-center space-x-3">
-                                <span>Evergreen Content</span>
-                                <Badge variant="secondary" className="text-xs">
-                                  {tasks.length > 0 ? Math.round((tasks.filter(t => t.completed).length / tasks.length) * 100) : 0}% Complete
-                                </Badge>
+                            <CardTitle>
+                              {/* Evergreen Title */}
+                              <div className="mb-3">
+                                <span className="text-xl font-bold flex items-center">
+                                  <div className="w-1 h-6 rounded-full mr-3 bg-green-500" />
+                                  Evergreen Content
+                                </span>
                               </div>
-                              <div className="flex items-center space-x-4">
+                              
+                              {/* Metrics and Controls */}
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-3">
+                                  <Badge variant="secondary" className="text-xs">
+                                    {tasks.length > 0 ? Math.round((tasks.filter(t => t.completed).length / tasks.length) * 100) : 0}% Complete
+                                  </Badge>
+                                  <div className="flex items-center space-x-2 text-sm text-gray-500">
+                                    <CheckCircle className="w-4 h-4" />
+                                    <span>{tasks.filter(t => t.completed).length}/{tasks.length} completed</span>
+                                  </div>
+                                </div>
+                                
                                 <div className="flex items-center space-x-2">
                                   <ArrowUpDown className="w-4 h-4 text-gray-500" />
                                   <select 
@@ -602,10 +628,6 @@ export default function ChecklistPage() {
                                     <option value="to-complete">To Complete</option>
                                     <option value="paused">Paused</option>
                                   </select>
-                                </div>
-                                <div className="flex items-center space-x-2 text-sm text-gray-500">
-                                  <CheckCircle className="w-4 h-4" />
-                                  <span>{tasks.filter(t => t.completed).length}/{tasks.length} completed</span>
                                 </div>
                               </div>
                             </CardTitle>
@@ -698,14 +720,27 @@ export default function ChecklistPage() {
                       return (
                         <Card key={releaseId}>
                           <CardHeader>
-                            <CardTitle className="flex items-center justify-between">
-                              <div className="flex items-center space-x-3">
-                                <span>General Tasks</span>
-                                <Badge variant="secondary" className="text-xs">
-                                  {tasks.length > 0 ? Math.round((tasks.filter(t => t.completed).length / tasks.length) * 100) : 0}% Complete
-                                </Badge>
+                            <CardTitle>
+                              {/* General Tasks Title */}
+                              <div className="mb-3">
+                                <span className="text-xl font-bold flex items-center">
+                                  <div className="w-1 h-6 rounded-full mr-3 bg-purple-500" />
+                                  General Tasks
+                                </span>
                               </div>
-                              <div className="flex items-center space-x-4">
+                              
+                              {/* Metrics and Controls */}
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-3">
+                                  <Badge variant="secondary" className="text-xs">
+                                    {tasks.length > 0 ? Math.round((tasks.filter(t => t.completed).length / tasks.length) * 100) : 0}% Complete
+                                  </Badge>
+                                  <div className="flex items-center space-x-2 text-sm text-gray-500">
+                                    <CheckCircle className="w-4 h-4" />
+                                    <span>{tasks.filter(t => t.completed).length}/{tasks.length} completed</span>
+                                  </div>
+                                </div>
+                                
                                 <div className="flex items-center space-x-2">
                                   <ArrowUpDown className="w-4 h-4 text-gray-500" />
                                   <select 
@@ -721,10 +756,6 @@ export default function ChecklistPage() {
                                     <option value="to-complete">To Complete</option>
                                     <option value="paused">Paused</option>
                                   </select>
-                                </div>
-                                <div className="flex items-center space-x-2 text-sm text-gray-500">
-                                  <CheckCircle className="w-4 h-4" />
-                                  <span>{tasks.filter(t => t.completed).length}/{tasks.length} completed</span>
                                 </div>
                               </div>
                             </CardTitle>
@@ -769,32 +800,48 @@ export default function ChecklistPage() {
                                       )}
                                     </div>
                                     <div className="flex items-center space-x-2">
-                                      {!task.completed && !task.paused && (
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() => handleReportBlocker(task.id)}
-                                          className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                      {task.completed ? (
+                                        <Badge 
+                                          className="bg-blue-500 text-white cursor-pointer hover:bg-blue-600 transition-colors text-xs"
+                                          onClick={() => window.location.href = '/calendar'}
                                         >
-                                          <AlertTriangle className="w-4 h-4 mr-1" />
-                                          Pause
-                                        </Button>
+                                          <Calendar className="w-3 h-3 mr-1" />
+                                          Add to Calendar
+                                        </Badge>
+                                      ) : (
+                                        task.paused ? (
+                                          <Badge 
+                                            className="bg-green-500 text-white cursor-pointer hover:bg-green-600 transition-colors text-xs"
+                                            onClick={() => handleViewBlockerDetails(task)}
+                                          >
+                                            <CheckCircle className="w-3 h-3 mr-1" />
+                                            Unpause
+                                          </Badge>
+                                        ) : (
+                                          <Badge 
+                                            className="bg-orange-500 text-white cursor-pointer hover:bg-orange-600 transition-colors text-xs"
+                                            onClick={() => handleReportBlocker(task.id)}
+                                          >
+                                            <AlertTriangle className="w-3 h-3 mr-1" />
+                                            Blocker
+                                          </Badge>
+                                        )
                                       )}
                                       {task.completed ? (
-                                        <Badge className="bg-green-500 text-white">
+                                        <Badge variant="outline" className="bg-green-100 text-green-800 text-xs">
                                           <CheckCircle className="w-3 h-3 mr-1" />
                                           Done
                                         </Badge>
                                       ) : task.paused ? (
                                         <Badge 
-                                          className="bg-orange-500 text-white cursor-pointer hover:bg-orange-600 transition-colors"
+                                          className="bg-red-500 text-white cursor-pointer hover:bg-red-600 transition-colors text-xs"
                                           onClick={() => handleViewBlockerDetails(task)}
                                         >
                                           <AlertTriangle className="w-3 h-3 mr-1" />
                                           Paused
                                         </Badge>
                                       ) : (
-                                        <Badge variant="outline">
+                                        <Badge variant="outline" className="text-xs">
                                           <Clock className="w-3 h-3 mr-1" />
                                           Pending
                                         </Badge>
@@ -819,12 +866,22 @@ export default function ChecklistPage() {
                   {!Object.keys(tasksByRelease).includes('general') && (
                     <Card>
                       <CardHeader>
-                        <CardTitle className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <span>General Tasks</span>
-                            <Badge variant="secondary" className="text-xs">
-                              Non-project tasks
-                            </Badge>
+                        <CardTitle>
+                          {/* General Tasks Title */}
+                          <div className="mb-3">
+                            <span className="text-xl font-bold flex items-center">
+                              <div className="w-1 h-6 rounded-full mr-3 bg-purple-500" />
+                              General Tasks
+                            </span>
+                          </div>
+                          
+                          {/* Metrics and Controls */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <Badge variant="secondary" className="text-xs">
+                                Non-project tasks
+                              </Badge>
+                            </div>
                           </div>
                         </CardTitle>
                       </CardHeader>
