@@ -291,7 +291,18 @@ export default function CalendarPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="flex h-screen">
         {/* Left Sidebar - Completed Tasks */}
-        <div className="w-1/6 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
+        <div 
+          className="w-1/6 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto"
+          onDragOver={handleDragOver}
+          onDrop={(e) => {
+            e.preventDefault();
+            if (draggedTask && draggedTask.scheduledDate) {
+              // Remove task from calendar and add back to sidebar
+              unscheduleTaskMutation.mutate(draggedTask.id);
+              setDraggedTask(null);
+            }
+          }}
+        >
           <div className="p-6">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
               Completed Tasks
@@ -487,7 +498,7 @@ export default function CalendarPage() {
                 return (
                   <div
                     key={day}
-                    className={`min-h-60 p-3 border-2 rounded-lg cursor-pointer transition-colors ${
+                    className={`min-h-60 p-3 border-2 rounded-lg cursor-pointer transition-colors flex flex-col ${
                       isHighPriority 
                         ? 'border-red-400 bg-red-50 dark:bg-red-900/20' 
                         : isToday 
@@ -497,9 +508,9 @@ export default function CalendarPage() {
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, day)}
                     onClick={(e) => {
-                      // Only handle cell click if not clicking on tasks
-                      if (e.target === e.currentTarget || (e.target as HTMLElement).closest('.cell-header')) {
-                        handleCellClick(day);
+                      e.preventDefault();
+                      if (draggedTask) {
+                        handleDrop(day);
                       }
                     }}
                   >
@@ -513,49 +524,17 @@ export default function CalendarPage() {
                       }`}>
                         {day}
                       </span>
-                      <div className="flex items-center space-x-2">
-                        {isHighPriority && (
-                          <span className="text-xs text-red-600 dark:text-red-400 font-medium">
-                            HIGH PRIORITY
-                          </span>
-                        )}
-                        {isToday && !isHighPriority && (
-                          <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-                            CURRENT DAY
-                          </span>
-                        )}
-                        <div className="flex items-center space-x-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="w-6 h-6 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const dateKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                              const newPriorityCells = new Set(priorityCells);
-                              if (newPriorityCells.has(dateKey)) {
-                                newPriorityCells.delete(dateKey);
-                              } else {
-                                newPriorityCells.add(dateKey);
-                              }
-                              setPriorityCells(newPriorityCells);
-                            }}
-                          >
-                            <i className="fas fa-wrench text-xs"></i>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="w-6 h-6 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setShowCustomDividerModal({ day, month: selectedMonth, year: selectedYear });
-                            }}
-                          >
-                            <i className="fas fa-plus text-xs"></i>
-                          </Button>
-                        </div>
-                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-6 h-6 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowCustomDividerModal({ day, month: selectedMonth, year: selectedYear });
+                        }}
+                      >
+                        <i className="fas fa-plus text-xs"></i>
+                      </Button>
                     </div>
 
                     {/* Release dividers for active releases */}
@@ -615,6 +594,12 @@ export default function CalendarPage() {
                                 key={task.id}
                                 className="text-xs p-2 bg-gray-100 dark:bg-gray-600 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors ml-2 min-h-[2.5rem] flex items-center leading-tight"
                                 title={`${task.taskTitle} - Click to remove`}
+                                draggable
+                                onDragStart={(e) => {
+                                  setDraggedTask(task);
+                                  e.dataTransfer.effectAllowed = 'move';
+                                }}
+                                onDragEnd={() => setDraggedTask(null)}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleTaskClick(task);
@@ -625,6 +610,20 @@ export default function CalendarPage() {
                             ))}
                           </div>
                         ))}
+                    </div>
+
+                    {/* Status text at bottom of cell */}
+                    <div className="mt-auto pt-2">
+                      {isHighPriority && (
+                        <div className="text-xs text-red-600 dark:text-red-400 font-medium text-center">
+                          HIGH PRIORITY
+                        </div>
+                      )}
+                      {isToday && !isHighPriority && (
+                        <div className="text-xs text-blue-600 dark:text-blue-400 font-medium text-center">
+                          CURRENT DAY
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -694,6 +693,38 @@ export default function CalendarPage() {
                       <i className={`${icon} text-gray-600 dark:text-gray-400`}></i>
                     </button>
                   ))}
+                </div>
+              </div>
+              <div className="border-t pt-4">
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    High Priority
+                  </label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (showCustomDividerModal) {
+                        const { day, month, year } = showCustomDividerModal;
+                        const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                        const newPriorityCells = new Set(priorityCells);
+                        if (newPriorityCells.has(dateKey)) {
+                          newPriorityCells.delete(dateKey);
+                        } else {
+                          newPriorityCells.add(dateKey);
+                        }
+                        setPriorityCells(newPriorityCells);
+                      }
+                    }}
+                    className={
+                      showCustomDividerModal && priorityCells.has(`${showCustomDividerModal.year}-${String(showCustomDividerModal.month + 1).padStart(2, '0')}-${String(showCustomDividerModal.day).padStart(2, '0')}`)
+                        ? 'bg-red-100 text-red-700 border-red-300'
+                        : ''
+                    }
+                  >
+                    {showCustomDividerModal && priorityCells.has(`${showCustomDividerModal.year}-${String(showCustomDividerModal.month + 1).padStart(2, '0')}-${String(showCustomDividerModal.day).padStart(2, '0')}`) 
+                      ? 'Enabled' : 'Disabled'}
+                  </Button>
                 </div>
               </div>
             </div>
