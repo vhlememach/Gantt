@@ -76,6 +76,7 @@ export const taskSocialMedia = pgTable("task_social_media", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   taskId: varchar("task_id").notNull().references(() => checklistTasks.id, { onDelete: "cascade" }),
   platforms: text("platforms").array().notNull(), // ["X", "LinkedIn", "Youtube", etc.]
+  linkUrl: text("link_url"), // Additional URL/Link field for social media tasks
   createdAt: timestamp("created_at").defaultNow(),
 });
 

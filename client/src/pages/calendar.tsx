@@ -82,6 +82,7 @@ export default function CalendarPage() {
   const [dividerName, setDividerName] = useState('');
   const [showSocialMediaModal, setShowSocialMediaModal] = useState<string | null>(null);
   const [taskSocialMedia, setTaskSocialMedia] = useState<Map<string, string[]>>(new Map());
+  const [taskSocialMediaUrls, setTaskSocialMediaUrls] = useState<Map<string, string>>(new Map());
   const [sidebarVisible, setSidebarVisible] = useState(true);
 
   const queryClient = useQueryClient();
@@ -97,9 +98,13 @@ export default function CalendarPage() {
     if (!allTaskSocialMedia || (allTaskSocialMedia as any[]).length === 0) return;
     
     const socialMediaMap = new Map<string, string[]>();
+    const socialMediaUrlMap = new Map<string, string>();
     (allTaskSocialMedia as any[]).forEach((sm: any) => {
       if (sm?.taskId && sm?.platforms) {
         socialMediaMap.set(sm.taskId, sm.platforms);
+        if (sm.linkUrl) {
+          socialMediaUrlMap.set(sm.taskId, sm.linkUrl);
+        }
       }
     });
     
@@ -111,13 +116,14 @@ export default function CalendarPage() {
     
     if (hasChanged) {
       setTaskSocialMedia(socialMediaMap);
+      setTaskSocialMediaUrls(socialMediaUrlMap);
     }
   }, [allTaskSocialMedia]);
 
-  // Social media mutation for saving platforms
+  // Social media mutation for saving platforms and URLs
   const saveTaskSocialMediaMutation = useMutation({
-    mutationFn: async ({ taskId, platforms }: { taskId: string; platforms: string[] }) => {
-      const response = await apiRequest('POST', '/api/task-social-media', { taskId, platforms });
+    mutationFn: async ({ taskId, platforms, linkUrl }: { taskId: string; platforms: string[]; linkUrl?: string }) => {
+      const response = await apiRequest('POST', '/api/task-social-media', { taskId, platforms, linkUrl });
       return await response.json();
     },
     onSuccess: () => {
@@ -143,6 +149,11 @@ export default function CalendarPage() {
     queryKey: ["/api/release-groups"]
   });
 
+  // Fetch evergreen boxes to check for task generation
+  const { data: evergreenBoxes = [] } = useQuery<any[]>({
+    queryKey: ["/api/evergreen-boxes"]
+  });
+
   // Generate random accent colors for releases on mount
   useEffect(() => {
     const colors = ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#F97316', '#6B7280', '#EC4899'];
@@ -164,6 +175,22 @@ export default function CalendarPage() {
       });
     }
   }, [releases, releaseAccentColors]);
+
+  // Check if we need to generate evergreen tasks on calendar page load
+  useEffect(() => {
+    const evergreenTasks = allTasks.filter(task => task.evergreenBoxId);
+    const boxesWithCycles = evergreenBoxes.filter((box: any) => box.waterfallCycleId);
+    
+    // If we have evergreen boxes with cycles but no evergreen tasks, generate them
+    if (boxesWithCycles.length > 0 && evergreenTasks.length === 0) {
+      console.log("No evergreen tasks found on calendar, generating them...");
+      fetch("/api/evergreen-tasks/generate", { method: "POST" })
+        .then(() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
+        })
+        .catch(console.error);
+    }
+  }, [allTasks, evergreenBoxes, queryClient]);
 
   // Schedule task mutation
   const scheduleTaskMutation = useMutation({
@@ -447,7 +474,10 @@ export default function CalendarPage() {
                   const group = release ? releaseGroups.find(g => g.id === release.groupId) : null;
                   
                   const groupColor = group?.color || '#6b7280';
-                  const accentColor = release ? releaseAccentColors.get(release.id) || '#ffffff' : '#ffffff';
+                  // For evergreen tasks, use a special accent color handling
+                  const accentColor = releaseId === 'evergreen' 
+                    ? releaseAccentColors.get('evergreen') || '#10B981'  // Default green for evergreen
+                    : release ? releaseAccentColors.get(release.id) || '#ffffff' : '#ffffff';
                   
                   return (
                     <div key={releaseId} className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
@@ -503,7 +533,8 @@ export default function CalendarPage() {
                                         style={{ backgroundColor: color }}
                                         onClick={() => {
                                           const newAccentColors = new Map(releaseAccentColors);
-                                          newAccentColors.set(release?.id || releaseId, color);
+                                          const currentReleaseId = release?.id || releaseId;
+                                          newAccentColors.set(currentReleaseId, color);
                                           setReleaseAccentColors(newAccentColors);
                                           setEditingReleaseAccent(null);
                                         }}
@@ -1014,6 +1045,30 @@ export default function CalendarPage() {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Select Social Media Platforms
             </h3>
+            
+            {/* Link/URL Field */}
+            <div className="mb-6">
+              <div className="flex items-center space-x-2 mb-2">
+                <i className="fas fa-link text-gray-500"></i>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Link</label>
+              </div>
+              <input
+                type="url"
+                placeholder="https://example.com"
+                value={taskSocialMediaUrls.get(showSocialMediaModal) || ''}
+                onChange={(e) => {
+                  const newUrls = new Map(taskSocialMediaUrls);
+                  if (e.target.value) {
+                    newUrls.set(showSocialMediaModal, e.target.value);
+                  } else {
+                    newUrls.delete(showSocialMediaModal);
+                  }
+                  setTaskSocialMediaUrls(newUrls);
+                }}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white bg-white dark:bg-gray-700 text-sm"
+              />
+            </div>
+            
             <div className="grid grid-cols-2 gap-3">
               {['X', 'LinkedIn', 'Youtube', 'Instagram', 'TikTok', 'Facebook', 'Reddit'].map(platform => {
                 const isSelected = taskSocialMedia.get(showSocialMediaModal)?.includes(platform) || false;
@@ -1044,11 +1099,13 @@ export default function CalendarPage() {
                       
                       setTaskSocialMedia(newTaskSocialMedia);
                       
-                      // Save to backend
+                      // Save to backend with URL
                       const updatedPlatforms = newTaskSocialMedia.get(showSocialMediaModal) || [];
+                      const currentUrl = taskSocialMediaUrls.get(showSocialMediaModal);
                       saveTaskSocialMediaMutation.mutate({ 
                         taskId: showSocialMediaModal, 
-                        platforms: updatedPlatforms 
+                        platforms: updatedPlatforms,
+                        linkUrl: currentUrl
                       });
                     }}
                   >
@@ -1067,9 +1124,11 @@ export default function CalendarPage() {
               <Button
                 onClick={() => {
                   const platforms = taskSocialMedia.get(showSocialMediaModal!) || [];
+                  const linkUrl = taskSocialMediaUrls.get(showSocialMediaModal!);
                   saveTaskSocialMediaMutation.mutate({ 
                     taskId: showSocialMediaModal!, 
-                    platforms 
+                    platforms,
+                    linkUrl
                   });
                   setShowSocialMediaModal(null);
                 }}
