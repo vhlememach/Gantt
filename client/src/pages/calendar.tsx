@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar as CalendarIcon, CheckCircle, Star, AlertTriangle, ExternalLink, ArrowLeft, Palette } from "lucide-react";
+import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaYoutube, FaTiktok, FaReddit } from "react-icons/fa";
+import { FaXTwitter } from "react-icons/fa6";
 import { Link } from "wouter";
 
 interface CalendarTask {
@@ -35,6 +37,34 @@ const isDateInReleaseRange = (date: Date, release: Release) => {
   const startDate = new Date(release.startDate);
   const endDate = new Date(release.endDate);
   return date >= startDate && date <= endDate;
+};
+
+// Social Media Icon Helper Component
+const SocialMediaIcon = ({ platform }: { platform: string }) => {
+  const colors = {
+    'X': '#000000',
+    'LinkedIn': '#0077B5', 
+    'Youtube': '#FF0000',
+    'Instagram': '#8A3AB9',
+    'TikTok': '#FF0050',
+    'Facebook': '#1877F2',
+    'Reddit': '#FF4500'
+  };
+
+  return (
+    <div 
+      className="w-4 h-4 rounded-full flex items-center justify-center text-white text-xs font-bold"
+      style={{ backgroundColor: colors[platform as keyof typeof colors] }}
+    >
+      {platform === 'X' ? <FaXTwitter className="w-2 h-2" /> : 
+       platform === 'LinkedIn' ? <FaLinkedin className="w-2 h-2" /> :
+       platform === 'Youtube' ? <FaYoutube className="w-2 h-2" /> :
+       platform === 'Instagram' ? <FaInstagram className="w-2 h-2" /> :
+       platform === 'TikTok' ? <FaTiktok className="w-2 h-2" /> :
+       platform === 'Facebook' ? <FaFacebook className="w-2 h-2" /> :
+       platform === 'Reddit' ? <FaReddit className="w-2 h-2" /> : platform[0]}
+    </div>
+  );
 };
 
 export default function CalendarPage() {
@@ -170,7 +200,10 @@ export default function CalendarPage() {
   // Transform tasks for calendar use - ensure no duplicates from start
   const uniqueTasksMap = new Map<string, ChecklistTask>();
   allTasks.forEach(task => {
-    uniqueTasksMap.set(task.id, task);
+    // Only add if not already exists to prevent duplicates
+    if (!uniqueTasksMap.has(task.id)) {
+      uniqueTasksMap.set(task.id, task);
+    }
   });
   
   const tasks: CalendarTask[] = Array.from(uniqueTasksMap.values()).map(task => ({
@@ -353,47 +386,62 @@ export default function CalendarPage() {
                               <i className="fas fa-wrench text-xs text-gray-600"></i>
                             </button>
                             {editingReleaseAccent === (release?.id || releaseId) && (
-                              <div className="absolute mt-6 left-0 bg-white dark:bg-gray-800 p-3 rounded shadow-lg border z-20 min-w-[200px]">
-                                <div className="grid grid-cols-4 gap-2 mb-3">
-                                  {['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#F97316', '#6B7280', '#EC4899'].map(color => (
+                              <>
+                                <div 
+                                  className="fixed inset-0 bg-black bg-opacity-50 z-40"
+                                  onClick={() => setEditingReleaseAccent(null)}
+                                />
+                                <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 p-4 rounded shadow-lg border z-50 min-w-[250px]">
+                                  <div className="flex items-center justify-between mb-3">
+                                    <h3 className="text-sm font-medium text-gray-900 dark:text-white">Choose Accent Color</h3>
                                     <button
-                                      key={color}
-                                      className={`w-8 h-8 rounded border-2 hover:scale-110 transition-transform ${
-                                        releaseAccentColors.get(release?.id || releaseId) === color 
-                                          ? 'border-gray-800 dark:border-white' 
-                                          : 'border-gray-300'
-                                      }`}
-                                      style={{ backgroundColor: color }}
+                                      className="w-6 h-6 rounded border border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center"
+                                      onClick={() => setEditingReleaseAccent(null)}
+                                    >
+                                      <i className="fas fa-times text-xs text-gray-600"></i>
+                                    </button>
+                                  </div>
+                                  <div className="grid grid-cols-4 gap-2 mb-3">
+                                    {['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#F97316', '#6B7280', '#EC4899'].map(color => (
+                                      <button
+                                        key={color}
+                                        className={`w-10 h-10 rounded border-2 hover:scale-110 transition-transform ${
+                                          releaseAccentColors.get(release?.id || releaseId) === color 
+                                            ? 'border-gray-800 dark:border-white' 
+                                            : 'border-gray-300'
+                                        }`}
+                                        style={{ backgroundColor: color }}
+                                        onClick={() => {
+                                          const newAccentColors = new Map(releaseAccentColors);
+                                          newAccentColors.set(release?.id || releaseId, color);
+                                          setReleaseAccentColors(newAccentColors);
+                                          setEditingReleaseAccent(null);
+                                        }}
+                                      />
+                                    ))}
+                                  </div>
+                                  <div className="flex items-center space-x-2 border-t pt-3">
+                                    <button
+                                      className="w-8 h-8 rounded border border-gray-300 hover:scale-110 transition-transform bg-white flex items-center justify-center"
                                       onClick={() => {
-                                        const newAccentColors = new Map(releaseAccentColors);
-                                        newAccentColors.set(release?.id || releaseId, color);
-                                        setReleaseAccentColors(newAccentColors);
-                                        setEditingReleaseAccent(null);
+                                        const colorInput = document.createElement('input');
+                                        colorInput.type = 'color';
+                                        colorInput.value = releaseAccentColors.get(release?.id || releaseId) || '#3B82F6';
+                                        colorInput.onchange = (e) => {
+                                          const newAccentColors = new Map(releaseAccentColors);
+                                          newAccentColors.set(release?.id || releaseId, (e.target as HTMLInputElement).value);
+                                          setReleaseAccentColors(newAccentColors);
+                                          setEditingReleaseAccent(null);
+                                        };
+                                        colorInput.click();
                                       }}
-                                    />
-                                  ))}
+                                    >
+                                      <i className="fas fa-paint-brush text-xs text-gray-600"></i>
+                                    </button>
+                                    <span className="text-xs text-gray-600 dark:text-gray-300">Custom Color</span>
+                                  </div>
                                 </div>
-                                <div className="flex items-center space-x-2 border-t pt-2">
-                                  <button
-                                    className="w-6 h-6 rounded border border-gray-300 hover:scale-110 transition-transform bg-white flex items-center justify-center"
-                                    onClick={() => {
-                                      const colorInput = document.createElement('input');
-                                      colorInput.type = 'color';
-                                      colorInput.value = releaseAccentColors.get(release?.id || releaseId) || '#3B82F6';
-                                      colorInput.onchange = (e) => {
-                                        const newAccentColors = new Map(releaseAccentColors);
-                                        newAccentColors.set(release?.id || releaseId, (e.target as HTMLInputElement).value);
-                                        setReleaseAccentColors(newAccentColors);
-                                        setEditingReleaseAccent(null);
-                                      };
-                                      colorInput.click();
-                                    }}
-                                  >
-                                    <i className="fas fa-paint-brush text-xs text-gray-600"></i>
-                                  </button>
-                                  <span className="text-xs text-gray-600 dark:text-gray-300">Custom Color</span>
-                                </div>
-                              </div>
+                              </>
                             )}
                           </div>
                         </div>
@@ -512,7 +560,7 @@ export default function CalendarPage() {
                 return (
                   <div
                     key={day}
-                    className={`min-h-60 p-3 border-2 rounded-lg transition-colors flex flex-col ${
+                    className={`min-h-60 p-3 border-2 transition-colors flex flex-col ${
                       isHighPriority 
                         ? 'border-red-400 bg-red-50 dark:bg-red-900/20' 
                         : isToday 
@@ -610,32 +658,9 @@ export default function CalendarPage() {
                                 {/* Social Media Icons */}
                                 {taskSocialMedia.get(task.id) && (
                                   <div className="flex space-x-1 mt-1">
-                                    {taskSocialMedia.get(task.id)?.map((platform, index) => {
-                                      const colors = {
-                                        'X': '#000000',
-                                        'LinkedIn': '#0077B5', 
-                                        'Youtube': '#FF0000',
-                                        'Instagram': '#8A3AB9',
-                                        'TikTok': '#FF0050',
-                                        'Facebook': '#1877F2',
-                                        'Reddit': '#FF4500'
-                                      };
-                                      return (
-                                        <div 
-                                          key={index} 
-                                          className="w-4 h-4 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                                          style={{ backgroundColor: colors[platform as keyof typeof colors] }}
-                                        >
-                                          {platform === 'X' ? '𝕏' : 
-                                           platform === 'LinkedIn' ? 'in' :
-                                           platform === 'Youtube' ? '▶' :
-                                           platform === 'Instagram' ? '📷' :
-                                           platform === 'TikTok' ? '♪' :
-                                           platform === 'Facebook' ? 'f' :
-                                           platform === 'Reddit' ? 'r' : platform[0]}
-                                        </div>
-                                      );
-                                    })}
+                                    {taskSocialMedia.get(task.id)?.map((platform, index) => (
+                                      <SocialMediaIcon key={index} platform={platform} />
+                                    ))}
                                   </div>
                                 )}
                               </div>
@@ -686,32 +711,9 @@ export default function CalendarPage() {
                                 {/* Social Media Icons */}
                                 {taskSocialMedia.get(task.id) && (
                                   <div className="flex space-x-1 mt-1">
-                                    {taskSocialMedia.get(task.id)?.map((platform, index) => {
-                                      const colors = {
-                                        'X': '#000000',
-                                        'LinkedIn': '#0077B5', 
-                                        'Youtube': '#FF0000',
-                                        'Instagram': '#8A3AB9',
-                                        'TikTok': '#FF0050',
-                                        'Facebook': '#1877F2',
-                                        'Reddit': '#FF4500'
-                                      };
-                                      return (
-                                        <div 
-                                          key={index} 
-                                          className="w-4 h-4 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                                          style={{ backgroundColor: colors[platform as keyof typeof colors] }}
-                                        >
-                                          {platform === 'X' ? '𝕏' : 
-                                           platform === 'LinkedIn' ? 'in' :
-                                           platform === 'Youtube' ? '▶' :
-                                           platform === 'Instagram' ? '📷' :
-                                           platform === 'TikTok' ? '♪' :
-                                           platform === 'Facebook' ? 'f' :
-                                           platform === 'Reddit' ? 'r' : platform[0]}
-                                        </div>
-                                      );
-                                    })}
+                                    {taskSocialMedia.get(task.id)?.map((platform, index) => (
+                                      <SocialMediaIcon key={index} platform={platform} />
+                                    ))}
                                   </div>
                                 )}
                               </div>
