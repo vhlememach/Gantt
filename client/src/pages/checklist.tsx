@@ -620,32 +620,27 @@ export default function ChecklistPage() {
                                   Request Approval
                                 </Badge>
                               )}
-                            </div>
-                            {/* Review actions for team members */}
-                            {task.reviewStatus === "requested" && task.reviewSubmissionUrl && (
-                              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                                <Button
-                                  size="sm"
-                                  className="w-full bg-green-600 hover:bg-green-700 text-white"
-                                  onClick={() => handleApproveReview(task)}
-                                >
-                                  Approve & Complete
-                                </Button>
-                              </div>
-                            )}
-                            {/* Submit review URL */}
-                            {task.reviewStatus === "requested" && !task.reviewSubmissionUrl && task.assignedTo === selectedMember && (
-                              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="w-full text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200"
+                              
+                              {/* Submit review button */}
+                              {task.reviewStatus === "requested" && !task.reviewSubmissionUrl && task.assignedTo === selectedMember && (
+                                <Badge
+                                  className="bg-blue-500 text-white cursor-pointer hover:bg-blue-600 transition-colors text-xs"
                                   onClick={() => handleSubmitReview(task)}
                                 >
                                   Submit V{task.currentVersion || 2}
-                                </Button>
-                              </div>
-                            )}
+                                </Badge>
+                              )}
+                              
+                              {/* Approve review button */}
+                              {task.reviewStatus === "requested" && task.reviewSubmissionUrl && (
+                                <Badge
+                                  className="bg-green-500 text-white cursor-pointer hover:bg-green-600 transition-colors text-xs"
+                                  onClick={() => handleApproveReview(task)}
+                                >
+                                  Approve
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -811,6 +806,26 @@ export default function ChecklistPage() {
                                         onClick={() => handleRequestReview(task)}
                                       >
                                         Request Approval
+                                      </Badge>
+                                    )}
+                                    
+                                    {/* Submit review button */}
+                                    {task.reviewStatus === "requested" && !task.reviewSubmissionUrl && task.assignedTo === selectedMember && (
+                                      <Badge
+                                        className="bg-blue-500 text-white cursor-pointer hover:bg-blue-600 transition-colors text-xs"
+                                        onClick={() => handleSubmitReview(task)}
+                                      >
+                                        Submit V{task.currentVersion || 2}
+                                      </Badge>
+                                    )}
+                                    
+                                    {/* Approve review button */}
+                                    {task.reviewStatus === "requested" && task.reviewSubmissionUrl && (
+                                      <Badge
+                                        className="bg-green-500 text-white cursor-pointer hover:bg-green-600 transition-colors text-xs"
+                                        onClick={() => handleApproveReview(task)}
+                                      >
+                                        Approve
                                       </Badge>
                                     )}
                                   </div>

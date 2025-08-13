@@ -251,14 +251,14 @@ export function ReviewModal({ isOpen, onClose, task, mode }: ReviewModalProps) {
         </div>
 
         <div className="flex justify-end space-x-3 pt-4">
-          <Button variant="outline" onClick={onClose} className="text-xs">
+          <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
           {mode === "approve" && changes.trim() && (task?.currentVersion || 2) < 10 ? (
             <Button 
               onClick={handleSubmit}
               disabled={requestReviewMutation.isPending || submitReviewMutation.isPending || approveReviewMutation.isPending || requestNextVersionMutation.isPending}
-              className="bg-purple-600 hover:bg-purple-700 text-white text-xs h-6 px-2"
+              className="bg-purple-600 hover:bg-purple-700 text-white"
             >
               Request V{(task?.currentVersion || 2) + 1}
             </Button>
@@ -266,7 +266,6 @@ export function ReviewModal({ isOpen, onClose, task, mode }: ReviewModalProps) {
             <Button 
               onClick={handleSubmit}
               disabled={requestReviewMutation.isPending || submitReviewMutation.isPending || approveReviewMutation.isPending || requestNextVersionMutation.isPending}
-              className="text-xs h-6 px-2"
             >
               {getButtonText()}
             </Button>
