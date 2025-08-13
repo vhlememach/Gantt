@@ -586,7 +586,7 @@ export default function ChecklistPage() {
                   {Object.entries(tasksByRelease)
                     .filter(([releaseId]) => releaseId === 'evergreen')
                     .map(([releaseId, tasks]) => {
-                      const memberSortOption = sortBy[member] || "priority";
+                      const memberSortOption = sortBy[`${member}-evergreen`] || "priority";
                       const sortedTasks = getSortedTasks(tasks, memberSortOption);
                       
                       return (
@@ -671,32 +671,48 @@ export default function ChecklistPage() {
                                     )}
                                   </div>
                                   <div className="flex items-center space-x-2">
-                                    {!task.completed && !task.paused && (
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => handleReportBlocker(task.id)}
-                                        className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                    {task.completed ? (
+                                      <Badge 
+                                        className="bg-blue-500 text-white cursor-pointer hover:bg-blue-600 transition-colors text-xs"
+                                        onClick={() => window.location.href = '/calendar'}
                                       >
-                                        <AlertTriangle className="w-4 h-4 mr-1" />
-                                        Pause
-                                      </Button>
+                                        <Calendar className="w-3 h-3 mr-1" />
+                                        Add to Calendar
+                                      </Badge>
+                                    ) : (
+                                      task.paused ? (
+                                        <Badge 
+                                          className="bg-green-500 text-white cursor-pointer hover:bg-green-600 transition-colors text-xs"
+                                          onClick={() => handleViewBlockerDetails(task)}
+                                        >
+                                          <CheckCircle className="w-3 h-3 mr-1" />
+                                          Unpause
+                                        </Badge>
+                                      ) : (
+                                        <Badge 
+                                          className="bg-orange-500 text-white cursor-pointer hover:bg-orange-600 transition-colors text-xs"
+                                          onClick={() => handleReportBlocker(task.id)}
+                                        >
+                                          <AlertTriangle className="w-3 h-3 mr-1" />
+                                          Blocker
+                                        </Badge>
+                                      )
                                     )}
                                     {task.completed ? (
-                                      <Badge className="bg-green-500 text-white">
+                                      <Badge variant="outline" className="bg-green-100 text-green-800 text-xs">
                                         <CheckCircle className="w-3 h-3 mr-1" />
                                         Done
                                       </Badge>
                                     ) : task.paused ? (
                                       <Badge 
-                                        className="bg-orange-500 text-white cursor-pointer hover:bg-orange-600 transition-colors"
+                                        className="bg-red-500 text-white cursor-pointer hover:bg-red-600 transition-colors text-xs"
                                         onClick={() => handleViewBlockerDetails(task)}
                                       >
                                         <AlertTriangle className="w-3 h-3 mr-1" />
                                         Paused
                                       </Badge>
                                     ) : (
-                                      <Badge variant="outline">
+                                      <Badge variant="outline" className="text-xs">
                                         <Clock className="w-3 h-3 mr-1" />
                                         Pending
                                       </Badge>
@@ -714,7 +730,7 @@ export default function ChecklistPage() {
                   {Object.entries(tasksByRelease)
                     .filter(([releaseId]) => releaseId === 'general')
                     .map(([releaseId, tasks]) => {
-                      const memberSortOption = sortBy[member] || "priority";
+                      const memberSortOption = sortBy[`${member}-general`] || "priority";
                       const sortedTasks = getSortedTasks(tasks, memberSortOption);
                       
                       return (
