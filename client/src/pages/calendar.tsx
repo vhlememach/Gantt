@@ -230,15 +230,15 @@ export default function CalendarPage() {
   const scheduledTasks = tasks.filter(task => task.scheduledDate);
   const unscheduledTasks = tasks.filter(task => !task.scheduledDate);
 
-  // Group unscheduled tasks by release
+  // Group unscheduled tasks by release with proper structure
   const tasksByRelease = unscheduledTasks.reduce((acc, task) => {
     const releaseId = task.releaseId || 'evergreen';
     if (!acc[releaseId]) {
-      acc[releaseId] = [];
+      acc[releaseId] = { tasks: [] };
     }
-    acc[releaseId].push(task);
+    acc[releaseId].tasks.push(task);
     return acc;
-  }, {} as Record<string, CalendarTask[]>);
+  }, {} as Record<string, { tasks: CalendarTask[] }>);
 
   const handleDragStart = (task: CalendarTask) => {
     console.log('Drag started for task:', task.taskTitle);
@@ -359,7 +359,10 @@ export default function CalendarPage() {
               </div>
 
               <div className="space-y-3">
-                {Object.entries(tasksByRelease).map(([releaseId, tasks]) => {
+                {Object.entries(tasksByRelease).map(([releaseId, releaseData]) => {
+                  // Deduplicate tasks within each release group
+                  const tasksArray = releaseData?.tasks || [];
+                  const uniqueTasks = Array.from(new Map(tasksArray.map(task => [task.id, task])).values());
                   const release = releases.find(r => r.id === releaseId);
                   const group = release ? releaseGroups.find(g => g.id === release.groupId) : null;
                   
@@ -384,7 +387,7 @@ export default function CalendarPage() {
                           </div>
                           <div className="flex items-center space-x-1">
                             <span className="text-xs bg-black bg-opacity-20 px-2 py-1 rounded">
-                              {tasks.length}
+                              {uniqueTasks.length}
                             </span>
                             <button
                               className="w-4 h-4 rounded border border-gray-300 hover:scale-110 transition-transform bg-white flex items-center justify-center"
@@ -454,7 +457,7 @@ export default function CalendarPage() {
                         </div>
                       </div>
                       <div className="p-2 space-y-2">
-                        {Array.from(new Map(tasks.map(task => [task.id, task])).values()).map(task => (
+                        {uniqueTasks.map(task => (
                           <div
                             key={task.id}
                             draggable
@@ -657,17 +660,14 @@ export default function CalendarPage() {
                                 key={task.id}
                                 draggable
                                 className="text-xs p-2 bg-gray-100 dark:bg-gray-600 rounded cursor-move hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors ml-2 min-h-[2.5rem] flex flex-col space-y-1"
-                                title={`${task.taskTitle} - Drag to move or click to remove`}
+                                title={`${task.taskTitle} - Drag to move or double-click to remove`}
                                 onDragStart={(e) => {
                                   e.stopPropagation();
                                   setDraggedTask(task);
                                 }}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  // Only open URL, don't remove task
-                                  if (task.taskUrl) {
-                                    window.open(task.taskUrl, '_blank');
-                                  }
+                                  // Single click does nothing - prevents accidental removal
                                 }}
                                 onDoubleClick={(e) => {
                                   e.stopPropagation();
@@ -691,7 +691,7 @@ export default function CalendarPage() {
                                 </div>
                                 {/* Social Media Icons */}
                                 {taskSocialMedia.get(task.id) && (
-                                  <div className="flex space-x-1 mt-1">
+                                  <div className="flex flex-wrap gap-1 mt-1 max-w-[120px]">
                                     {taskSocialMedia.get(task.id)?.map((platform, index) => (
                                       <SocialMediaIcon key={index} platform={platform} />
                                     ))}
@@ -716,7 +716,7 @@ export default function CalendarPage() {
                               <div
                                 key={task.id}
                                 className="text-xs p-2 bg-gray-100 dark:bg-gray-600 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors ml-2 min-h-[2.5rem] flex flex-col space-y-1"
-                                title={`${task.taskTitle} - Click to remove`}
+                                title={`${task.taskTitle} - Double-click to remove`}
                                 draggable
                                 onDragStart={(e) => {
                                   setDraggedTask(task);
@@ -725,10 +725,7 @@ export default function CalendarPage() {
                                 onDragEnd={() => setDraggedTask(null)}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  // Only open URL, don't remove task
-                                  if (task.taskUrl) {
-                                    window.open(task.taskUrl, '_blank');
-                                  }
+                                  // Single click does nothing - prevents accidental removal
                                 }}
                                 onDoubleClick={(e) => {
                                   e.stopPropagation();
@@ -752,7 +749,7 @@ export default function CalendarPage() {
                                 </div>
                                 {/* Social Media Icons */}
                                 {taskSocialMedia.get(task.id) && (
-                                  <div className="flex space-x-1 mt-1">
+                                  <div className="flex flex-wrap gap-1 mt-1 max-w-[120px]">
                                     {taskSocialMedia.get(task.id)?.map((platform, index) => (
                                       <SocialMediaIcon key={index} platform={platform} />
                                     ))}
