@@ -431,6 +431,17 @@ export default function CalendarPage() {
                   }
                   
                   const taskList = releaseData.tasks;
+                  console.log(`Rendering release ${releaseId} with ${taskList.length} tasks:`, taskList.map(t => t.taskTitle));
+                  
+                  // Final verification - check for duplicates in UI
+                  const titleCounts = taskList.reduce((acc, task) => {
+                    acc[task.taskTitle] = (acc[task.taskTitle] || 0) + 1;
+                    return acc;
+                  }, {} as Record<string, number>);
+                  const duplicates = Object.entries(titleCounts).filter(([title, count]) => count > 1);
+                  if (duplicates.length > 0) {
+                    console.error(`DUPLICATES FOUND in release ${releaseId}:`, duplicates);
+                  }
                   const release = releases.find(r => r.id === releaseId);
                   const group = release ? releaseGroups.find(g => g.id === release.groupId) : null;
                   

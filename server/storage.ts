@@ -364,10 +364,28 @@ export class MemStorage implements IStorage {
     ];
 
     releases.forEach(release => {
+      // Track used task titles for this release to prevent duplicates
+      const usedTaskTitles = new Set<string>();
+      
       teamMembers.forEach(member => {
         // Create 2-3 tasks per member per release
         const taskCount = Math.floor(Math.random() * 2) + 2;
         for (let i = 0; i < taskCount; i++) {
+          // Find an unused task for this release
+          let taskTitle: string;
+          let attempts = 0;
+          do {
+            const baseTask = sampleTasks[Math.floor(Math.random() * sampleTasks.length)];
+            taskTitle = `${baseTask} - ${release.name}`;
+            attempts++;
+            // If we can't find unique task after 10 attempts, add a suffix
+            if (attempts > 10) {
+              taskTitle = `${baseTask} ${attempts - 10} - ${release.name}`;
+            }
+          } while (usedTaskTitles.has(taskTitle) && attempts < 20);
+          
+          usedTaskTitles.add(taskTitle);
+          
           const taskId = randomUUID();
           const isCompleted = Math.random() > 0.7; // 30% completed randomly
           const task: ChecklistTask = {
@@ -375,7 +393,7 @@ export class MemStorage implements IStorage {
             releaseId: release.id,
             evergreenBoxId: null,
             assignedTo: member,
-            taskTitle: `${sampleTasks[Math.floor(Math.random() * sampleTasks.length)]} - ${release.name}`,
+            taskTitle: taskTitle,
             taskDescription: `${member}'s task for ${release.name}`,
             taskUrl: Math.random() > 0.5 ? `https://docs.example.com/${taskId}` : null,
             priority: false, // Priority is determined by release.highPriority
