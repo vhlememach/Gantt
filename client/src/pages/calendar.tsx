@@ -83,7 +83,13 @@ export default function CalendarPage() {
     });
     
     if (newAccentColors.size > 0) {
-      setReleaseAccentColors(prev => new Map([...prev, ...newAccentColors]));
+      setReleaseAccentColors(prev => {
+        const updated = new Map(prev);
+        newAccentColors.forEach((value, key) => {
+          updated.set(key, value);
+        });
+        return updated;
+      });
     }
   }, [releases, releaseAccentColors]);
 
@@ -169,9 +175,13 @@ export default function CalendarPage() {
     scheduledDate: task.scheduledDate
   }));
 
-  // Separate tasks
-  const scheduledTasks = tasks.filter(task => task.scheduledDate);
-  const unscheduledTasks = tasks.filter(task => !task.scheduledDate);
+  // Separate tasks - ensure no duplicates by using unique IDs
+  const uniqueTasks = tasks.filter((task, index, self) => 
+    index === self.findIndex(t => t.id === task.id)
+  );
+  
+  const scheduledTasks = uniqueTasks.filter(task => task.scheduledDate);
+  const unscheduledTasks = uniqueTasks.filter(task => !task.scheduledDate);
 
   // Group unscheduled tasks by release
   const tasksByRelease = unscheduledTasks.reduce((acc, task) => {
@@ -328,12 +338,16 @@ export default function CalendarPage() {
                               <i className="fas fa-wrench text-xs text-gray-600"></i>
                             </button>
                             {editingReleaseAccent === (release?.id || releaseId) && (
-                              <div className="absolute mt-6 left-0 bg-white dark:bg-gray-800 p-2 rounded shadow-lg border z-20">
-                                <div className="flex space-x-2 mb-2">
+                              <div className="absolute mt-6 left-0 bg-white dark:bg-gray-800 p-3 rounded shadow-lg border z-20 min-w-[200px]">
+                                <div className="grid grid-cols-4 gap-2 mb-3">
                                   {['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#F97316', '#6B7280', '#EC4899'].map(color => (
                                     <button
                                       key={color}
-                                      className="w-6 h-6 rounded border hover:scale-110 transition-transform"
+                                      className={`w-8 h-8 rounded border-2 hover:scale-110 transition-transform ${
+                                        releaseAccentColors.get(release?.id || releaseId) === color 
+                                          ? 'border-gray-800 dark:border-white' 
+                                          : 'border-gray-300'
+                                      }`}
                                       style={{ backgroundColor: color }}
                                       onClick={() => {
                                         const newAccentColors = new Map(releaseAccentColors);
@@ -344,17 +358,26 @@ export default function CalendarPage() {
                                     />
                                   ))}
                                 </div>
-                                <input
-                                  type="color"
-                                  className="w-full h-8 rounded border border-gray-300 cursor-pointer"
-                                  value={releaseAccentColors.get(release?.id || releaseId) || '#3B82F6'}
-                                  onChange={(e) => {
-                                    const newAccentColors = new Map(releaseAccentColors);
-                                    newAccentColors.set(release?.id || releaseId, e.target.value);
-                                    setReleaseAccentColors(newAccentColors);
-                                  }}
-                                  onBlur={() => setEditingReleaseAccent(null)}
-                                />
+                                <div className="flex items-center space-x-2 border-t pt-2">
+                                  <button
+                                    className="w-6 h-6 rounded border border-gray-300 hover:scale-110 transition-transform bg-white flex items-center justify-center"
+                                    onClick={() => {
+                                      const colorInput = document.createElement('input');
+                                      colorInput.type = 'color';
+                                      colorInput.value = releaseAccentColors.get(release?.id || releaseId) || '#3B82F6';
+                                      colorInput.onchange = (e) => {
+                                        const newAccentColors = new Map(releaseAccentColors);
+                                        newAccentColors.set(release?.id || releaseId, (e.target as HTMLInputElement).value);
+                                        setReleaseAccentColors(newAccentColors);
+                                        setEditingReleaseAccent(null);
+                                      };
+                                      colorInput.click();
+                                    }}
+                                  >
+                                    <i className="fas fa-paint-brush text-xs text-gray-600"></i>
+                                  </button>
+                                  <span className="text-xs text-gray-600 dark:text-gray-300">Custom Color</span>
+                                </div>
                               </div>
                             )}
                           </div>
@@ -366,8 +389,9 @@ export default function CalendarPage() {
                             key={task.id}
                             draggable
                             onDragStart={() => handleDragStart(task)}
+                            onDragEnd={() => setDraggedTask(null)}
                             className="p-3 bg-gray-50 dark:bg-gray-700 rounded text-xs cursor-move hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors min-h-[3rem] flex items-center"
-                            title={task.taskTitle}
+                            title={`Drag to schedule: ${task.taskTitle}`}
                           >
                             <div className="font-medium text-gray-900 dark:text-white leading-tight break-words">
                               {task.taskTitle}
@@ -467,13 +491,13 @@ export default function CalendarPage() {
                 return (
                   <div
                     key={day}
-                    className={`min-h-60 p-3 border-2 rounded-lg cursor-pointer transition-colors flex flex-col ${
+                    className={`min-h-60 p-3 border-2 rounded-lg transition-colors flex flex-col ${
                       isHighPriority 
                         ? 'border-red-400 bg-red-50 dark:bg-red-900/20' 
                         : isToday 
                           ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-400' 
                           : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
-                    } hover:bg-gray-50 dark:hover:bg-gray-700`}
+                    } ${draggedTask ? 'hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-400' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, day)}
                   >
