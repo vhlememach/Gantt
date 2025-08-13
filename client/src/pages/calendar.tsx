@@ -43,11 +43,15 @@ export default function CalendarPage() {
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth());
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
   const [draggedTask, setDraggedTask] = useState<CalendarTask | null>(null);
-  const [showColorPicker, setShowColorPicker] = useState(false);
   const [priorityCells, setPriorityCells] = useState<Set<string>>(new Set());
   const [editingReleaseAccent, setEditingReleaseAccent] = useState<string | null>(null);
   const [releaseAccentColors, setReleaseAccentColors] = useState<Map<string, string>>(new Map());
   const [showCustomDividerModal, setShowCustomDividerModal] = useState<{ day: number; month: number; year: number } | null>(null);
+  const [customDividers, setCustomDividers] = useState<Map<string, Array<{ name: string; color: string; icon: string }>>>(new Map());
+  const [showColorPicker, setShowColorPicker] = useState<string | null>(null);
+  const [selectedColor, setSelectedColor] = useState('#3B82F6');
+  const [selectedIcon, setSelectedIcon] = useState('fas fa-star');
+  const [dividerName, setDividerName] = useState('');
 
   const queryClient = useQueryClient();
 
@@ -93,6 +97,19 @@ export default function CalendarPage() {
   
   // Filter scheduled tasks for calendar
   const scheduledTasks = tasksWithReleaseInfo.filter(task => task.scheduledDate);
+
+  // Initialize random accent colors for releases
+  useEffect(() => {
+    if (releases.length > 0 && releaseAccentColors.size === 0) {
+      const colors = ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#F97316', '#6B7280', '#EC4899'];
+      const newAccentColors = new Map();
+      releases.forEach(release => {
+        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+        newAccentColors.set(release.id, randomColor);
+      });
+      setReleaseAccentColors(newAccentColors);
+    }
+  }, [releases, releaseAccentColors.size]);
 
   // Group unscheduled tasks by release
   const tasksByRelease = unscheduledTasks.reduce((acc, task) => {
@@ -272,12 +289,7 @@ export default function CalendarPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Desktop Navigation */}
-      <div className="hidden md:block">
-        <Navigation />
-      </div>
-
-      <div className="flex h-screen pt-12">
+      <div className="flex h-screen">
         {/* Left Sidebar - Completed Tasks */}
         <div className="w-1/6 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
           <div className="p-6">
@@ -337,6 +349,12 @@ export default function CalendarPage() {
                               }}
                             />
                           ))}
+                          <button
+                            className="w-4 h-4 rounded border border-gray-300 hover:scale-110 transition-transform bg-white flex items-center justify-center"
+                            onClick={() => setShowColorPicker(release.id)}
+                          >
+                            <i className="fas fa-paint-brush text-xs text-gray-600"></i>
+                          </button>
                         </div>
                       )}
                     </div>
@@ -506,17 +524,37 @@ export default function CalendarPage() {
                             CURRENT DAY
                           </span>
                         )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="w-6 h-6 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setShowCustomDividerModal({ day, month: selectedMonth, year: selectedYear });
-                          }}
-                        >
-                          <i className="fas fa-plus text-xs"></i>
-                        </Button>
+                        <div className="flex items-center space-x-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-6 h-6 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const dateKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                              const newPriorityCells = new Set(priorityCells);
+                              if (newPriorityCells.has(dateKey)) {
+                                newPriorityCells.delete(dateKey);
+                              } else {
+                                newPriorityCells.add(dateKey);
+                              }
+                              setPriorityCells(newPriorityCells);
+                            }}
+                          >
+                            <i className="fas fa-wrench text-xs"></i>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-6 h-6 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowCustomDividerModal({ day, month: selectedMonth, year: selectedYear });
+                            }}
+                          >
+                            <i className="fas fa-plus text-xs"></i>
+                          </Button>
+                        </div>
                       </div>
                     </div>
 
@@ -615,6 +653,8 @@ export default function CalendarPage() {
                 </label>
                 <input
                   type="text"
+                  value={dividerName}
+                  onChange={(e) => setDividerName(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white bg-white dark:bg-gray-700"
                   placeholder="Enter divider name"
                 />
@@ -627,8 +667,11 @@ export default function CalendarPage() {
                   {['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#F97316', '#6B7280', '#EC4899'].map(color => (
                     <button
                       key={color}
-                      className="w-8 h-8 rounded border border-gray-300 hover:scale-110 transition-transform"
+                      className={`w-8 h-8 rounded border-2 hover:scale-110 transition-transform ${
+                        selectedColor === color ? 'border-gray-800 dark:border-white' : 'border-gray-300'
+                      }`}
                       style={{ backgroundColor: color }}
+                      onClick={() => setSelectedColor(color)}
                     />
                   ))}
                 </div>
@@ -641,7 +684,12 @@ export default function CalendarPage() {
                   {['fas fa-star', 'fas fa-flag', 'fas fa-bell', 'fas fa-heart', 'fas fa-check', 'fas fa-exclamation'].map(icon => (
                     <button
                       key={icon}
-                      className="w-8 h-8 border border-gray-300 dark:border-gray-600 rounded flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700"
+                      className={`w-8 h-8 border-2 rounded flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                        selectedIcon === icon 
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+                          : 'border-gray-300 dark:border-gray-600'
+                      }`}
+                      onClick={() => setSelectedIcon(icon)}
                     >
                       <i className={`${icon} text-gray-600 dark:text-gray-400`}></i>
                     </button>
@@ -658,9 +706,28 @@ export default function CalendarPage() {
               </Button>
               <Button
                 onClick={() => {
-                  // TODO: Add custom divider logic
-                  setShowCustomDividerModal(null);
+                  if (dividerName.trim() && showCustomDividerModal) {
+                    const { day, month, year } = showCustomDividerModal;
+                    const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    
+                    const newDividers = new Map(customDividers);
+                    const existingDividers = newDividers.get(dateKey) || [];
+                    existingDividers.push({
+                      name: dividerName.trim(),
+                      color: selectedColor,
+                      icon: selectedIcon
+                    });
+                    newDividers.set(dateKey, existingDividers);
+                    setCustomDividers(newDividers);
+                    
+                    // Reset form
+                    setDividerName('');
+                    setSelectedColor('#3B82F6');
+                    setSelectedIcon('fas fa-star');
+                    setShowCustomDividerModal(null);
+                  }
                 }}
+                disabled={!dividerName.trim()}
               >
                 Add Divider
               </Button>
