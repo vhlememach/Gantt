@@ -315,9 +315,14 @@ export default function CalendarPage() {
     const unscheduled = processedTasks.filter(task => !task.scheduledDate);
     console.log('Scheduled:', scheduled.length, 'Unscheduled:', unscheduled.length);
 
-    // Group unscheduled tasks by release with strict deduplication
-    // The sidebar should show unscheduled tasks that can be added to the calendar
-    const groupedTasks = unscheduled.reduce((acc, task) => {
+    // Group COMPLETED unscheduled tasks by release with strict deduplication
+    // The sidebar should ONLY show tasks that are completed in Team Checklist AND unscheduled
+    const completedUnscheduledTasks = unscheduled.filter(task => {
+      const originalTask = deduplicatedTasks.find(t => t.id === task.id);
+      return originalTask?.completed === true;
+    });
+    
+    const groupedTasks = completedUnscheduledTasks.reduce((acc, task) => {
       const releaseId = task.releaseId || 'evergreen';
       if (!acc[releaseId]) {
         acc[releaseId] = { tasks: [], seenIds: new Set<string>() };
@@ -458,7 +463,7 @@ export default function CalendarPage() {
             <div className="p-6">
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  Completed Tasks
+                  Available Tasks
                 </h2>
                 <Button
                   variant="outline"
@@ -472,7 +477,7 @@ export default function CalendarPage() {
               </div>
               <div className="mb-6">
                 <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
-                  {unscheduledTasks.length} unscheduled
+                  {Object.values(tasksByRelease).reduce((total, release) => total + release.tasks.length, 0)} completed & unscheduled
                 </Badge>
               </div>
 
