@@ -801,11 +801,23 @@ export default function CalendarPage() {
                                   </Button>
                                 </div>
                                 {/* Social Media Icons */}
-                                {taskSocialMedia.get(task.id) && (
+                                {(taskSocialMedia.get(task.id) || taskSocialMediaUrls.get(task.id)) && (
                                   <div className="flex flex-wrap gap-1 mt-1 max-w-[120px]">
                                     {taskSocialMedia.get(task.id)?.map((platform, index) => (
                                       <SocialMediaIcon key={index} platform={platform} />
                                     ))}
+                                    {taskSocialMediaUrls.get(task.id) && (
+                                      <a 
+                                        href={taskSocialMediaUrls.get(task.id)} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-500 hover:bg-blue-600 text-white text-xs transition-colors"
+                                        title="Visit Link"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <i className="fas fa-link text-[10px]"></i>
+                                      </a>
+                                    )}
                                   </div>
                                 )}
                               </div>
@@ -859,11 +871,23 @@ export default function CalendarPage() {
                                   </Button>
                                 </div>
                                 {/* Social Media Icons */}
-                                {taskSocialMedia.get(task.id) && (
+                                {(taskSocialMedia.get(task.id) || taskSocialMediaUrls.get(task.id)) && (
                                   <div className="flex flex-wrap gap-1 mt-1 max-w-[120px]">
                                     {taskSocialMedia.get(task.id)?.map((platform, index) => (
                                       <SocialMediaIcon key={index} platform={platform} />
                                     ))}
+                                    {taskSocialMediaUrls.get(task.id) && (
+                                      <a 
+                                        href={taskSocialMediaUrls.get(task.id)} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-500 hover:bg-blue-600 text-white text-xs transition-colors"
+                                        title="Visit Link"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <i className="fas fa-link text-[10px]"></i>
+                                      </a>
+                                    )}
                                   </div>
                                 )}
                               </div>

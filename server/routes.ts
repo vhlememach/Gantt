@@ -334,6 +334,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const evergreenBoxes = await storage.getEvergreenBoxes();
       const assignments = await storage.getContentFormatAssignments();
       const cycles = await storage.getWaterfallCycles();
+      const existingTasks = await storage.getChecklistTasks();
       
       console.log("Found boxes:", evergreenBoxes.length, "assignments:", assignments.length, "cycles:", cycles.length);
       
@@ -355,18 +356,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 const assignedMember = assignment.assignedMembers[0];
                 const taskName = `${box.title} > ${formatType.charAt(0).toUpperCase() + formatType.slice(1)}`;
                 
-                const taskData = {
-                  taskTitle: taskName,
-                  assignedTo: assignedMember,
-                  evergreenBoxId: box.id,
-                  waterfallCycleId: box.waterfallCycleId,
-                  contentFormatType: formatType,
-                  completed: false
-                };
+                // Check if task already exists with same title and evergreen box
+                const existingTask = existingTasks.find(task => 
+                  task.taskTitle === taskName && 
+                  task.evergreenBoxId === box.id &&
+                  task.contentFormatType === formatType
+                );
                 
-                console.log("Creating task:", taskData);
-                await storage.createChecklistTask(taskData);
-                tasksCreated++;
+                if (!existingTask) {
+                  const taskData = {
+                    taskTitle: taskName,
+                    assignedTo: assignedMember,
+                    evergreenBoxId: box.id,
+                    waterfallCycleId: box.waterfallCycleId,
+                    contentFormatType: formatType,
+                    completed: false
+                  };
+                  
+                  console.log("Creating task:", taskData);
+                  await storage.createChecklistTask(taskData);
+                  tasksCreated++;
+                } else {
+                  console.log(`Task already exists: ${taskName}`);
+                }
               }
             }
           }
