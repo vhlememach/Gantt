@@ -95,7 +95,7 @@ export default function CalendarPage() {
   // Load social media data into state
   useEffect(() => {
     const socialMediaMap = new Map<string, string[]>();
-    allTaskSocialMedia.forEach((sm: any) => {
+    (allTaskSocialMedia as any[]).forEach((sm: any) => {
       socialMediaMap.set(sm.taskId, sm.platforms || []);
     });
     setTaskSocialMedia(socialMediaMap);
@@ -249,15 +249,21 @@ export default function CalendarPage() {
   const scheduledTasks = tasks.filter(task => task.scheduledDate);
   const unscheduledTasks = tasks.filter(task => !task.scheduledDate);
 
-  // Group unscheduled tasks by release with proper structure
+  // Group unscheduled tasks by release with proper structure and deduplication
   const tasksByRelease = unscheduledTasks.reduce((acc, task) => {
     const releaseId = task.releaseId || 'evergreen';
     if (!acc[releaseId]) {
-      acc[releaseId] = { tasks: [] };
+      acc[releaseId] = { tasks: [], taskIds: new Set<string>() };
     }
-    acc[releaseId].tasks.push(task);
+    
+    // Only add task if it's not already in this release group
+    if (!acc[releaseId].taskIds.has(task.id)) {
+      acc[releaseId].tasks.push(task);
+      acc[releaseId].taskIds.add(task.id);
+    }
+    
     return acc;
-  }, {} as Record<string, { tasks: CalendarTask[] }>);
+  }, {} as Record<string, { tasks: CalendarTask[], taskIds: Set<string> }>);
 
   const handleDragStart = (task: CalendarTask) => {
     console.log('Drag started for task:', task.taskTitle);
@@ -379,9 +385,12 @@ export default function CalendarPage() {
 
               <div className="space-y-3">
                 {Object.entries(tasksByRelease).map(([releaseId, releaseData]) => {
-                  // Deduplicate tasks within each release group
-                  const tasksArray = releaseData?.tasks || [];
-                  const uniqueTasks = Array.from(new Map(tasksArray.map(task => [task.id, task])).values());
+                  if (!releaseData || !releaseData.tasks || releaseData.tasks.length === 0) {
+                    return null;
+                  }
+                  
+                  // Tasks are already deduplicated in the grouping logic
+                  const uniqueTasks = releaseData.tasks;
                   const release = releases.find(r => r.id === releaseId);
                   const group = release ? releaseGroups.find(g => g.id === release.groupId) : null;
                   
@@ -813,7 +822,7 @@ export default function CalendarPage() {
               <button
                 className="w-6 h-6 rounded border border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center"
                 onClick={() => {
-                  setShowCustomDividerModal(false);
+                  setShowCustomDividerModal(null);
                   setDividerName('');
                   setSelectedColor('#3B82F6');
                   setSelectedIcon('fas fa-bookmark');
