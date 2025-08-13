@@ -11,15 +11,15 @@ import { Link } from "wouter";
 interface CalendarTask {
   id: string;
   taskTitle: string;
-  taskDescription?: string;
-  taskUrl?: string;
+  taskDescription?: string | null;
+  taskUrl?: string | null;
   assignedTo: string;
   releaseId: string;
   releaseName?: string;
   releaseGroup?: string;
   releaseColor?: string;
   releaseIcon?: string;
-  priority: boolean;
+  priority: boolean | null;
   scheduledDate?: string | null;
 }
 
@@ -74,10 +74,7 @@ export default function CalendarPage() {
   // Schedule task mutation
   const scheduleTaskMutation = useMutation({
     mutationFn: async ({ taskId, date }: { taskId: string; date: string }) => {
-      const response = await apiRequest(`/api/checklist-tasks/${taskId}/schedule`, {
-        method: 'PATCH',
-        body: { scheduledDate: date }
-      });
+      const response = await apiRequest(`/api/checklist-tasks/${taskId}/schedule`, 'PATCH', { scheduledDate: date });
       return response;
     },
     onSuccess: () => {
@@ -88,9 +85,7 @@ export default function CalendarPage() {
   // Unschedule task mutation
   const unscheduleTaskMutation = useMutation({
     mutationFn: async (taskId: string) => {
-      const response = await apiRequest(`/api/checklist-tasks/${taskId}/unschedule`, {
-        method: 'PATCH'
-      });
+      const response = await apiRequest(`/api/checklist-tasks/${taskId}/unschedule`, 'PATCH');
       return response;
     },
     onSuccess: () => {
@@ -139,25 +134,24 @@ export default function CalendarPage() {
   }
 
   // Transform tasks for calendar use
-  const tasks: CalendarTask[] = allTasks.map(task => {
-    const release = releases.find(r => r.id === task.releaseId);
-    const group = release ? releaseGroups.find(g => g.id === release.groupId) : null;
-    
-    return {
-      id: task.id,
-      taskTitle: task.taskTitle,
-      taskDescription: task.taskDescription,
-      taskUrl: task.taskUrl,
-      assignedTo: task.assignedTo,
-      releaseId: task.releaseId || 'evergreen',
-      releaseName: release?.name,
-      releaseGroup: group?.name,
-      releaseColor: group?.color,
-      releaseIcon: release?.icon,
-      priority: task.priority,
-      scheduledDate: task.scheduledDate
-    };
-  });
+  const tasks: CalendarTask[] = allTasks.map(task => ({
+    id: task.id,
+    taskTitle: task.taskTitle,
+    taskDescription: task.taskDescription,
+    taskUrl: task.taskUrl,
+    assignedTo: task.assignedTo,
+    releaseId: task.releaseId || 'evergreen',
+    releaseName: releases.find(r => r.id === task.releaseId)?.name,
+    releaseGroup: releases.find(r => r.id === task.releaseId) 
+      ? releaseGroups.find(g => g.id === releases.find(r => r.id === task.releaseId)?.groupId)?.name 
+      : undefined,
+    releaseColor: releases.find(r => r.id === task.releaseId) 
+      ? releaseGroups.find(g => g.id === releases.find(r => r.id === task.releaseId)?.groupId)?.color 
+      : undefined,
+    releaseIcon: releases.find(r => r.id === task.releaseId)?.icon,
+    priority: task.priority,
+    scheduledDate: task.scheduledDate
+  }));
 
   // Separate tasks
   const scheduledTasks = tasks.filter(task => task.scheduledDate);
@@ -387,14 +381,17 @@ export default function CalendarPage() {
             {/* Calendar Grid */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
               {/* Day Labels */}
-              {daysOfWeek.map(day => (
-                <div key={day} className="p-3 text-center text-sm font-medium text-gray-500 dark:text-gray-400">
-                  {day}
-                </div>
-              ))}
+              <div className="grid grid-cols-7 border-b border-gray-200 dark:border-gray-700">
+                {daysOfWeek.map(day => (
+                  <div key={day} className="p-3 text-center text-sm font-medium text-gray-500 dark:text-gray-400">
+                    {day}
+                  </div>
+                ))}
+              </div>
 
               {/* Calendar Days */}
-              {calendarDays.map((day, index) => {
+              <div className="grid grid-cols-7">
+                {calendarDays.map((day, index) => {
                 if (day === null) {
                   return <div key={`empty-${index}`} className="h-60"></div>;
                 }
@@ -637,6 +634,7 @@ export default function CalendarPage() {
                   </div>
                 );
               })}
+              </div>
             </div>
           </div>
         </div>
