@@ -3,7 +3,8 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { 
   insertReleaseGroupSchema, insertReleaseSchema, insertAppSettingsSchema, insertChecklistTaskSchema,
-  insertWaterfallCycleSchema, insertContentFormatAssignmentSchema, insertEvergreenBoxSchema
+  insertWaterfallCycleSchema, insertContentFormatAssignmentSchema, insertEvergreenBoxSchema,
+  insertTaskSocialMediaSchema
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -586,6 +587,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching checklist tasks by evergreen box:", error);
       res.status(500).json({ error: "Failed to fetch checklist tasks" });
+    }
+  });
+
+  // Task Social Media API routes
+  app.get("/api/task-social-media", async (req, res) => {
+    try {
+      const socialMedia = await storage.getTaskSocialMedia();
+      res.json(socialMedia);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get task social media" });
+    }
+  });
+
+  app.get("/api/task-social-media/task/:taskId", async (req, res) => {
+    try {
+      const { taskId } = req.params;
+      const socialMedia = await storage.getTaskSocialMediaByTask(taskId);
+      res.json(socialMedia || null);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get task social media" });
+    }
+  });
+
+  app.post("/api/task-social-media", async (req, res) => {
+    try {
+      const validatedData = insertTaskSocialMediaSchema.parse(req.body);
+      // Check if social media for this task already exists
+      const existing = await storage.getTaskSocialMediaByTask(validatedData.taskId);
+      if (existing) {
+        // Update existing
+        const updated = await storage.updateTaskSocialMedia(existing.id, validatedData);
+        res.json(updated);
+      } else {
+        // Create new
+        const socialMedia = await storage.createTaskSocialMedia(validatedData);
+        res.json(socialMedia);
+      }
+    } catch (error) {
+      res.status(400).json({ message: "Invalid task social media data" });
+    }
+  });
+
+  app.put("/api/task-social-media/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validatedData = insertTaskSocialMediaSchema.partial().parse(req.body);
+      const socialMedia = await storage.updateTaskSocialMedia(id, validatedData);
+      if (!socialMedia) {
+        return res.status(404).json({ message: "Task social media not found" });
+      }
+      res.json(socialMedia);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid task social media data" });
+    }
+  });
+
+  app.delete("/api/task-social-media/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteTaskSocialMedia(id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Task social media not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete task social media" });
     }
   });
 

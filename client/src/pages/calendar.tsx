@@ -86,6 +86,35 @@ export default function CalendarPage() {
 
   const queryClient = useQueryClient();
 
+  // Fetch all task social media data
+  const { data: allTaskSocialMedia = [] } = useQuery({
+    queryKey: ['/api/task-social-media'],
+    enabled: true
+  });
+
+  // Load social media data into state
+  useEffect(() => {
+    const socialMediaMap = new Map<string, string[]>();
+    allTaskSocialMedia.forEach((sm: any) => {
+      socialMediaMap.set(sm.taskId, sm.platforms || []);
+    });
+    setTaskSocialMedia(socialMediaMap);
+  }, [allTaskSocialMedia]);
+
+  // Social media mutation for saving platforms
+  const saveTaskSocialMediaMutation = useMutation({
+    mutationFn: async ({ taskId, platforms }: { taskId: string; platforms: string[] }) => {
+      const response = await apiRequest('POST', '/api/task-social-media', { taskId, platforms });
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/task-social-media'] });
+    },
+    onError: (error) => {
+      console.error('Save social media mutation error:', error);
+    }
+  });
+
   // Fetch tasks data - use only main endpoint to avoid duplicates
   const { data: allTasks = [] } = useQuery<ChecklistTask[]>({
     queryKey: ["/api/checklist-tasks"]
@@ -197,18 +226,8 @@ export default function CalendarPage() {
     calendarDays.push(day);
   }
 
-  // Transform tasks for calendar use - ensure no duplicates with Set-based approach
-  const uniqueTaskIds = new Set<string>();
-  const uniqueTasks: ChecklistTask[] = [];
-  
-  allTasks.forEach(task => {
-    if (!uniqueTaskIds.has(task.id)) {
-      uniqueTaskIds.add(task.id);
-      uniqueTasks.push(task);
-    }
-  });
-  
-  const tasks: CalendarTask[] = uniqueTasks.map(task => ({
+  // Transform tasks for calendar use - use direct filtering instead of manual deduplication
+  const tasks: CalendarTask[] = allTasks.map(task => ({
     id: task.id,
     taskTitle: task.taskTitle,
     taskDescription: task.taskDescription,
@@ -963,6 +982,13 @@ export default function CalendarPage() {
                       }
                       
                       setTaskSocialMedia(newTaskSocialMedia);
+                      
+                      // Save to backend
+                      const updatedPlatforms = newTaskSocialMedia.get(showSocialMediaModal) || [];
+                      saveTaskSocialMediaMutation.mutate({ 
+                        taskId: showSocialMediaModal, 
+                        platforms: updatedPlatforms 
+                      });
                     }}
                   >
                     <div className="text-sm font-medium">{platform}</div>
@@ -978,7 +1004,15 @@ export default function CalendarPage() {
                 Cancel
               </Button>
               <Button
-                onClick={() => setShowSocialMediaModal(null)}
+                onClick={() => {
+                  const platforms = taskSocialMedia.get(showSocialMediaModal!) || [];
+                  saveTaskSocialMediaMutation.mutate({ 
+                    taskId: showSocialMediaModal!, 
+                    platforms 
+                  });
+                  setShowSocialMediaModal(null);
+                }}
+                className="bg-green-600 hover:bg-green-700 text-white"
               >
                 Save
               </Button>

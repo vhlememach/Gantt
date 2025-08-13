@@ -5,7 +5,8 @@ import {
   type ChecklistTask, type InsertChecklistTask,
   type WaterfallCycle, type InsertWaterfallCycle,
   type ContentFormatAssignment, type InsertContentFormatAssignment,
-  type EvergreenBox, type InsertEvergreenBox
+  type EvergreenBox, type InsertEvergreenBox,
+  type TaskSocialMedia, type InsertTaskSocialMedia
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -59,6 +60,13 @@ export interface IStorage {
   createEvergreenBox(box: InsertEvergreenBox): Promise<EvergreenBox>;
   updateEvergreenBox(id: string, box: Partial<InsertEvergreenBox>): Promise<EvergreenBox | undefined>;
   deleteEvergreenBox(id: string): Promise<boolean>;
+
+  // Task Social Media
+  getTaskSocialMedia(): Promise<TaskSocialMedia[]>;
+  getTaskSocialMediaByTask(taskId: string): Promise<TaskSocialMedia | undefined>;
+  createTaskSocialMedia(socialMedia: InsertTaskSocialMedia): Promise<TaskSocialMedia>;
+  updateTaskSocialMedia(id: string, socialMedia: Partial<InsertTaskSocialMedia>): Promise<TaskSocialMedia | undefined>;
+  deleteTaskSocialMedia(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -68,6 +76,7 @@ export class MemStorage implements IStorage {
   private waterfallCycles: Map<string, WaterfallCycle>;
   private contentFormatAssignments: Map<string, ContentFormatAssignment>;
   private evergreenBoxes: Map<string, EvergreenBox>;
+  private taskSocialMedia: Map<string, TaskSocialMedia>;
   private appSettings: AppSettings;
 
   constructor() {
@@ -77,6 +86,7 @@ export class MemStorage implements IStorage {
     this.waterfallCycles = new Map();
     this.contentFormatAssignments = new Map();
     this.evergreenBoxes = new Map();
+    this.taskSocialMedia = new Map();
     this.appSettings = {
       id: randomUUID(),
       headerTitle: "Release Gantt Chart",
@@ -641,6 +651,39 @@ export class MemStorage implements IStorage {
 
   async deleteEvergreenBox(id: string): Promise<boolean> {
     return this.evergreenBoxes.delete(id);
+  }
+
+  // Task Social Media
+  async getTaskSocialMedia(): Promise<TaskSocialMedia[]> {
+    return Array.from(this.taskSocialMedia.values());
+  }
+
+  async getTaskSocialMediaByTask(taskId: string): Promise<TaskSocialMedia | undefined> {
+    return Array.from(this.taskSocialMedia.values()).find(sm => sm.taskId === taskId);
+  }
+
+  async createTaskSocialMedia(socialMedia: InsertTaskSocialMedia): Promise<TaskSocialMedia> {
+    const id = randomUUID();
+    const newSocialMedia: TaskSocialMedia = {
+      ...socialMedia,
+      id,
+      createdAt: new Date(),
+    };
+    this.taskSocialMedia.set(id, newSocialMedia);
+    return newSocialMedia;
+  }
+
+  async updateTaskSocialMedia(id: string, socialMedia: Partial<InsertTaskSocialMedia>): Promise<TaskSocialMedia | undefined> {
+    const existing = this.taskSocialMedia.get(id);
+    if (!existing) return undefined;
+
+    const updated: TaskSocialMedia = { ...existing, ...socialMedia };
+    this.taskSocialMedia.set(id, updated);
+    return updated;
+  }
+
+  async deleteTaskSocialMedia(id: string): Promise<boolean> {
+    return this.taskSocialMedia.delete(id);
   }
 }
 

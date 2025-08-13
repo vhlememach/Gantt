@@ -71,6 +71,14 @@ export const evergreenBoxes = pgTable("evergreen_boxes", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Social media platforms for tasks
+export const taskSocialMedia = pgTable("task_social_media", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  taskId: varchar("task_id").notNull().references(() => checklistTasks.id, { onDelete: "cascade" }),
+  platforms: text("platforms").array().notNull(), // ["X", "LinkedIn", "Youtube", etc.]
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Checklist tasks for marketing team members
 export const checklistTasks = pgTable("checklist_tasks", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -125,6 +133,11 @@ export const insertEvergreenBoxSchema = createInsertSchema(evergreenBoxes).omit(
   createdAt: true,
 });
 
+export const insertTaskSocialMediaSchema = createInsertSchema(taskSocialMedia).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertChecklistTaskSchema = createInsertSchema(checklistTasks).omit({
   id: true,
   createdAt: true,
@@ -148,6 +161,9 @@ export type ContentFormatAssignment = typeof contentFormatAssignments.$inferSele
 
 export type InsertEvergreenBox = z.infer<typeof insertEvergreenBoxSchema>;
 export type EvergreenBox = typeof evergreenBoxes.$inferSelect;
+
+export type InsertTaskSocialMedia = z.infer<typeof insertTaskSocialMediaSchema>;
+export type TaskSocialMedia = typeof taskSocialMedia.$inferSelect;
 
 export type InsertChecklistTask = z.infer<typeof insertChecklistTaskSchema>;
 export type ChecklistTask = typeof checklistTasks.$inferSelect;
