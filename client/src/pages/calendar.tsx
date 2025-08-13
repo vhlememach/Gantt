@@ -53,16 +53,16 @@ const SocialMediaIcon = ({ platform }: { platform: string }) => {
 
   return (
     <div 
-      className="w-4 h-4 rounded-full flex items-center justify-center text-white text-xs font-bold"
+      className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
       style={{ backgroundColor: colors[platform as keyof typeof colors] }}
     >
-      {platform === 'X' ? <FaXTwitter className="w-2 h-2" /> : 
-       platform === 'LinkedIn' ? <FaLinkedin className="w-2 h-2" /> :
-       platform === 'Youtube' ? <FaYoutube className="w-2 h-2" /> :
-       platform === 'Instagram' ? <FaInstagram className="w-2 h-2" /> :
-       platform === 'TikTok' ? <FaTiktok className="w-2 h-2" /> :
-       platform === 'Facebook' ? <FaFacebook className="w-2 h-2" /> :
-       platform === 'Reddit' ? <FaReddit className="w-2 h-2" /> : platform[0]}
+      {platform === 'X' ? <FaXTwitter className="w-3 h-3" /> : 
+       platform === 'LinkedIn' ? <FaLinkedin className="w-3 h-3" /> :
+       platform === 'Youtube' ? <FaYoutube className="w-3 h-3" /> :
+       platform === 'Instagram' ? <FaInstagram className="w-3 h-3" /> :
+       platform === 'TikTok' ? <FaTiktok className="w-3 h-3" /> :
+       platform === 'Facebook' ? <FaFacebook className="w-3 h-3" /> :
+       platform === 'Reddit' ? <FaReddit className="w-3 h-3" /> : platform[0]}
     </div>
   );
 };
@@ -197,16 +197,18 @@ export default function CalendarPage() {
     calendarDays.push(day);
   }
 
-  // Transform tasks for calendar use - ensure no duplicates from start
-  const uniqueTasksMap = new Map<string, ChecklistTask>();
+  // Transform tasks for calendar use - ensure no duplicates with Set-based approach
+  const uniqueTaskIds = new Set<string>();
+  const uniqueTasks: ChecklistTask[] = [];
+  
   allTasks.forEach(task => {
-    // Only add if not already exists to prevent duplicates
-    if (!uniqueTasksMap.has(task.id)) {
-      uniqueTasksMap.set(task.id, task);
+    if (!uniqueTaskIds.has(task.id)) {
+      uniqueTaskIds.add(task.id);
+      uniqueTasks.push(task);
     }
   });
   
-  const tasks: CalendarTask[] = Array.from(uniqueTasksMap.values()).map(task => ({
+  const tasks: CalendarTask[] = uniqueTasks.map(task => ({
     id: task.id,
     taskTitle: task.taskTitle,
     taskDescription: task.taskDescription,
@@ -274,9 +276,14 @@ export default function CalendarPage() {
     }
   };
 
-  const handleTaskClick = (task: CalendarTask) => {
-    if (task.scheduledDate) {
+  const handleTaskClick = (task: CalendarTask, action: 'view' | 'remove' = 'view') => {
+    if (action === 'remove' && task.scheduledDate) {
       unscheduleTaskMutation.mutate(task.id);
+    } else if (action === 'view') {
+      // For now, just open task URL if available
+      if (task.taskUrl) {
+        window.open(task.taskUrl, '_blank');
+      }
     }
   };
 
@@ -447,13 +454,14 @@ export default function CalendarPage() {
                         </div>
                       </div>
                       <div className="p-2 space-y-2">
-                        {tasks.map(task => (
+                        {Array.from(new Map(tasks.map(task => [task.id, task])).values()).map(task => (
                           <div
                             key={task.id}
                             draggable
                             onDragStart={(e) => {
                               console.log('onDragStart called for:', task.taskTitle);
                               handleDragStart(task);
+                              e.dataTransfer.effectAllowed = 'move';
                             }}
                             onDragEnd={(e) => {
                               console.log('onDragEnd called');
@@ -597,11 +605,29 @@ export default function CalendarPage() {
                     {customDividers.get(dateKey)?.map((divider, index) => (
                       <div 
                         key={index}
-                        className="text-xs font-medium px-2 py-1 rounded text-white opacity-90 mb-1"
+                        className="text-xs font-medium px-2 py-1 rounded text-white opacity-90 mb-1 flex items-center justify-between group"
                         style={{ backgroundColor: divider.color }}
                       >
-                        <i className={`${divider.icon} mr-1`}></i>
-                        {divider.name}
+                        <div className="flex items-center">
+                          <i className={`${divider.icon} mr-1`}></i>
+                          {divider.name}
+                        </div>
+                        <button
+                          className="w-4 h-4 rounded border border-white/30 hover:bg-white/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity ml-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const newDividers = new Map(customDividers);
+                            const existingDividers = newDividers.get(dateKey) || [];
+                            newDividers.set(dateKey, existingDividers.filter((_, i) => i !== index));
+                            if (newDividers.get(dateKey)?.length === 0) {
+                              newDividers.delete(dateKey);
+                            }
+                            setCustomDividers(newDividers);
+                          }}
+                          title="Delete divider"
+                        >
+                          <i className="fas fa-times text-xs"></i>
+                        </button>
                       </div>
                     ))}
 
@@ -638,7 +664,15 @@ export default function CalendarPage() {
                                 }}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleTaskClick(task);
+                                  // Only open URL, don't remove task
+                                  if (task.taskUrl) {
+                                    window.open(task.taskUrl, '_blank');
+                                  }
+                                }}
+                                onDoubleClick={(e) => {
+                                  e.stopPropagation();
+                                  // Double-click to remove from calendar
+                                  handleTaskClick(task, 'remove');
                                 }}
                               >
                                 <div className="flex items-center justify-between">
@@ -691,7 +725,15 @@ export default function CalendarPage() {
                                 onDragEnd={() => setDraggedTask(null)}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleTaskClick(task);
+                                  // Only open URL, don't remove task
+                                  if (task.taskUrl) {
+                                    window.open(task.taskUrl, '_blank');
+                                  }
+                                }}
+                                onDoubleClick={(e) => {
+                                  e.stopPropagation();
+                                  // Double-click to remove from calendar
+                                  handleTaskClick(task, 'remove');
                                 }}
                               >
                                 <div className="flex items-center justify-between">
@@ -748,9 +790,22 @@ export default function CalendarPage() {
       {showCustomDividerModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-96">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Add Custom Divider
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Add Custom Divider
+              </h3>
+              <button
+                className="w-6 h-6 rounded border border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center"
+                onClick={() => {
+                  setShowCustomDividerModal(false);
+                  setDividerName('');
+                  setSelectedColor('#3B82F6');
+                  setSelectedIcon('fas fa-bookmark');
+                }}
+              >
+                <i className="fas fa-times text-xs text-gray-600"></i>
+              </button>
+            </div>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
