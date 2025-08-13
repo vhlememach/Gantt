@@ -590,15 +590,6 @@ export default function GanttPage() {
                 <Navigation className="text-white" />
               </div>
               
-              <Button
-                onClick={() => setIsGroupModalOpen(true)}
-                variant="secondary"
-                className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-0"
-              >
-                <Ungroup className="mr-2 h-4 w-4" />
-                Groups
-              </Button>
-              
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -606,11 +597,20 @@ export default function GanttPage() {
                     className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-0"
                   >
                     <Palette className="mr-2 h-4 w-4" />
-                    Customize
+                    Customize Menu
                     <ChevronDown className="ml-2 h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => setIsGroupModalOpen(true)}>
+                    <Ungroup className="mr-2 h-4 w-4" />
+                    Groups
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setIsWaterfallModalOpen(true)}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    Waterfall Cycles
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setIsHeaderModalOpen(true)}>
                     <Palette className="mr-2 h-4 w-4" />
                     Header & Style
@@ -621,15 +621,6 @@ export default function GanttPage() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              
-              <Button
-                onClick={() => setIsWaterfallModalOpen(true)}
-                variant="secondary"
-                className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-0"
-              >
-                <Settings className="mr-2 h-4 w-4" />
-                Waterfall Cycles
-              </Button>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -669,7 +660,7 @@ export default function GanttPage() {
           <div className="flex items-center space-x-4">
             <Button onClick={() => handleReleaseEdit(null)} className="hover:bg-blue-700 bg-[#7232d9]">
               <Plus className="mr-2 h-4 w-4" />
-              Add Release
+              Add Project
             </Button>
             <div className="flex items-center space-x-2">
               <label className="text-sm font-medium text-slate-700">View:</label>
@@ -732,7 +723,7 @@ export default function GanttPage() {
       <div className="bg-slate-100 border-t border-slate-200 px-4 py-2">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-6 text-sm text-slate-600">
-            <span>Total Releases: <strong>5</strong></span>
+            <span>Total Projects: <strong>5</strong></span>
             <span>Active Groups: <strong>2</strong></span>
             <span>Timeline: <strong>Jan 2025 - Jul 2025</strong></span>
           </div>

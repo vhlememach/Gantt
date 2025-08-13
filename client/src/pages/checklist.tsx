@@ -360,7 +360,7 @@ export default function ChecklistPage() {
                           value={selectedReleaseId}
                           onChange={(e) => setSelectedReleaseId(e.target.value)}
                         >
-                          <option value="">Select Release...</option>
+                          <option value="">Select Project...</option>
                           {releases.map(release => (
                             <option key={release.id} value={release.id}>
                               {release.name}
