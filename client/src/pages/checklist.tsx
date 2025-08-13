@@ -436,26 +436,23 @@ export default function ChecklistPage() {
                 {/* Column 1: Project Checklists */}
                 <div className="space-y-6">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b pb-2">Project Checklists</h3>
-                  {Object.entries(tasksByRelease)
-                    .filter(([releaseId]) => releaseId !== 'evergreen' && releases.find(r => r.id === releaseId))
-                    .sort(([releaseIdA], [releaseIdB]) => {
-                      const releaseA = releases.find(r => r.id === releaseIdA);
-                      const releaseB = releases.find(r => r.id === releaseIdB);
+                  {releases
+                    .sort((releaseA, releaseB) => {
                       const priorityA = releaseA?.highPriority ? 1 : 0;
                       const priorityB = releaseB?.highPriority ? 1 : 0;
                       return priorityB - priorityA; // High priority first
                     })
-                    .map(([releaseId, tasks]) => {
-                const release = releases.find(r => r.id === releaseId);
-                const releaseProgress = getReleaseProgress(releaseId);
-                const memberSortOption = sortBy[member] || "priority";
+                    .map((release) => {
+                      const tasks = tasksByRelease[release.id] || [];
+                const releaseProgress = getReleaseProgress(release.id);
+                const memberSortOption = sortBy[selectedMember] || "priority";
                 const sortedTasks = getSortedTasks(tasks, memberSortOption);
-                const daysRemaining = getDaysRemaining(releaseId);
+                const daysRemaining = getDaysRemaining(release.id);
                 const isHighPriority = release?.highPriority || false;
                 
                 return (
                   <Card 
-                    key={releaseId}
+                    key={release.id}
                     className={isHighPriority ? 'ring-2 ring-red-400 ring-opacity-60' : ''}
                   >
                     <CardHeader>
@@ -471,7 +468,7 @@ export default function ChecklistPage() {
                                   : '#6B7280' 
                               }}
                             />
-                            {release?.name || 'Unassigned Tasks'}
+                            {release.name}
                           </span>
                         </div>
                         
@@ -497,7 +494,7 @@ export default function ChecklistPage() {
                               value={memberSortOption}
                               onChange={(e) => setSortBy(prev => ({ 
                                 ...prev, 
-                                [member]: e.target.value as SortOption 
+                                [selectedMember]: e.target.value as SortOption 
                               }))}
                             >
                               <option value="priority">Priority</option>
@@ -511,7 +508,13 @@ export default function ChecklistPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-3">
-                        {sortedTasks.map(task => (
+                        {tasks.length === 0 ? (
+                          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                            <div className="mb-2">No tasks assigned to {selectedMember}</div>
+                            <div className="text-sm">Add tasks using the form above</div>
+                          </div>
+                        ) : (
+                          sortedTasks.map(task => (
                           <div
                             key={task.id}
                             className={`p-3 rounded-lg border ${
@@ -654,13 +657,14 @@ export default function ChecklistPage() {
                               )}
                             </div>
                           </div>
-                        ))}
+                          ))
+                        )}
                       </div>
                     </CardContent>
                   </Card>
-                    );
-                  })}
-                </div>
+                );
+              })}
+            </div>
 
                 {/* Column 2: Evergreen and General */}
                 <div className="space-y-6">
@@ -670,7 +674,7 @@ export default function ChecklistPage() {
                   {Object.entries(tasksByRelease)
                     .filter(([releaseId]) => releaseId === 'evergreen')
                     .map(([releaseId, tasks]) => {
-                      const memberSortOption = sortBy[`${member}-evergreen`] || "priority";
+                      const memberSortOption = sortBy[`${selectedMember}-evergreen`] || "priority";
                       const sortedTasks = getSortedTasks(tasks, memberSortOption);
                       
                       return (
@@ -704,7 +708,7 @@ export default function ChecklistPage() {
                                     value={memberSortOption}
                                     onChange={(e) => setSortBy(prev => ({ 
                                       ...prev, 
-                                      [member]: e.target.value as SortOption 
+                                      [`${selectedMember}-evergreen`]: e.target.value as SortOption 
                                     }))}
                                   >
                                     <option value="priority">Priority</option>
@@ -903,7 +907,7 @@ export default function ChecklistPage() {
                                     value={memberSortOption}
                                     onChange={(e) => setSortBy(prev => ({ 
                                       ...prev, 
-                                      [member]: e.target.value as SortOption 
+                                      [`${selectedMember}-general`]: e.target.value as SortOption 
                                     }))}
                                   >
                                     <option value="priority">Priority</option>

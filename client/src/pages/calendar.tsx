@@ -303,8 +303,15 @@ export default function CalendarPage() {
     const unscheduled = processedTasks.filter(task => !task.scheduledDate);
     console.log('Scheduled:', scheduled.length, 'Unscheduled:', unscheduled.length);
 
-    // Group unscheduled tasks by release with strict deduplication
-    const groupedTasks = unscheduled.reduce((acc, task) => {
+    // Group ONLY completed tasks that were added to calendar (have scheduledDate) by release
+    // The sidebar should only show completed tasks that were explicitly added to calendar
+    const completedScheduledTasks = processedTasks.filter(task => {
+      // Find the original task to check completion status
+      const originalTask = deduplicatedTasks.find(t => t.id === task.id);
+      return originalTask?.completed && task.scheduledDate;
+    });
+    
+    const groupedTasks = completedScheduledTasks.reduce((acc, task) => {
       const releaseId = task.releaseId || 'evergreen';
       if (!acc[releaseId]) {
         acc[releaseId] = { tasks: [], seenIds: new Set<string>() };
