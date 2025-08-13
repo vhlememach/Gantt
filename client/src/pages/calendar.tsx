@@ -431,18 +431,19 @@ export default function CalendarPage() {
                   }
                   
                   const taskList = releaseData.tasks;
-                  console.log(`Rendering release ${releaseId} with ${taskList.length} tasks:`, taskList.map(t => t.taskTitle));
+                  const release = releases.find(r => r.id === releaseId);
                   
-                  // Final verification - check for duplicates in UI
+                  // Verify no duplicates exist
                   const titleCounts = taskList.reduce((acc, task) => {
                     acc[task.taskTitle] = (acc[task.taskTitle] || 0) + 1;
                     return acc;
                   }, {} as Record<string, number>);
                   const duplicates = Object.entries(titleCounts).filter(([title, count]) => count > 1);
                   if (duplicates.length > 0) {
-                    console.error(`DUPLICATES FOUND in release ${releaseId}:`, duplicates);
+                    console.error(`❌ DUPLICATES FOUND in release ${release?.name || releaseId}:`, duplicates);
+                  } else {
+                    console.log(`✅ No duplicates in release ${release?.name || releaseId} (${taskList.length} unique tasks)`);
                   }
-                  const release = releases.find(r => r.id === releaseId);
                   const group = release ? releaseGroups.find(g => g.id === release.groupId) : null;
                   
                   const groupColor = group?.color || '#6b7280';

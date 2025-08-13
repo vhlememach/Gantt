@@ -364,30 +364,31 @@ export class MemStorage implements IStorage {
     ];
 
     releases.forEach(release => {
-      // Track used task titles for this release to prevent duplicates
-      const usedTaskTitles = new Set<string>();
+      // Create a shuffled copy of tasks for this release to ensure uniqueness
+      const availableTasks = [...sampleTasks];
+      let taskIndex = 0;
       
       teamMembers.forEach(member => {
-        // Create 2-3 tasks per member per release
-        const taskCount = Math.floor(Math.random() * 2) + 2;
+        // Create exactly 2 unique tasks per member per release
+        const taskCount = 2;
         for (let i = 0; i < taskCount; i++) {
-          // Find an unused task for this release
-          let taskTitle: string;
-          let attempts = 0;
-          do {
-            const baseTask = sampleTasks[Math.floor(Math.random() * sampleTasks.length)];
-            taskTitle = `${baseTask} - ${release.name}`;
-            attempts++;
-            // If we can't find unique task after 10 attempts, add a suffix
-            if (attempts > 10) {
-              taskTitle = `${baseTask} ${attempts - 10} - ${release.name}`;
+          // If we've run out of tasks, shuffle the array again
+          if (taskIndex >= availableTasks.length) {
+            // Shuffle the array to get different order
+            for (let j = availableTasks.length - 1; j > 0; j--) {
+              const k = Math.floor(Math.random() * (j + 1));
+              [availableTasks[j], availableTasks[k]] = [availableTasks[k], availableTasks[j]];
             }
-          } while (usedTaskTitles.has(taskTitle) && attempts < 20);
+            taskIndex = 0;
+          }
           
-          usedTaskTitles.add(taskTitle);
+          const baseTask = availableTasks[taskIndex];
+          taskIndex++;
           
+          const taskTitle = `${baseTask} - ${release.name}`;
           const taskId = randomUUID();
           const isCompleted = Math.random() > 0.7; // 30% completed randomly
+          
           const task: ChecklistTask = {
             id: taskId,
             releaseId: release.id,
