@@ -187,7 +187,7 @@ export default function ChecklistPage() {
   const handleCreateTask = () => {
     if (newTaskTitle && selectedReleaseId) {
       createTaskMutation.mutate({
-        releaseId: selectedReleaseId,
+        releaseId: selectedReleaseId === 'general' ? 'general' : selectedReleaseId,
         assignedTo: selectedMember,
         taskTitle: newTaskTitle,
         taskUrl: newTaskUrl || undefined
@@ -363,6 +363,7 @@ export default function ChecklistPage() {
                           onChange={(e) => setSelectedReleaseId(e.target.value)}
                         >
                           <option value="">Select Project...</option>
+                          <option value="general">General Tasks</option>
                           {releases.map(release => (
                             <option key={release.id} value={release.id}>
                               {release.name}
@@ -418,22 +419,29 @@ export default function ChecklistPage() {
                     className={isHighPriority ? 'ring-2 ring-red-400 ring-opacity-60' : ''}
                   >
                     <CardHeader>
-                      <CardTitle className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <span>
-                            {releaseId === 'evergreen' ? 'Evergreen Content' : 
-                             release?.name || 'Unassigned Tasks'}
+                      <CardTitle>
+                        {/* Project Title */}
+                        <div className="mb-3">
+                          <span className="text-lg font-semibold">
+                            {release?.name || 'Unassigned Tasks'}
                           </span>
-                          <div className="flex items-center space-x-2">
+                        </div>
+                        
+                        {/* Metrics and Controls */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
                             <Badge variant={releaseProgress === 100 ? "default" : "outline"}>
-                              {releaseProgress}% Complete
+                              {isNaN(releaseProgress) ? 0 : releaseProgress}% Complete
                             </Badge>
                             <Badge variant="secondary" className="text-xs">
                               {daysRemaining} days remaining
                             </Badge>
+                            <div className="flex items-center space-x-2 text-sm text-gray-500">
+                              <CheckCircle className="w-4 h-4" />
+                              <span>{tasks.filter(t => t.completed).length}/{tasks.length} completed</span>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex items-center space-x-4">
+                          
                           <div className="flex items-center space-x-2">
                             <ArrowUpDown className="w-4 h-4 text-gray-500" />
                             <select 
@@ -449,11 +457,6 @@ export default function ChecklistPage() {
                               <option value="to-complete">To Complete</option>
                               <option value="paused">Paused</option>
                             </select>
-                          </div>
-
-                          <div className="flex items-center space-x-2 text-sm text-gray-500">
-                            <CheckCircle className="w-4 h-4" />
-                            <span>{tasks.filter(t => t.completed).length}/{tasks.length} completed</span>
                           </div>
                         </div>
                       </CardTitle>
@@ -507,53 +510,47 @@ export default function ChecklistPage() {
                             </div>
                             <div className="flex items-center space-x-2">
                               {task.completed ? (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
+                                <Badge 
+                                  className="bg-blue-500 text-white cursor-pointer hover:bg-blue-600 transition-colors text-xs"
                                   onClick={() => window.location.href = '/calendar'}
-                                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                                 >
                                   <Calendar className="w-3 h-3 mr-1" />
                                   Add to Calendar
-                                </Button>
+                                </Badge>
                               ) : (
                                 task.paused ? (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
+                                  <Badge 
+                                    className="bg-green-500 text-white cursor-pointer hover:bg-green-600 transition-colors text-xs"
                                     onClick={() => handleViewBlockerDetails(task)}
-                                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
                                   >
                                     <CheckCircle className="w-3 h-3 mr-1" />
                                     Unpause
-                                  </Button>
+                                  </Badge>
                                 ) : (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
+                                  <Badge 
+                                    className="bg-orange-500 text-white cursor-pointer hover:bg-orange-600 transition-colors text-xs"
                                     onClick={() => handleReportBlocker(task.id)}
-                                    className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
                                   >
-                                    <Pause className="w-3 h-3 mr-1" />
+                                    <AlertTriangle className="w-3 h-3 mr-1" />
                                     Report Blocker
-                                  </Button>
+                                  </Badge>
                                 )
                               )}
                               {task.completed ? (
-                                <Badge variant="outline" className="bg-green-100 text-green-800">
+                                <Badge variant="outline" className="bg-green-100 text-green-800 text-xs">
                                   <CheckCircle className="w-3 h-3 mr-1" />
                                   Done
                                 </Badge>
                               ) : task.paused ? (
                                 <Badge 
-                                  className="bg-orange-500 text-white cursor-pointer hover:bg-orange-600 transition-colors"
+                                  className="bg-red-500 text-white cursor-pointer hover:bg-red-600 transition-colors text-xs"
                                   onClick={() => handleViewBlockerDetails(task)}
                                 >
                                   <AlertTriangle className="w-3 h-3 mr-1" />
                                   Paused
                                 </Badge>
                               ) : (
-                                <Badge variant="outline">
+                                <Badge variant="outline" className="text-xs">
                                   <Clock className="w-3 h-3 mr-1" />
                                   Pending
                                 </Badge>
@@ -586,7 +583,7 @@ export default function ChecklistPage() {
                               <div className="flex items-center space-x-3">
                                 <span>Evergreen Content</span>
                                 <Badge variant="secondary" className="text-xs">
-                                  {Math.round((tasks.filter(t => t.completed).length / tasks.length) * 100)}% Complete
+                                  {tasks.length > 0 ? Math.round((tasks.filter(t => t.completed).length / tasks.length) * 100) : 0}% Complete
                                 </Badge>
                               </div>
                               <div className="flex items-center space-x-4">
@@ -692,25 +689,154 @@ export default function ChecklistPage() {
                     })}
 
                   {/* General Checklist */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <span>General Tasks</span>
-                          <Badge variant="secondary" className="text-xs">
-                            Non-project tasks
-                          </Badge>
+                  {Object.entries(tasksByRelease)
+                    .filter(([releaseId]) => releaseId === 'general')
+                    .map(([releaseId, tasks]) => {
+                      const memberSortOption = sortBy[member] || "priority";
+                      const sortedTasks = getSortedTasks(tasks, memberSortOption);
+                      
+                      return (
+                        <Card key={releaseId}>
+                          <CardHeader>
+                            <CardTitle className="flex items-center justify-between">
+                              <div className="flex items-center space-x-3">
+                                <span>General Tasks</span>
+                                <Badge variant="secondary" className="text-xs">
+                                  {tasks.length > 0 ? Math.round((tasks.filter(t => t.completed).length / tasks.length) * 100) : 0}% Complete
+                                </Badge>
+                              </div>
+                              <div className="flex items-center space-x-4">
+                                <div className="flex items-center space-x-2">
+                                  <ArrowUpDown className="w-4 h-4 text-gray-500" />
+                                  <select 
+                                    className="text-sm border border-gray-300 rounded px-2 py-1"
+                                    value={memberSortOption}
+                                    onChange={(e) => setSortBy(prev => ({ 
+                                      ...prev, 
+                                      [member]: e.target.value as SortOption 
+                                    }))}
+                                  >
+                                    <option value="priority">Priority</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="to-complete">To Complete</option>
+                                    <option value="paused">Paused</option>
+                                  </select>
+                                </div>
+                                <div className="flex items-center space-x-2 text-sm text-gray-500">
+                                  <CheckCircle className="w-4 h-4" />
+                                  <span>{tasks.filter(t => t.completed).length}/{tasks.length} completed</span>
+                                </div>
+                              </div>
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            {tasks.length > 0 ? (
+                              <div className="space-y-3">
+                                {sortedTasks.map(task => (
+                                  <div
+                                    key={task.id}
+                                    className={`flex items-center space-x-3 p-3 rounded-lg border ${
+                                      task.completed 
+                                        ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800' 
+                                        : task.paused
+                                        ? 'bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800'
+                                        : 'bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700'
+                                    }`}
+                                  >
+                                    <Checkbox
+                                      checked={task.completed || false}
+                                      onCheckedChange={(checked) => 
+                                        handleTaskToggle(task.id, !!checked)
+                                      }
+                                    />
+                                    <div className="flex-1">
+                                      <div className={`font-medium ${
+                                        task.completed ? 'line-through text-gray-500' : 'text-gray-900 dark:text-white'
+                                      }`}>
+                                        {task.taskTitle}
+                                      </div>
+                                      {task.taskDescription && (
+                                        <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                          {task.taskDescription}
+                                        </div>
+                                      )}
+                                      {task.taskUrl && (
+                                        <div className="text-sm text-blue-600 hover:text-blue-800 mt-1">
+                                          <a href={task.taskUrl} target="_blank" rel="noopener noreferrer">
+                                            View Link
+                                          </a>
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                      {!task.completed && !task.paused && (
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => handleReportBlocker(task.id)}
+                                          className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                        >
+                                          <AlertTriangle className="w-4 h-4 mr-1" />
+                                          Pause
+                                        </Button>
+                                      )}
+                                      {task.completed ? (
+                                        <Badge className="bg-green-500 text-white">
+                                          <CheckCircle className="w-3 h-3 mr-1" />
+                                          Done
+                                        </Badge>
+                                      ) : task.paused ? (
+                                        <Badge 
+                                          className="bg-orange-500 text-white cursor-pointer hover:bg-orange-600 transition-colors"
+                                          onClick={() => handleViewBlockerDetails(task)}
+                                        >
+                                          <AlertTriangle className="w-3 h-3 mr-1" />
+                                          Paused
+                                        </Badge>
+                                      ) : (
+                                        <Badge variant="outline">
+                                          <Clock className="w-3 h-3 mr-1" />
+                                          Pending
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="text-center py-8 text-gray-500">
+                                <Users className="w-12 h-12 mx-auto mb-4" />
+                                <p>General tasks will appear here</p>
+                                <p className="text-sm">For tasks outside of projects and evergreen content</p>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  
+                  {/* Show empty state if no general tasks exist */}
+                  {!Object.keys(tasksByRelease).includes('general') && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <span>General Tasks</span>
+                            <Badge variant="secondary" className="text-xs">
+                              Non-project tasks
+                            </Badge>
+                          </div>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-center py-8 text-gray-500">
+                          <Users className="w-12 h-12 mx-auto mb-4" />
+                          <p>General tasks will appear here</p>
+                          <p className="text-sm">For tasks outside of projects and evergreen content</p>
                         </div>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-center py-8 text-gray-500">
-                        <Users className="w-12 h-12 mx-auto mb-4" />
-                        <p>General tasks will appear here</p>
-                        <p className="text-sm">For tasks outside of projects and evergreen content</p>
-                      </div>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
               </div>
 

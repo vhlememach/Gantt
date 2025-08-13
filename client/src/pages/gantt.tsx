@@ -597,7 +597,7 @@ export default function GanttPage() {
                     className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-0"
                   >
                     <Palette className="mr-2 h-4 w-4" />
-                    Customize Menu
+                    Customize
                     <ChevronDown className="ml-2 h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
