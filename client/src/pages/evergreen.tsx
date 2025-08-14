@@ -205,6 +205,17 @@ export default function EvergreenPage({}: EvergreenPageProps) {
                           {getBoxProgress(box.id)}% Complete
                         </Badge>
                       </div>
+                      
+                      {/* Show tasks count for this box */}
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-500 dark:text-gray-400">Tasks:</span>
+                        <Badge 
+                          variant="secondary"
+                          className="text-xs"
+                        >
+                          {allTasks.filter(task => task.evergreenBoxId === box.id).length} tasks
+                        </Badge>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -228,6 +239,71 @@ export default function EvergreenPage({}: EvergreenPageProps) {
             </div>
           </div>
         ))}
+
+        {/* Show Evergreen Content group specifically to display tasks */}
+        <div className="mb-8">
+          <div className="flex items-center mb-4">
+            <div className="w-4 h-4 rounded-full mr-3 bg-green-500" />
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              Evergreen Content
+            </h2>
+            <Badge variant="outline" className="ml-2">
+              {allTasks.filter(task => task.evergreenBoxId).length} tasks
+            </Badge>
+          </div>
+          
+          {/* Show evergreen tasks grouped by waterfall cycle */}
+          <div className="space-y-4">
+            {waterfallCycles.map(cycle => {
+              const cycleTasks = allTasks.filter(task => 
+                task.evergreenBoxId && 
+                boxes.find(box => box.id === task.evergreenBoxId && box.waterfallCycleId === cycle.id)
+              );
+              
+              if (cycleTasks.length === 0) return null;
+              
+              return (
+                <div key={cycle.id} className="bg-white dark:bg-gray-800 rounded-lg border p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-medium text-gray-900 dark:text-white">
+                      {cycle.name} ({cycle.type})
+                    </h3>
+                    <Badge variant="secondary" className="text-xs">
+                      {cycleTasks.length} tasks
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                    {cycleTasks.map(task => (
+                      <div key={task.id} className="text-sm bg-gray-50 dark:bg-gray-700 rounded p-2">
+                        <div className="font-medium text-gray-900 dark:text-white">
+                          {task.taskTitle}
+                        </div>
+                        <div className="text-gray-500 dark:text-gray-400">
+                          Assigned to: {task.assignedTo}
+                        </div>
+                        <div className="text-xs text-gray-400 dark:text-gray-500">
+                          {task.completed ? '✓ Completed' : '⏳ Pending'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+            
+            {/* Show orphaned evergreen tasks */}
+            {allTasks.filter(task => task.evergreenBoxId && !boxes.find(box => box.id === task.evergreenBoxId)).length > 0 && (
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800 p-4">
+                <h3 className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">
+                  Orphaned Tasks (Box Deleted)
+                </h3>
+                <div className="text-sm text-yellow-700 dark:text-yellow-300">
+                  {allTasks.filter(task => task.evergreenBoxId && !boxes.find(box => box.id === task.evergreenBoxId)).length} tasks with deleted evergreen boxes
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
 
         {boxes.length === 0 && (
           <div className="text-center py-12">

@@ -620,9 +620,12 @@ export default function CalendarPage() {
                               console.log('onDragStart called for:', task.taskTitle);
                               handleDragStart(task);
                               e.dataTransfer.effectAllowed = 'move';
+                              e.dataTransfer.setData('text/plain', JSON.stringify(task));
+                              e.currentTarget.style.opacity = '0.5';
                             }}
                             onDragEnd={(e) => {
                               console.log('onDragEnd called');
+                              e.currentTarget.style.opacity = '1';
                               setDraggedTask(null);
                             }}
                             className="p-3 bg-gray-50 dark:bg-gray-700 rounded text-xs cursor-move hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors min-h-[3rem] flex items-center"

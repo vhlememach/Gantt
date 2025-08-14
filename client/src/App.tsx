@@ -19,54 +19,67 @@ import AdminSimple from "@/pages/admin-simple";
 
 function AdminDropdown() {
   const { user } = useAuth();
+  const [location] = useLocation();
   
   if (!user?.isAdmin) {
     return null;
   }
 
+  const handleAdminAction = (action: string, detail?: any) => {
+    // Navigate to gantt page if not there, then execute action
+    if (location !== '/' && action.startsWith('gantt:')) {
+      window.location.href = '/';
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent(action, detail ? { detail } : undefined));
+      }, 100);
+    } else {
+      window.dispatchEvent(new CustomEvent(action, detail ? { detail } : undefined));
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Settings className="h-4 w-4 mr-2" />
-          Admin
-          <ChevronDown className="ml-2 h-4 w-4" />
+        <Button variant="outline" size="sm" className="border-white/20 text-black bg-white/90 hover:bg-white hover:text-black">
+          <Settings className="h-4 w-4 mr-2 text-black" />
+          <span className="text-black">Admin</span>
+          <ChevronDown className="ml-2 h-4 w-4 text-black" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
         {/* Customize Options */}
-        <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:open-groups'))}>
+        <DropdownMenuItem onClick={() => handleAdminAction('gantt:open-groups')}>
           <Users className="mr-2 h-4 w-4" />
           Groups
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:open-waterfall'))}>
+        <DropdownMenuItem onClick={() => handleAdminAction('gantt:open-waterfall')}>
           <Shuffle className="mr-2 h-4 w-4" />
           Waterfall Cycles
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:open-header'))}>
+        <DropdownMenuItem onClick={() => handleAdminAction('gantt:open-header')}>
           <Palette className="mr-2 h-4 w-4" />
           Header & Style
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:open-status'))}>
+        <DropdownMenuItem onClick={() => handleAdminAction('gantt:open-status')}>
           <ShieldCheck className="mr-2 h-4 w-4" />
           Status Colors
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         {/* Export Options */}
-        <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:export', { detail: 'json' }))}>
+        <DropdownMenuItem onClick={() => handleAdminAction('gantt:export', 'json')}>
           <FileJson className="mr-2 h-4 w-4" />
           Export as JSON
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:import'))}>
+        <DropdownMenuItem onClick={() => handleAdminAction('gantt:import')}>
           <Upload className="mr-2 h-4 w-4" />
           Import from JSON
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:export', { detail: 'png' }))}>
+        <DropdownMenuItem onClick={() => handleAdminAction('gantt:export', 'png')}>
           <Image className="mr-2 h-4 w-4" />
           Export as PNG
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:export', { detail: 'pdf' }))}>
+        <DropdownMenuItem onClick={() => handleAdminAction('gantt:export', 'pdf')}>
           <FileType className="mr-2 h-4 w-4" />
           Export as PDF
         </DropdownMenuItem>

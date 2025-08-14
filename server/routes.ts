@@ -311,6 +311,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Review request endpoint
+  app.post("/api/checklist-tasks/:id/request-review", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { changes } = req.body;
+      
+      // Update task status to indicate review requested
+      const task = await storage.updateChecklistTask(id, { 
+        reviewRequested: true,
+        reviewChanges: changes,
+        reviewRequestedAt: new Date().toISOString()
+      });
+      
+      if (!task) {
+        return res.status(404).json({ message: "Checklist task not found" });
+      }
+      
+      res.json({ success: true, message: "Review requested successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to request review" });
+    }
+  });
+
   app.delete("/api/checklist-tasks/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
