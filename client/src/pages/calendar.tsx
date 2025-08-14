@@ -9,6 +9,7 @@ import { Calendar as CalendarIcon, CheckCircle, Star, AlertTriangle, ExternalLin
 import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaYoutube, FaTiktok, FaReddit } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
 import { Link } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 
 interface CalendarTask {
   id: string;
@@ -88,6 +89,7 @@ export default function CalendarPage() {
   const [sidebarVisible, setSidebarVisible] = useState(true);
 
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   // Fetch all task social media data
   const { data: allTaskSocialMedia = [] } = useQuery({
@@ -319,7 +321,19 @@ export default function CalendarPage() {
     // The sidebar should ONLY show tasks that are completed in Team Checklist AND unscheduled
     const completedUnscheduledTasks = unscheduled.filter(task => {
       const originalTask = deduplicatedTasks.find(t => t.id === task.id);
-      return originalTask?.completed === true;
+      const isCompleted = originalTask?.completed === true;
+      
+      // Debug all completed tasks specifically
+      if (isCompleted) {
+        console.log(`✅ COMPLETED unscheduled task "${task.taskTitle}" (${task.id}): releaseId=${task.releaseId}, evergreenBoxId=${(originalTask as any)?.evergreenBoxId}`);
+      }
+      
+      // Debug evergreen tasks specifically
+      if (task.releaseId === 'evergreen') {
+        console.log(`🔍 Evergreen task "${task.taskTitle}" (${task.id}): completed=${isCompleted}, scheduled=${!!task.scheduledDate}, originalCompleted=${originalTask?.completed}`);
+      }
+      
+      return isCompleted;
     });
     
     const groupedTasks = completedUnscheduledTasks.reduce((acc, task) => {
@@ -375,7 +389,11 @@ export default function CalendarPage() {
         const endDate = new Date(release.endDate);
         
         if (targetDate < startDate || targetDate > endDate) {
-          alert(`Cannot schedule task outside of release date range (${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()})`);
+          toast({
+            title: "Invalid Date",
+            description: `Cannot schedule task outside of release date range (${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()})`,
+            variant: "destructive",
+          });
           setDraggedTask(null);
           return;
         }
