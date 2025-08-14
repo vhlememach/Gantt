@@ -80,6 +80,7 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, user: Partial<InsertUser>): Promise<User | undefined>;
+  updateUserPassword(id: string, password: string): Promise<boolean>;
   deleteUser(id: string): Promise<boolean>;
 }
 
@@ -744,6 +745,10 @@ export class MemStorage implements IStorage {
     throw new Error("User authentication not supported in MemStorage");
   }
 
+  async updateUserPassword(id: string, password: string): Promise<boolean> {
+    throw new Error("User authentication not supported in MemStorage");
+  }
+
   async deleteUser(id: string): Promise<boolean> {
     throw new Error("User authentication not supported in MemStorage");
   }
@@ -787,6 +792,15 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return updatedUser || undefined;
+  }
+
+  async updateUserPassword(id: string, password: string): Promise<boolean> {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const result = await db
+      .update(users)
+      .set({ password: hashedPassword, updatedAt: new Date() })
+      .where(eq(users.id, id));
+    return result.rowCount > 0;
   }
 
   async deleteUser(id: string): Promise<boolean> {

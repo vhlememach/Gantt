@@ -91,14 +91,7 @@ export default function Login() {
             </Button>
           </form>
 
-          <div className="mt-6 p-4 bg-muted rounded-lg">
-            <p className="text-sm text-muted-foreground mb-2">Demo Accounts:</p>
-            <div className="text-xs space-y-1">
-              <div><strong>Admin:</strong> victor.leme@zengate.global</div>
-              <div><strong>User:</strong> visitor</div>
-              <div className="text-muted-foreground">Contact admin for password</div>
-            </div>
-          </div>
+
         </CardContent>
       </Card>
     </div>

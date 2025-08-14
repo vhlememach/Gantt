@@ -121,7 +121,7 @@ function Router() {
           <Route path="/checklist" component={ChecklistPage} />
           <Route path="/evergreen" component={EvergreenPage} />
           <Route path="/calendar" component={CalendarPage} />
-          <Route path="/admin" component={Admin} />
+          {user?.isAdmin && <Route path="/admin" component={Admin} />}
           <Route component={NotFound} />
         </Switch>
       </main>

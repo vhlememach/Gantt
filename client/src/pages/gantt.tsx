@@ -607,7 +607,7 @@ export default function GanttPage() {
               <h1 
                 className="text-xl font-bold"
                 style={{
-                  color: settings?.headerTitleColor || '#FFFFFF'
+                  color: settings?.headerTitleColor || '#1f2937'
                 }}
               >
                 {settings?.headerTitle || "Release Gantt Chart"}

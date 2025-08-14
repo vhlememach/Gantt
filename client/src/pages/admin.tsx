@@ -34,12 +34,24 @@ export default function Admin() {
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('');
   const [newUserIsAdmin, setNewUserIsAdmin] = useState(false);
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string>('');
+  const [newPassword, setNewPassword] = useState('');
   const queryClient = useQueryClient();
 
   // Redirect non-admin users
-  if (!authLoading && (!currentUser || !currentUser.isAdmin)) {
+  if (!authLoading && currentUser && !currentUser.isAdmin) {
     navigate('/');
     return null;
+  }
+  
+  // Show loading while checking auth
+  if (authLoading || !currentUser) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
   }
 
   const { data: users, isLoading: usersLoading } = useQuery<User[]>({
@@ -69,6 +81,27 @@ export default function Admin() {
     },
   });
 
+  const changePasswordMutation = useMutation({
+    mutationFn: async (data: { userId: string; password: string }) => {
+      const response = await fetch(`/api/users/${data.userId}/password`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: data.password }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to change password');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      setIsPasswordDialogOpen(false);
+      setSelectedUserId('');
+      setNewPassword('');
+    },
+  });
+
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: string) => {
       const response = await fetch(`/api/users/${userId}`, {
@@ -93,6 +126,23 @@ export default function Admin() {
         email: newUserEmail,
         password: newUserPassword,
         isAdmin: newUserIsAdmin,
+      });
+    } catch (error) {
+      // Error handled by mutation
+    }
+  };
+
+  const handleChangePassword = async (userId: string) => {
+    setSelectedUserId(userId);
+    setIsPasswordDialogOpen(true);
+  };
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await changePasswordMutation.mutateAsync({
+        userId: selectedUserId,
+        password: newPassword,
       });
     } catch (error) {
       // Error handled by mutation
@@ -271,18 +321,29 @@ export default function Admin() {
                     {new Date(user.createdAt).toLocaleDateString()}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteUser(user.id)}
-                      disabled={
-                        user.id === currentUser?.id || 
-                        deleteUserMutation.isPending
-                      }
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex gap-2 justify-end">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleChangePassword(user.id)}
+                        disabled={changePasswordMutation.isPending}
+                        className="text-blue-600 hover:text-blue-700"
+                      >
+                        Change Password
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteUser(user.id)}
+                        disabled={
+                          user.id === currentUser?.id || 
+                          deleteUserMutation.isPending
+                        }
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -296,6 +357,67 @@ export default function Admin() {
           )}
         </CardContent>
       </Card>
+
+      {/* Password Change Dialog */}
+      <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Password</DialogTitle>
+            <DialogDescription>
+              Set a new password for this user
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handlePasswordSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">New Password</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+                disabled={changePasswordMutation.isPending}
+                placeholder="Enter new password"
+              />
+            </div>
+
+            {changePasswordMutation.error && (
+              <Alert variant="destructive">
+                <AlertDescription>
+                  {changePasswordMutation.error instanceof Error 
+                    ? changePasswordMutation.error.message 
+                    : 'Failed to change password'}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <div className="flex gap-2">
+              <Button
+                type="submit"
+                disabled={changePasswordMutation.isPending}
+              >
+                {changePasswordMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  'Update Password'
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsPasswordDialogOpen(false)}
+                disabled={changePasswordMutation.isPending}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
