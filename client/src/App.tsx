@@ -124,7 +124,15 @@ function Router() {
           <Route path="/checklist" component={ChecklistPage} />
           <Route path="/evergreen" component={EvergreenPage} />
           <Route path="/calendar" component={CalendarPage} />
-          <Route path="/admin" component={Admin} />
+          <Route path="/admin">
+            {user?.isAdmin ? <Admin /> : (
+              <div className="container mx-auto px-4 py-8">
+                <h1 className="text-2xl font-bold text-red-600">Access Denied</h1>
+                <p>Admin privileges required to access this page.</p>
+                <p>Current user: {user?.email} (Admin: {user?.isAdmin ? 'Yes' : 'No'})</p>
+              </div>
+            )}
+          </Route>
           <Route component={NotFound} />
         </Switch>
       </main>

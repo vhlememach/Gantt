@@ -30,6 +30,14 @@ export default function Admin() {
   // ALL HOOKS MUST BE CALLED AT THE TOP - NO EXCEPTIONS
   const [, navigate] = useLocation();
   const { user: currentUser, isLoading: authLoading } = useAuth();
+  
+  console.log('=== ADMIN COMPONENT RENDER ===', {
+    timestamp: new Date().toISOString(),
+    currentUser,
+    authLoading,
+    isAdmin: currentUser?.isAdmin,
+    email: currentUser?.email
+  });
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('');
@@ -47,13 +55,15 @@ export default function Admin() {
   });
 
   // Debug logging for admin issues
-  console.log('Admin Page Debug:', {
+  console.log('=== ADMIN DATA FETCH ===', {
     currentUser,
     authLoading,
     usersLoading,
     usersError: usersError?.message,
     hasUsers: !!users,
-    usersCount: users?.length
+    usersCount: users?.length,
+    enabledQuery: !!currentUser?.isAdmin,
+    users: users
   });
 
   const createUserMutation = useMutation({
@@ -244,6 +254,17 @@ export default function Admin() {
     );
   }
 
+  console.log('=== ADMIN FINAL RENDER ===', {
+    hasCurrentUser: !!currentUser,
+    isAdmin: currentUser?.isAdmin,
+    hasUsers: !!users,
+    usersCount: users?.length,
+    authLoading,
+    usersLoading,
+    usersError: usersError?.message,
+    actualRenderContent: true
+  });
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="mb-8">
@@ -424,7 +445,7 @@ export default function Admin() {
 
           {!users?.length && (
             <div className="text-center py-8 text-muted-foreground">
-              No users found
+              No users found (Debug: users={JSON.stringify(users)})
             </div>
           )}
         </CardContent>
