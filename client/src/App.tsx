@@ -1,6 +1,7 @@
 import { Switch, Route, useLocation, Link } from "wouter";
 import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider, useQuery } from "@tanstack/react-query";
+import type { AppSettings } from "@shared/schema";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
@@ -16,72 +17,81 @@ import Login from "@/pages/login";
 import Admin from "@/pages/admin";
 import AdminSimple from "@/pages/admin-simple";
 
-function GanttControls() {
-  return (
-    <div className="flex items-center space-x-3">
-      {/* Customize Dropdown */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm">
-            <Palette className="mr-2 h-4 w-4" />
-            Customize
-            <ChevronDown className="ml-2 h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:open-groups'))}>
-            <Ungroup className="mr-2 h-4 w-4" />
-            Groups
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:open-waterfall'))}>
-            <Settings className="mr-2 h-4 w-4" />
-            Waterfall Cycles
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:open-header'))}>
-            <Palette className="mr-2 h-4 w-4" />
-            Header & Style
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:open-status'))}>
-            <Settings className="mr-2 h-4 w-4" />
-            Status Colors
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+function AdminDropdown() {
+  const { user } = useAuth();
+  
+  if (!user?.isAdmin) {
+    return null;
+  }
 
-      {/* Export Dropdown */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm">
-            <Download className="mr-2 h-4 w-4" />
-            Export
-            <ChevronDown className="ml-2 h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:export', { detail: 'json' }))}>
-            Export as JSON
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm">
+          <Settings className="h-4 w-4 mr-2" />
+          Admin
+          <ChevronDown className="ml-2 h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        {/* Customize Options */}
+        <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:open-groups'))}>
+          <Ungroup className="mr-2 h-4 w-4" />
+          Groups
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:open-waterfall'))}>
+          <Settings className="mr-2 h-4 w-4" />
+          Waterfall Cycles
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:open-header'))}>
+          <Palette className="mr-2 h-4 w-4" />
+          Header & Style
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:open-status'))}>
+          <Settings className="mr-2 h-4 w-4" />
+          Status Colors
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        {/* Export Options */}
+        <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:export', { detail: 'json' }))}>
+          <Download className="mr-2 h-4 w-4" />
+          Export as JSON
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:import'))}>
+          <Upload className="mr-2 h-4 w-4" />
+          Import from JSON
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:export', { detail: 'png' }))}>
+          <Download className="mr-2 h-4 w-4" />
+          Export as PNG
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:export', { detail: 'pdf' }))}>
+          <Download className="mr-2 h-4 w-4" />
+          Export as PDF
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        {/* Admin Panel */}
+        <Link href="/admin">
+          <DropdownMenuItem>
+            <Settings className="mr-2 h-4 w-4" />
+            Admin Panel
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:import'))}>
-            <Upload className="mr-2 h-4 w-4" />
-            Import from JSON
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:export', { detail: 'png' }))}>
-            Export as PNG
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:export', { detail: 'pdf' }))}>
-            Export as PDF
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+        </Link>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
 function Navigation() {
   const { user, logout, isLoggingOut } = useAuth();
   const [location] = useLocation();
+  
+  // Query settings to get custom header title and styling
+  const { data: settings } = useQuery({
+    queryKey: ["/api/settings"],
+    enabled: !!user,
+  });
 
   const handleLogout = async () => {
     try {
@@ -99,11 +109,24 @@ function Navigation() {
   ];
 
   return (
-    <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
+    <nav 
+      className="border-b border-gray-200 dark:border-gray-700 px-4 py-3"
+      style={{
+        background: settings?.headerBackgroundColor ? 
+          `linear-gradient(135deg, ${settings.headerBackgroundColor}, ${settings.buttonColor || settings.headerBackgroundColor})` : 
+          undefined
+      }}
+    >
       <div className="flex items-center justify-between max-w-7xl mx-auto">
         <div className="flex items-center space-x-8">
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-            Palmyra Project Management
+          <h1 
+            className="text-xl font-bold text-gray-900 dark:text-white"
+            style={{
+              color: settings?.headerTitleColor || undefined,
+              fontFamily: settings?.fontFamily || undefined
+            }}
+          >
+            {settings?.headerTitle || "Palmyra Project Management"}
           </h1>
           
           <div className="flex space-x-1">
@@ -123,20 +146,11 @@ function Navigation() {
         </div>
 
         <div className="flex items-center space-x-4">
-          {location === "/" && <GanttControls />}
-          
           <span className="text-sm text-gray-600 dark:text-gray-400">
             {user?.email}
           </span>
           
-          {user?.isAdmin && (
-            <Link href="/admin">
-              <Button variant="outline" size="sm">
-                <Settings className="h-4 w-4 mr-2" />
-                Admin
-              </Button>
-            </Link>
-          )}
+          <AdminDropdown />
 
           <Button
             variant="outline"
