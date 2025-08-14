@@ -85,12 +85,14 @@ export function useAuth() {
       // Update the user state directly
       setUser(data.user);
       setIsAuthenticated(true);
-      // Clear all cached data and refetch after a short delay
+      setIsLoading(false);
+      
+      // Clear all cached data 
       queryClient.clear();
       
-      // Double-check auth status after successful login
+      // Force page reload to ensure clean state after login
       setTimeout(() => {
-        checkAuth();
+        window.location.href = '/';
       }, 100);
     },
   });

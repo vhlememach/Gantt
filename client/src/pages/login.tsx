@@ -24,7 +24,7 @@ export default function Login() {
     e.preventDefault();
     try {
       await login({ email, password });
-      navigate('/');
+      // Navigation is handled by the login hook
     } catch (error) {
       // Error is handled by the mutation
     }

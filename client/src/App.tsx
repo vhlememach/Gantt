@@ -108,12 +108,12 @@ function Router() {
   }
 
   // Show login page only if we're definitely not authenticated
-  if (!isAuthenticated && !isLoading) {
+  if (!isAuthenticated && !isLoading && isUnauthenticated) {
     return <Login />;
   }
 
-  // Fallback: if no authentication state, show main app to prevent blank pages
-  // This ensures users never get stuck with blank pages
+  // If we have no clear authentication state but not loading, show main app
+  // This prevents blank pages during authentication transitions
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -125,8 +125,7 @@ function Router() {
           <Route path="/checklist" component={ChecklistPage} />
           <Route path="/evergreen" component={EvergreenPage} />
           <Route path="/calendar" component={CalendarPage} />
-          <Route path="/admin" component={AdminSimple} />
-          <Route path="/admin-full" component={Admin} />
+          <Route path="/admin" component={Admin} />
           <Route component={NotFound} />
         </Switch>
       </main>
