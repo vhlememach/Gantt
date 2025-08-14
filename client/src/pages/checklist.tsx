@@ -633,9 +633,8 @@ export default function ChecklistPage() {
                                     className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
                                     onClick={() => {
                                       setEditingTask(task);
-                                      // For evergreen tasks, check if prefix already exists to avoid duplication
-                                      const hasPrefix = task.taskTitle.includes(` > `);
-                                      const displayTitle = task.evergreenBoxId && !hasPrefix ? `${task.assignedTo} > ${task.taskTitle}` : task.taskTitle;
+                                      // Use the same display logic as shown in the UI
+                                      const displayTitle = task.evergreenBoxId ? `${task.assignedTo} > ${task.taskTitle}` : task.taskTitle;
                                       setEditTitle(displayTitle);
                                       setEditUrl(task.taskUrl || "");
                                     }}
@@ -942,9 +941,8 @@ export default function ChecklistPage() {
                                       className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
                                       onClick={() => {
                                         setEditingTask(task);
-                                        // For evergreen tasks, check if prefix already exists to avoid duplication
-                                        const hasPrefix = task.taskTitle.includes(` > `);
-                                        const displayTitle = task.evergreenBoxId && !hasPrefix ? `${task.assignedTo} > ${task.taskTitle}` : task.taskTitle;
+                                        // Use the same display logic as shown in the UI
+                                        const displayTitle = task.evergreenBoxId ? `${task.assignedTo} > ${task.taskTitle}` : task.taskTitle;
                                         setEditTitle(displayTitle);
                                         setEditUrl(task.taskUrl || "");
                                       }}
@@ -1057,9 +1055,8 @@ export default function ChecklistPage() {
                                         className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
                                         onClick={() => {
                                           setEditingTask(task);
-                                          // For evergreen tasks, check if prefix already exists to avoid duplication
-                                          const hasPrefix = task.taskTitle.includes(` > `);
-                                          const displayTitle = task.evergreenBoxId && !hasPrefix ? `${task.assignedTo} > ${task.taskTitle}` : task.taskTitle;
+                                          // Use the same display logic as shown in the UI
+                                          const displayTitle = task.evergreenBoxId ? `${task.assignedTo} > ${task.taskTitle}` : task.taskTitle;
                                           setEditTitle(displayTitle);
                                           setEditUrl(task.taskUrl || "");
                                         }}
