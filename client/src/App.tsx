@@ -13,6 +13,7 @@ import EvergreenPage from "@/pages/evergreen";
 import CalendarPage from "@/pages/calendar";
 import Login from "@/pages/login";
 import Admin from "@/pages/admin";
+import AdminSimple from "@/pages/admin-simple";
 
 function Navigation() {
   const { user, logout, isLoggingOut } = useAuth();
@@ -124,15 +125,8 @@ function Router() {
           <Route path="/checklist" component={ChecklistPage} />
           <Route path="/evergreen" component={EvergreenPage} />
           <Route path="/calendar" component={CalendarPage} />
-          <Route path="/admin">
-            {user?.isAdmin ? <Admin /> : (
-              <div className="container mx-auto px-4 py-8">
-                <h1 className="text-2xl font-bold text-red-600">Access Denied</h1>
-                <p>Admin privileges required to access this page.</p>
-                <p>Current user: {user?.email} (Admin: {user?.isAdmin ? 'Yes' : 'No'})</p>
-              </div>
-            )}
-          </Route>
+          <Route path="/admin" component={AdminSimple} />
+          <Route path="/admin-full" component={Admin} />
           <Route component={NotFound} />
         </Switch>
       </main>

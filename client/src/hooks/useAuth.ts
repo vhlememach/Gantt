@@ -56,13 +56,13 @@ export function useAuth() {
   useEffect(() => {
     checkAuth();
     
-    // Fallback timeout to prevent infinite loading
+    // Fallback timeout to prevent infinite loading but be more lenient
     const timeout = setTimeout(() => {
-      if (isLoading) {
+      if (isLoading && !user) {
         console.log('Auth check timeout, marking as not loading');
         setIsLoading(false);
       }
-    }, 10000); // 10 seconds max loading
+    }, 15000); // 15 seconds max loading, and only if no user
     
     return () => clearTimeout(timeout);
   }, []);

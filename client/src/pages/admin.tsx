@@ -173,11 +173,41 @@ export default function Admin() {
   };
 
   // NOW handle conditional rendering AFTER all hooks
-  // Show loading while checking auth
-  if (authLoading || !currentUser) {
+  // Show loading while checking auth - but don't show forever
+  if (authLoading && !currentUser) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p>Loading admin panel...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If no user but not loading, show message instead of blank page
+  if (!authLoading && !currentUser) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="mb-8">
+          <Button
+            variant="outline"
+            onClick={() => navigate('/')}
+            className="mb-4"
+          >
+            ← Back to Dashboard
+          </Button>
+          
+          <h1 className="text-3xl font-bold">Admin Panel</h1>
+          <p className="text-muted-foreground mt-1">Authentication required</p>
+        </div>
+        
+        <div className="text-center py-8">
+          <p className="text-gray-600 mb-4">Please log in to access the admin panel.</p>
+          <Button onClick={() => window.location.href = '/api/login'}>
+            Log In
+          </Button>
+        </div>
       </div>
     );
   }
