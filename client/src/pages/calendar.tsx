@@ -74,6 +74,7 @@ export default function CalendarPage() {
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth());
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
   const [draggedTask, setDraggedTask] = useState<CalendarTask | null>(null);
+  console.log('Current draggedTask state:', draggedTask?.taskTitle || 'none');
   const [priorityCells, setPriorityCells] = useState<Set<string>>(new Set());
   const [editingReleaseAccent, setEditingReleaseAccent] = useState<string | null>(null);
   const [releaseAccentColors, setReleaseAccentColors] = useState<Map<string, string>>(new Map());

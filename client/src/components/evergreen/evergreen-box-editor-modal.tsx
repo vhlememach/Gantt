@@ -61,19 +61,21 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
     },
   });
 
-  // Reset form when box data loads
+  // Reset form when box data loads or modal opens
   useEffect(() => {
-    if (box && isEditing) {
+    if (box && isEditing && isOpen) {
+      console.log('Populating form with box data:', box);
       form.reset({
-        title: box.title,
+        title: box.title || "",
         description: box.description || "",
-        groupId: box.groupId,
+        groupId: box.groupId || "",
         responsible: box.responsible || "",
-        icon: box.icon,
+        icon: box.icon || "lucide-megaphone",
         waterfallCycleId: box.waterfallCycleId || "none",
         url: box.url || "",
       });
-    } else if (!isEditing) {
+    } else if (!isEditing && isOpen) {
+      console.log('Resetting form for new box');
       form.reset({
         title: "",
         description: "",
@@ -84,7 +86,7 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
         url: "",
       });
     }
-  }, [box, isEditing, form]);
+  }, [box, isEditing, isOpen, form]);
 
   // Function to generate evergreen tasks based on waterfall cycle assignments
   const generateEvergreenTasks = async (boxId: string, waterfallCycleId: string, boxTitle: string) => {
