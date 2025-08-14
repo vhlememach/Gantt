@@ -163,14 +163,14 @@ function Navigation() {
             size="sm"
             onClick={handleLogout}
             disabled={isLoggingOut}
-            className="border-white/20 text-white hover:bg-white/10 hover:text-white"
+            className="border-white/20 text-black bg-white/90 hover:bg-white hover:text-black"
           >
             {isLoggingOut ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin text-white" />
+              <Loader2 className="h-4 w-4 mr-2 animate-spin text-black" />
             ) : (
-              <LogOut className="h-4 w-4 mr-2 text-white" />
+              <LogOut className="h-4 w-4 mr-2 text-black" />
             )}
-            <span className="text-white">Sign Out</span>
+            <span className="text-black">Sign Out</span>
           </Button>
         </div>
       </div>
