@@ -610,7 +610,7 @@ export default function GanttPage() {
                   color: settings?.headerTitleColor || '#1f2937'
                 }}
               >
-                {settings?.headerTitle || "Release Gantt Chart"}
+                {settings?.headerTitle || "Palmyra"}
               </h1>
             </div>
             
@@ -724,99 +724,6 @@ export default function GanttPage() {
             </div>
           </div>
           <div className="flex items-center space-x-4">
-            
-            {/* Customize Dropdown */}
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-0"
-                  >
-                    <Palette className="mr-2 h-4 w-4" />
-                    Customize
-                    <ChevronDown className="ml-2 h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={() => setIsGroupModalOpen(true)}>
-                    <Ungroup className="mr-2 h-4 w-4" />
-                    Groups
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setIsWaterfallModalOpen(true)}>
-                    <Settings className="mr-2 h-4 w-4" />
-                    Waterfall Cycles
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setIsHeaderModalOpen(true)}>
-                    <Palette className="mr-2 h-4 w-4" />
-                    Header & Style
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setIsStatusColorModalOpen(true)}>
-                    <Settings className="mr-2 h-4 w-4" />
-                    Status Colors
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-0"
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    Export
-                    <ChevronDown className="ml-2 h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => handleExport('json')}>
-                    Export as JSON
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleImport}>
-                    Import from JSON
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => handleExport('png')}>
-                    Export as PNG
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleExport('pdf')}>
-                    Export as PDF
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              {/* Export Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-slate-700 hover:text-slate-900"
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    Export
-                    <ChevronDown className="ml-2 h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => handleExport('json')}>
-                    Export as JSON
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleImport}>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Import from JSON
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => handleExport('png')}>
-                    Export as PNG
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleExport('pdf')}>
-                    Export as PDF
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            
             <div className="flex items-center space-x-2">
               <label className="text-sm font-medium text-slate-700">Zoom:</label>
               <Slider

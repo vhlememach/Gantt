@@ -33,7 +33,7 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
 
   // Fetch existing box data for editing
   const { data: box, isLoading: boxLoading } = useQuery<EvergreenBox>({
-    queryKey: ["/api/evergreen-boxes", boxId],
+    queryKey: [`/api/evergreen-boxes/${boxId}`],
     enabled: isEditing && isOpen && !!boxId,
   });
 
@@ -63,7 +63,7 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
 
   // Reset form when box data loads or modal opens
   useEffect(() => {
-    console.log('useEffect triggered - box:', box, 'isEditing:', isEditing, 'isOpen:', isOpen, 'boxLoading:', boxLoading);
+    console.log('useEffect triggered - box:', box, 'isEditing:', isEditing, 'isOpen:', isOpen, 'boxLoading:', boxLoading, 'boxId:', boxId);
     
     if (isEditing && isOpen && box && !boxLoading) {
       console.log('Populating form with box data:', box);
@@ -77,18 +77,13 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
         url: box.url || "",
       };
       console.log('Form data being set:', formData);
-      form.reset(formData);
       
-      // Force field values to be set
-      setTimeout(() => {
-        form.setValue('title', box.title || "");
-        form.setValue('description', box.description || "");
-        form.setValue('groupId', box.groupId || "");
-        form.setValue('responsible', box.responsible || "");
-        form.setValue('icon', box.icon || "lucide-megaphone");
-        form.setValue('waterfallCycleId', box.waterfallCycleId || "none");
-        form.setValue('url', box.url || "");
-      }, 100);
+      // Use Object.keys to ensure all fields are set
+      Object.keys(formData).forEach(key => {
+        form.setValue(key as keyof typeof formData, formData[key as keyof typeof formData]);
+      });
+      
+      form.reset(formData);
     } else if (!isEditing && isOpen) {
       console.log('Resetting form for new box');
       form.reset({
@@ -101,7 +96,7 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
         url: "",
       });
     }
-  }, [box, isEditing, isOpen, boxLoading, form]);
+  }, [box, isEditing, isOpen, boxLoading, boxId, form]);
 
   // Function to generate evergreen tasks based on waterfall cycle assignments
   const generateEvergreenTasks = async (boxId: string, waterfallCycleId: string, boxTitle: string) => {
