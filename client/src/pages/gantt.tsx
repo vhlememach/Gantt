@@ -7,7 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Slider } from "@/components/ui/slider";
 import { Palette, Ungroup, Download, Plus, ExpandIcon, ChevronDown, Settings, CheckSquare, Megaphone, Upload, Calendar } from "lucide-react";
 
-import { MobileNavigation } from "@/components/ui/navigation";
+
 import HeaderCustomizationModal from "@/components/gantt/header-customization-modal";
 import GroupManagementModal from "@/components/gantt/group-management-modal";
 import ReleaseEditorModal from "@/components/gantt/release-editor-modal";
@@ -812,11 +812,7 @@ export default function GanttPage() {
         isOpen={isWaterfallModalOpen}
         onClose={() => setIsWaterfallModalOpen(false)}
       />
-      
-      {/* Mobile Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 md:hidden">
-        <MobileNavigation />
-      </div>
+
     </div>
   );
 }
