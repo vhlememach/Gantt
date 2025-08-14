@@ -634,7 +634,7 @@ export default function GanttPage() {
             {/* Add Project Button */}
             <Button 
               onClick={() => handleReleaseEdit(null)} 
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-[#7232d9] hover:bg-[#6028c5] text-white"
             >
               <Plus className="mr-2 h-4 w-4" />
               Add Project

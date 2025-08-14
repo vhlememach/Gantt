@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2, LogOut, Settings, BarChart3, Calendar as CalendarIcon, CheckSquare, Repeat, Palette, Download, ChevronDown, Upload, Ungroup } from "lucide-react";
+import { Loader2, LogOut, Settings, BarChart3, Calendar as CalendarIcon, CheckSquare, Repeat, Palette, Download, ChevronDown, Upload, Ungroup, Users, Shuffle, FileJson, Image, FileType, ShieldCheck } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import NotFound from "@/pages/not-found";
 import GanttPage from "@/pages/gantt";
@@ -36,11 +36,11 @@ function AdminDropdown() {
       <DropdownMenuContent align="end" className="w-48">
         {/* Customize Options */}
         <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:open-groups'))}>
-          <Ungroup className="mr-2 h-4 w-4" />
+          <Users className="mr-2 h-4 w-4" />
           Groups
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:open-waterfall'))}>
-          <Settings className="mr-2 h-4 w-4" />
+          <Shuffle className="mr-2 h-4 w-4" />
           Waterfall Cycles
         </DropdownMenuItem>
         <DropdownMenuSeparator />
@@ -49,13 +49,13 @@ function AdminDropdown() {
           Header & Style
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:open-status'))}>
-          <Settings className="mr-2 h-4 w-4" />
+          <ShieldCheck className="mr-2 h-4 w-4" />
           Status Colors
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         {/* Export Options */}
         <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:export', { detail: 'json' }))}>
-          <Download className="mr-2 h-4 w-4" />
+          <FileJson className="mr-2 h-4 w-4" />
           Export as JSON
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:import'))}>
@@ -63,11 +63,11 @@ function AdminDropdown() {
           Import from JSON
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:export', { detail: 'png' }))}>
-          <Download className="mr-2 h-4 w-4" />
+          <Image className="mr-2 h-4 w-4" />
           Export as PNG
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:export', { detail: 'pdf' }))}>
-          <Download className="mr-2 h-4 w-4" />
+          <FileType className="mr-2 h-4 w-4" />
           Export as PDF
         </DropdownMenuItem>
         <DropdownMenuSeparator />
@@ -88,7 +88,7 @@ function Navigation() {
   const [location] = useLocation();
   
   // Query settings to get custom header title and styling
-  const { data: settings } = useQuery({
+  const { data: settings } = useQuery<AppSettings>({
     queryKey: ["/api/settings"],
     enabled: !!user,
   });
@@ -110,19 +110,19 @@ function Navigation() {
 
   return (
     <nav 
-      className="border-b border-gray-200 dark:border-gray-700 px-4 py-3"
+      className="border-b border-purple-200 dark:border-purple-700 px-4 py-3"
       style={{
         background: settings?.headerBackgroundColor ? 
           `linear-gradient(135deg, ${settings.headerBackgroundColor}, ${settings.buttonColor || settings.headerBackgroundColor})` : 
-          undefined
+          'linear-gradient(135deg, #7c3aed, #a855f7)'
       }}
     >
       <div className="flex items-center justify-between max-w-7xl mx-auto">
         <div className="flex items-center space-x-8">
           <h1 
-            className="text-xl font-bold text-gray-900 dark:text-white"
+            className="text-xl font-bold text-white"
             style={{
-              color: settings?.headerTitleColor || undefined,
+              color: settings?.headerTitleColor || '#ffffff',
               fontFamily: settings?.fontFamily || undefined
             }}
           >
@@ -133,12 +133,18 @@ function Navigation() {
             {navItems.map(({ path, label, icon: Icon }) => (
               <Link key={path} href={path}>
                 <Button
-                  variant={location === path ? "default" : "ghost"}
+                  variant={location === path ? "secondary" : "ghost"}
                   size="sm"
-                  className="flex items-center space-x-2"
+                  className={`
+                    flex items-center space-x-2 border-0
+                    ${location === path 
+                      ? "bg-purple-300/30 text-white hover:bg-purple-300/40" 
+                      : "text-white hover:text-white hover:bg-purple-600/20"
+                    }
+                  `}
                 >
-                  <Icon className="h-4 w-4" />
-                  <span>{label}</span>
+                  <Icon className="h-4 w-4 text-white" />
+                  <span className="text-white">{label}</span>
                 </Button>
               </Link>
             ))}
@@ -146,7 +152,7 @@ function Navigation() {
         </div>
 
         <div className="flex items-center space-x-4">
-          <span className="text-sm text-gray-600 dark:text-gray-400">
+          <span className="text-sm text-white/90">
             {user?.email}
           </span>
           
@@ -157,13 +163,14 @@ function Navigation() {
             size="sm"
             onClick={handleLogout}
             disabled={isLoggingOut}
+            className="border-white/20 text-white hover:bg-white/10 hover:text-white"
           >
             {isLoggingOut ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              <Loader2 className="h-4 w-4 mr-2 animate-spin text-white" />
             ) : (
-              <LogOut className="h-4 w-4 mr-2" />
+              <LogOut className="h-4 w-4 mr-2 text-white" />
             )}
-            Sign Out
+            <span className="text-white">Sign Out</span>
           </Button>
         </div>
       </div>
