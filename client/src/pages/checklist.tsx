@@ -633,7 +633,9 @@ export default function ChecklistPage() {
                                     className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
                                     onClick={() => {
                                       setEditingTask(task);
-                                      setEditTitle(task.taskTitle);
+                                      // For evergreen tasks, include the team member prefix in the edit form
+                                      const displayTitle = task.evergreenBoxId ? `${task.assignedTo} > ${task.taskTitle}` : task.taskTitle;
+                                      setEditTitle(displayTitle);
                                       setEditUrl(task.taskUrl || "");
                                     }}
                                   >
@@ -939,7 +941,9 @@ export default function ChecklistPage() {
                                       className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
                                       onClick={() => {
                                         setEditingTask(task);
-                                        setEditTitle(task.taskTitle);
+                                        // For evergreen tasks, include the team member prefix in the edit form
+                                        const displayTitle = task.evergreenBoxId ? `${task.assignedTo} > ${task.taskTitle}` : task.taskTitle;
+                                        setEditTitle(displayTitle);
                                         setEditUrl(task.taskUrl || "");
                                       }}
                                     >
@@ -1044,6 +1048,22 @@ export default function ChecklistPage() {
                                       )}
                                     </div>
                                     <div className="flex items-center space-x-2">
+                                      {/* Wrench icon for General tasks - left of blocker */}
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                        onClick={() => {
+                                          setEditingTask(task);
+                                          // For evergreen tasks, include the team member prefix in the edit form
+                                          const displayTitle = task.evergreenBoxId ? `${task.assignedTo} > ${task.taskTitle}` : task.taskTitle;
+                                          setEditTitle(displayTitle);
+                                          setEditUrl(task.taskUrl || "");
+                                        }}
+                                      >
+                                        <Settings className="w-3 h-3 text-gray-500" />
+                                      </Button>
+                                      
                                       {task.paused ? (
                                         <Badge 
                                           className="bg-green-500 text-white cursor-pointer hover:bg-green-600 transition-colors text-xs"
