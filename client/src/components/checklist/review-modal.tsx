@@ -71,7 +71,7 @@ export function ReviewModal({ isOpen, onClose, task, mode }: ReviewModalProps) {
 
   const requestNextVersionMutation = useMutation({
     mutationFn: async ({ taskId, changes }: { taskId: string; changes: string }) => {
-      const response = await apiRequest('POST', `/api/checklist-tasks/${taskId}/request-review`, { changes });
+      const response = await apiRequest('POST', `/api/checklist-tasks/${taskId}/request-next-version`, { changes });
       return await response.json();
     },
     onSuccess: () => {

@@ -48,38 +48,38 @@ function AdminDropdown() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
         {/* Customize Options */}
-        <DropdownMenuItem onClick={() => handleAdminAction('gantt:open-groups')}>
+        <DropdownMenuItem onClick={(e) => { e.preventDefault(); handleAdminAction('gantt:open-groups'); }}>
           <Users className="mr-2 h-4 w-4" />
           Groups
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleAdminAction('gantt:open-waterfall')}>
+        <DropdownMenuItem onClick={(e) => { e.preventDefault(); handleAdminAction('gantt:open-waterfall'); }}>
           <Shuffle className="mr-2 h-4 w-4" />
           Waterfall Cycles
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => handleAdminAction('gantt:open-header')}>
+        <DropdownMenuItem onClick={(e) => { e.preventDefault(); handleAdminAction('gantt:open-header'); }}>
           <Palette className="mr-2 h-4 w-4" />
           Header & Style
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleAdminAction('gantt:open-status')}>
+        <DropdownMenuItem onClick={(e) => { e.preventDefault(); handleAdminAction('gantt:open-status'); }}>
           <ShieldCheck className="mr-2 h-4 w-4" />
           Status Colors
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         {/* Export Options */}
-        <DropdownMenuItem onClick={() => handleAdminAction('gantt:export', 'json')}>
+        <DropdownMenuItem onClick={(e) => { e.preventDefault(); handleAdminAction('gantt:export', 'json'); }}>
           <FileJson className="mr-2 h-4 w-4" />
           Export as JSON
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleAdminAction('gantt:import')}>
+        <DropdownMenuItem onClick={(e) => { e.preventDefault(); handleAdminAction('gantt:import'); }}>
           <Upload className="mr-2 h-4 w-4" />
           Import from JSON
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleAdminAction('gantt:export', 'png')}>
+        <DropdownMenuItem onClick={(e) => { e.preventDefault(); handleAdminAction('gantt:export', 'png'); }}>
           <Image className="mr-2 h-4 w-4" />
           Export as PNG
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleAdminAction('gantt:export', 'pdf')}>
+        <DropdownMenuItem onClick={(e) => { e.preventDefault(); handleAdminAction('gantt:export', 'pdf'); }}>
           <FileType className="mr-2 h-4 w-4" />
           Export as PDF
         </DropdownMenuItem>

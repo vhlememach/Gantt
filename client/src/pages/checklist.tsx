@@ -58,6 +58,13 @@ export default function ChecklistPage() {
     const evergreenTasks = allTasks.filter(task => task.evergreenBoxId);
     const boxesWithCycles = evergreenBoxes.filter(box => box.waterfallCycleId);
     
+    // Debug logging for evergreen tasks
+    console.log("🔍 All tasks count:", allTasks.length);
+    console.log("🔍 Evergreen tasks found:", evergreenTasks.length);
+    console.log("🔍 Evergreen boxes:", evergreenBoxes.length);
+    console.log("🔍 Selected member:", selectedMember);
+    console.log("🔍 Member evergreen tasks:", allTasks.filter(task => task.evergreenBoxId && task.assignedTo === selectedMember));
+    
     // If we have evergreen boxes with cycles but no evergreen tasks, generate them
     if (boxesWithCycles.length > 0 && evergreenTasks.length === 0) {
       console.log("No evergreen tasks found, generating them...");
@@ -67,7 +74,7 @@ export default function ChecklistPage() {
         })
         .catch(console.error);
     }
-  }, [allTasks, evergreenBoxes, queryClient]);
+  }, [allTasks, evergreenBoxes, queryClient, selectedMember]);
 
   // Fetch all releases for the dropdown
   const { data: releases = [] } = useQuery<Release[]>({

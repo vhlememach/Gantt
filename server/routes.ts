@@ -376,6 +376,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Request next version endpoint
+  app.post("/api/checklist-tasks/:id/request-next-version", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { changes } = req.body;
+      
+      // Get current task to increment version
+      const currentTask = await storage.getChecklistTask(id);
+      if (!currentTask) {
+        return res.status(404).json({ message: "Checklist task not found" });
+      }
+      
+      const nextVersion = (currentTask.currentVersion || 1) + 1;
+      
+      const task = await storage.updateChecklistTask(id, { 
+        reviewStatus: "requested",
+        reviewChanges: changes,
+        reviewRequestedAt: new Date().toISOString(),
+        currentVersion: nextVersion,
+        reviewSubmissionUrl: null // Reset submission URL for new version
+      });
+      
+      res.json({ success: true, message: `Version ${nextVersion} requested successfully` });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to request next version" });
+    }
+  });
+
   // Schedule task endpoint for calendar
   app.patch("/api/checklist-tasks/:id/schedule", requireAuth, async (req, res) => {
     try {
@@ -393,6 +421,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, message: "Task scheduled successfully" });
     } catch (error) {
       res.status(500).json({ message: "Failed to schedule task" });
+    }
+  });
+
+  // Unschedule task endpoint for calendar
+  app.patch("/api/checklist-tasks/:id/unschedule", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const task = await storage.updateChecklistTask(id, { 
+        scheduledDate: null
+      });
+      
+      if (!task) {
+        return res.status(404).json({ message: "Checklist task not found" });
+      }
+      
+      res.json({ success: true, message: "Task unscheduled successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to unschedule task" });
     }
   });
 
