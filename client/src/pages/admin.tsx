@@ -40,9 +40,20 @@ export default function Admin() {
   const queryClient = useQueryClient();
 
   // Always call all queries and mutations at the top
-  const { data: users, isLoading: usersLoading } = useQuery<User[]>({
+  const { data: users, isLoading: usersLoading, error: usersError } = useQuery<User[]>({
     queryKey: ['/api/users'],
     enabled: !!currentUser?.isAdmin,
+    retry: false,
+  });
+
+  // Debug logging for admin issues
+  console.log('Admin Page Debug:', {
+    currentUser,
+    authLoading,
+    usersLoading,
+    usersError: usersError?.message,
+    hasUsers: !!users,
+    usersCount: users?.length
   });
 
   const createUserMutation = useMutation({
@@ -194,11 +205,40 @@ export default function Admin() {
           </Button>
           
           <h1 className="text-3xl font-bold">Admin Panel</h1>
-          <p className="text-muted-foreground mt-1">Loading...</p>
+          <p className="text-muted-foreground mt-1">Loading users...</p>
         </div>
         
         <div className="flex items-center justify-center py-8">
           <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if users query failed
+  if (usersError && currentUser?.isAdmin) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="mb-8">
+          <Button
+            variant="outline"
+            onClick={() => navigate('/')}
+            className="mb-4"
+          >
+            ← Back to Dashboard
+          </Button>
+          
+          <h1 className="text-3xl font-bold">Admin Panel</h1>
+          <p className="text-muted-foreground mt-1">Error loading user data</p>
+        </div>
+        
+        <div className="text-center py-8">
+          <p className="text-red-600 mb-4">
+            Failed to load users: {usersError?.message || 'Unknown error'}
+          </p>
+          <Button onClick={() => window.location.reload()}>
+            Retry
+          </Button>
         </div>
       </div>
     );

@@ -53,9 +53,21 @@ export function requireAuth(req: any, res: any, next: any) {
 
 // Middleware to check if user is admin
 export function requireAdmin(req: any, res: any, next: any) {
+  console.log('Admin check - Session:', {
+    userId: req.session?.userId,
+    isAdmin: req.session?.isAdmin,
+    user: req.user
+  });
+  
   if (req.session?.userId && req.session?.isAdmin) {
     return next();
   }
+  
+  // Fallback: check user object if session isAdmin is not set
+  if (req.user?.isAdmin) {
+    return next();
+  }
+  
   return res.status(403).json({ error: 'Admin access required' });
 }
 
@@ -67,6 +79,11 @@ export async function addUserToRequest(req: any, res: any, next: any) {
       if (user) {
         const { password: _, ...userWithoutPassword } = user;
         req.user = userWithoutPassword;
+        
+        // Ensure session isAdmin is synced with user data
+        if (req.session.isAdmin !== user.isAdmin) {
+          req.session.isAdmin = user.isAdmin;
+        }
       }
     } catch (error) {
       console.error("Error loading user:", error);
