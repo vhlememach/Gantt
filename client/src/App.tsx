@@ -91,10 +91,11 @@ function Navigation() {
 }
 
 function Router() {
-  const { isAuthenticated, isUnauthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isUnauthenticated, isLoading, user } = useAuth();
   const [location] = useLocation();
   
   console.log("Current location:", location);
+  console.log("Auth state:", { isAuthenticated, isUnauthenticated, isLoading, user });
   
   // Show loading spinner only briefly while checking authentication
   if (isLoading && !isUnauthenticated) {

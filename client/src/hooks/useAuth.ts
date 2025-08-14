@@ -23,30 +23,37 @@ export function useAuth() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Check authentication status on mount
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const response = await fetch('/api/me', {
-          credentials: 'include',
-        });
-        
-        if (response.ok) {
-          const userData = await response.json();
-          setUser(userData);
-          setIsAuthenticated(true);
-        } else {
-          setUser(null);
-          setIsAuthenticated(false);
-        }
-      } catch (error) {
+  // Function to check authentication status
+  const checkAuth = async () => {
+    try {
+      const response = await fetch('/api/me', {
+        credentials: 'include',
+      });
+      
+      if (response.ok) {
+        const userData = await response.json();
+        console.log('Auth check successful:', userData);
+        setUser(userData);
+        setIsAuthenticated(true);
+        return userData;
+      } else {
+        console.log('Auth check failed:', response.status);
         setUser(null);
         setIsAuthenticated(false);
-      } finally {
-        setIsLoading(false);
+        return null;
       }
-    };
+    } catch (error) {
+      console.error('Auth check error:', error);
+      setUser(null);
+      setIsAuthenticated(false);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  // Check authentication status on mount
+  useEffect(() => {
     checkAuth();
   }, []);
 
@@ -63,12 +70,18 @@ export function useAuth() {
       }
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
+      console.log('Login successful:', data);
       // Update the user state directly
       setUser(data.user);
       setIsAuthenticated(true);
-      // Clear all cached data and refetch
+      // Clear all cached data and refetch after a short delay
       queryClient.clear();
+      
+      // Double-check auth status after successful login
+      setTimeout(() => {
+        checkAuth();
+      }, 100);
     },
   });
 
