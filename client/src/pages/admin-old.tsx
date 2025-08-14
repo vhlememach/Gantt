@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
+// We'll use fetch directly for these requests
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,7 +28,6 @@ interface CreateUserData {
 }
 
 export default function Admin() {
-  // ALL HOOKS MUST BE CALLED AT THE TOP - NO EXCEPTIONS
   const [, navigate] = useLocation();
   const { user: currentUser, isLoading: authLoading } = useAuth();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -39,11 +39,26 @@ export default function Admin() {
   const [newPassword, setNewPassword] = useState('');
   const queryClient = useQueryClient();
 
-  // Always call all queries and mutations at the top
+  // Always call useQuery to avoid hooks order issues
   const { data: users, isLoading: usersLoading } = useQuery<User[]>({
     queryKey: ['/api/users'],
     enabled: !!currentUser?.isAdmin,
   });
+
+  // Redirect non-admin users after all hooks
+  if (!authLoading && currentUser && !currentUser.isAdmin) {
+    navigate('/');
+    return null;
+  }
+  
+  // Show loading while checking auth
+  if (authLoading || !currentUser) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   const createUserMutation = useMutation({
     mutationFn: async (userData: CreateUserData) => {
@@ -105,7 +120,6 @@ export default function Admin() {
     },
   });
 
-  // Event handlers
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -151,20 +165,12 @@ export default function Admin() {
     }
   };
 
-  // NOW handle conditional rendering AFTER all hooks
-  // Show loading while checking auth
-  if (authLoading || !currentUser) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
-  }
-
-  // Redirect non-admin users after all hooks
-  if (currentUser && !currentUser.isAdmin) {
-    navigate('/');
-    return null;
   }
   
   if (usersLoading) {
