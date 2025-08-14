@@ -161,10 +161,24 @@ export default function Admin() {
     );
   }
 
-  // Redirect non-admin users after all hooks
-  if (currentUser && !currentUser.isAdmin) {
-    navigate('/');
-    return null;
+  // Redirect non-admin users after all hooks, but show a message first
+  if (!authLoading && currentUser && !currentUser.isAdmin) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="mb-8">
+          <Button
+            variant="outline"
+            onClick={() => navigate('/')}
+            className="mb-4"
+          >
+            ← Back to Dashboard
+          </Button>
+          
+          <h1 className="text-3xl font-bold">Access Restricted</h1>
+          <p className="text-muted-foreground mt-1">You need admin privileges to access this page.</p>
+        </div>
+      </div>
+    );
   }
   
   if (usersLoading) {

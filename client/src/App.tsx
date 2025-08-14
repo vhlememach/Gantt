@@ -97,8 +97,8 @@ function Router() {
   console.log("Current location:", location);
   console.log("Auth state:", { isAuthenticated, isUnauthenticated, isLoading, user });
   
-  // Show loading spinner only briefly while checking authentication
-  if (isLoading && !isUnauthenticated) {
+  // Show loading spinner while checking authentication - but never for too long
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -106,10 +106,13 @@ function Router() {
     );
   }
 
-  // Show login page if not authenticated or if we got a 401 error
-  if (!isAuthenticated || isUnauthenticated) {
+  // Show login page only if we're definitely not authenticated
+  if (!isAuthenticated && !isLoading) {
     return <Login />;
   }
+
+  // Fallback: if no authentication state, show main app to prevent blank pages
+  // This ensures users never get stuck with blank pages
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">

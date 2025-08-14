@@ -52,9 +52,19 @@ export function useAuth() {
     }
   };
 
-  // Check authentication status on mount
+  // Check authentication status on mount with timeout
   useEffect(() => {
     checkAuth();
+    
+    // Fallback timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      if (isLoading) {
+        console.log('Auth check timeout, marking as not loading');
+        setIsLoading(false);
+      }
+    }, 10000); // 10 seconds max loading
+    
+    return () => clearTimeout(timeout);
   }, []);
 
   const loginMutation = useMutation({
@@ -108,7 +118,7 @@ export function useAuth() {
     user,
     isLoading,
     isAuthenticated,
-    isUnauthenticated: !isAuthenticated && !isLoading,
+    isUnauthenticated: !isAuthenticated && !isLoading && !user,
     login: loginMutation.mutateAsync,
     logout: logoutMutation.mutateAsync,
     isLoggingIn: loginMutation.isPending,
