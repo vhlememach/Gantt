@@ -633,11 +633,8 @@ export default function ChecklistPage() {
                                     className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
                                     onClick={() => {
                                       setEditingTask(task);
-                                      // Use the same display logic as shown in the UI
-                                      const displayTitle = task.evergreenBoxId ? 
-                                        (task.taskTitle.includes(' > ') ? task.taskTitle : `${task.assignedTo} > ${task.taskTitle}`)
-                                        : task.taskTitle;
-                                      setEditTitle(displayTitle);
+                                      // For editing, show the raw taskTitle (what's stored in database)
+                                      setEditTitle(task.taskTitle);
                                       setEditUrl(task.taskUrl || "");
                                     }}
                                   >
@@ -820,9 +817,7 @@ export default function ChecklistPage() {
                                     <div className={`font-medium ${
                                       task.completed ? 'line-through text-gray-500' : 'text-gray-900 dark:text-white'
                                     }`}>
-                                      {task.evergreenBoxId ? 
-                                        (task.taskTitle.includes(' > ') ? task.taskTitle : `${task.assignedTo} > ${task.taskTitle}`)
-                                        : task.taskTitle}
+                                      {task.evergreenBoxId ? `${task.assignedTo} > ${task.taskTitle}` : task.taskTitle}
                                     </div>
                                     {task.taskDescription && (
                                       <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -945,11 +940,8 @@ export default function ChecklistPage() {
                                       className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
                                       onClick={() => {
                                         setEditingTask(task);
-                                        // Use the same display logic as shown in the UI
-                                        const displayTitle = task.evergreenBoxId ? 
-                                          (task.taskTitle.includes(' > ') ? task.taskTitle : `${task.assignedTo} > ${task.taskTitle}`)
-                                          : task.taskTitle;
-                                        setEditTitle(displayTitle);
+                                        // For editing, show the raw taskTitle (what's stored in database)
+                                        setEditTitle(task.taskTitle);
                                         setEditUrl(task.taskUrl || "");
                                       }}
                                     >
@@ -1061,11 +1053,8 @@ export default function ChecklistPage() {
                                         className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
                                         onClick={() => {
                                           setEditingTask(task);
-                                          // Use the same display logic as shown in the UI
-                                          const displayTitle = task.evergreenBoxId ? 
-                                            (task.taskTitle.includes(' > ') ? task.taskTitle : `${task.assignedTo} > ${task.taskTitle}`)
-                                            : task.taskTitle;
-                                          setEditTitle(displayTitle);
+                                          // For editing, show the raw taskTitle (what's stored in database)
+                                          setEditTitle(task.taskTitle);
                                           setEditUrl(task.taskUrl || "");
                                         }}
                                       >
