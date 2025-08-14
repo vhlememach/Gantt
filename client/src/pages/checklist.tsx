@@ -91,6 +91,8 @@ export default function ChecklistPage() {
     let groupId;
     if (task.evergreenBoxId) {
       groupId = 'evergreen';
+    } else if (task.waterfallCycleType === 'Monthly') {
+      groupId = `monthly-${task.releaseId}`;
     } else {
       groupId = task.releaseId || 'unassigned';
     }
