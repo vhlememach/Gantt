@@ -104,7 +104,7 @@ export class MemStorage implements IStorage {
     this.taskSocialMedia = new Map();
     this.appSettings = {
       id: randomUUID(),
-      headerTitle: "Release Gantt Chart",
+      headerTitle: "Palmyra",
       headerBackgroundColor: "#3B82F6",
       headerTitleColor: "#FFFFFF",
       fontFamily: "Inter",
