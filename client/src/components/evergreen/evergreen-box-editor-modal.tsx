@@ -44,15 +44,23 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
       setBoxError(null);
       
       fetch(`/api/evergreen-boxes/${boxId}`, { credentials: 'include' })
-        .then(response => {
+        .then(async response => {
           console.log('Fetch response:', response.status, response.ok);
           if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
-          return response.json();
-        })
-        .then(data => {
-          console.log('Fetched box data:', data);
-          setBox(data);
-          setBoxLoading(false);
+          
+          const text = await response.text();
+          console.log('Raw response text:', text);
+          
+          try {
+            const data = JSON.parse(text);
+            console.log('Parsed box data:', data);
+            setBox(data);
+            setBoxLoading(false);
+          } catch (parseError) {
+            console.error('JSON parse error:', parseError);
+            console.error('Response was:', text);
+            throw new Error(`Failed to parse response: ${parseError}`);
+          }
         })
         .catch(error => {
           console.error('Fetch error:', error);

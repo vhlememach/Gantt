@@ -438,6 +438,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/evergreen-boxes/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const box = await storage.getEvergreenBox(id);
+      if (!box) {
+        return res.status(404).json({ message: "Evergreen box not found" });
+      }
+      res.json(box);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get evergreen box" });
+    }
+  });
+
   app.post("/api/evergreen-boxes", requireAuth, async (req, res) => {
     try {
       const validatedData = insertEvergreenBoxSchema.parse(req.body);
