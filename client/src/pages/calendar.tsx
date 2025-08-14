@@ -283,7 +283,7 @@ export default function CalendarPage() {
     // Transform tasks - include completion status
     const processedTasks: CalendarTask[] = deduplicatedTasks.map(task => ({
       id: task.id,
-      taskTitle: task.taskTitle,
+      taskTitle: task.evergreenBoxId ? `${task.assignedTo} > ${task.taskTitle}` : task.taskTitle,
       taskDescription: task.taskDescription,
       taskUrl: task.taskUrl,
       assignedTo: task.assignedTo,
