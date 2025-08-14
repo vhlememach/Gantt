@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -10,9 +10,13 @@ import EvergreenPage from "@/pages/evergreen";
 import CalendarPage from "@/pages/calendar";
 
 function Router() {
+  const [location] = useLocation();
+  console.log("Current location:", location);
+  
   return (
     <Switch>
       <Route path="/" component={GanttPage} />
+      <Route path="/gantt" component={GanttPage} />
       <Route path="/checklist" component={ChecklistPage} />
       <Route path="/evergreen" component={EvergreenPage} />
       <Route path="/calendar" component={CalendarPage} />
