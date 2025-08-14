@@ -30,18 +30,41 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isEditing = !!boxId;
+  
+  // Direct state management for box data
+  const [box, setBox] = useState<EvergreenBox | null>(null);
+  const [boxLoading, setBoxLoading] = useState(false);
+  const [boxError, setBoxError] = useState<Error | null>(null);
 
-  // Fetch existing box data for editing
-  const { data: box, isLoading: boxLoading, error: boxError } = useQuery<EvergreenBox>({
-    queryKey: ["/api/evergreen-boxes", boxId],
-    queryFn: async () => {
-      if (!boxId) throw new Error("Box ID is required");
-      const response = await fetch(`/api/evergreen-boxes/${boxId}`);
-      if (!response.ok) throw new Error("Failed to fetch box data");
-      return response.json();
-    },
-    enabled: isEditing && isOpen && !!boxId,
-  });
+  // Direct fetch for box data
+  useEffect(() => {
+    if (isEditing && isOpen && boxId) {
+      console.log('Starting direct fetch for box:', boxId);
+      setBoxLoading(true);
+      setBoxError(null);
+      
+      fetch(`/api/evergreen-boxes/${boxId}`, { credentials: 'include' })
+        .then(response => {
+          console.log('Fetch response:', response.status, response.ok);
+          if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
+          return response.json();
+        })
+        .then(data => {
+          console.log('Fetched box data:', data);
+          setBox(data);
+          setBoxLoading(false);
+        })
+        .catch(error => {
+          console.error('Fetch error:', error);
+          setBoxError(error);
+          setBoxLoading(false);
+        });
+    } else {
+      setBox(null);
+      setBoxLoading(false);
+      setBoxError(null);
+    }
+  }, [isEditing, isOpen, boxId]);
 
   // Fetch groups and waterfall cycles for dropdowns
   const { data: groups = [] } = useQuery<ReleaseGroup[]>({
