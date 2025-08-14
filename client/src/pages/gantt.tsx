@@ -621,7 +621,112 @@ export default function GanttPage() {
                 <Navigation className="text-white" />
               </div>
               
+              {/* Customize Dropdown */}
               <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-0"
+                  >
+                    <Palette className="mr-2 h-4 w-4" />
+                    Customize
+                    <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => setIsGroupModalOpen(true)}>
+                    <Ungroup className="mr-2 h-4 w-4" />
+                    Groups
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setIsWaterfallModalOpen(true)}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    Waterfall Cycles
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setIsHeaderModalOpen(true)}>
+                    <Palette className="mr-2 h-4 w-4" />
+                    Header & Style
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setIsStatusColorModalOpen(true)}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    Status Colors
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Export Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-0"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Export
+                    <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => handleExport('json')}>
+                    Export as JSON
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleImport}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Import from JSON
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => handleExport('png')}>
+                    Export as PNG
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport('pdf')}>
+                    Export as PDF
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Timeline Controls */}
+      <div className="bg-white border-b border-slate-200 px-4 py-3">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Button onClick={() => handleReleaseEdit(null)} className="hover:bg-blue-700 bg-[#7232d9]">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Project
+            </Button>
+            <div className="flex items-center space-x-2">
+              <label className="text-sm font-medium text-slate-700">View:</label>
+              <Select value={viewMode} onValueChange={setViewMode}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Quarters">Quarters</SelectItem>
+                  <SelectItem value="Months">Months</SelectItem>
+                  <SelectItem value="Weeks">Weeks</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <label className="text-sm font-medium text-slate-700">Type:</label>
+              <Select value={viewType} onValueChange={(value: "Normal" | "Condensed") => setViewType(value)}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Normal">Normal</SelectItem>
+                  <SelectItem value="Condensed">Condensed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="flex items-center space-x-4">
+            
+            {/* Customize Dropdown */}
+            <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="secondary"
@@ -680,47 +785,38 @@ export default function GanttPage() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            </div>
-          </div>
-        </div>
-      </header>
 
-      {/* Timeline Controls */}
-      <div className="bg-white border-b border-slate-200 px-4 py-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button onClick={() => handleReleaseEdit(null)} className="hover:bg-blue-700 bg-[#7232d9]">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Project
-            </Button>
-            <div className="flex items-center space-x-2">
-              <label className="text-sm font-medium text-slate-700">View:</label>
-              <Select value={viewMode} onValueChange={setViewMode}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Quarters">Quarters</SelectItem>
-                  <SelectItem value="Months">Months</SelectItem>
-                  <SelectItem value="Weeks">Weeks</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <label className="text-sm font-medium text-slate-700">Type:</label>
-              <Select value={viewType} onValueChange={(value: "Normal" | "Condensed") => setViewType(value)}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Normal">Normal</SelectItem>
-                  <SelectItem value="Condensed">Condensed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="flex items-center space-x-4">
+              {/* Export Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-slate-700 hover:text-slate-900"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Export
+                    <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => handleExport('json')}>
+                    Export as JSON
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleImport}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Import from JSON
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => handleExport('png')}>
+                    Export as PNG
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport('pdf')}>
+                    Export as PDF
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            
             <div className="flex items-center space-x-2">
               <label className="text-sm font-medium text-slate-700">Zoom:</label>
               <Slider
