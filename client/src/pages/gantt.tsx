@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
-import { Palette, Ungroup, Download, Plus, ExpandIcon, ChevronDown, Settings, CheckSquare, Megaphone, Upload } from "lucide-react";
+import { Palette, Ungroup, Download, Plus, ExpandIcon, ChevronDown, Settings, CheckSquare, Megaphone, Upload, Calendar } from "lucide-react";
 
-import { Navigation, MobileNavigation } from "@/components/ui/navigation";
+import { MobileNavigation } from "@/components/ui/navigation";
 import HeaderCustomizationModal from "@/components/gantt/header-customization-modal";
 import GroupManagementModal from "@/components/gantt/group-management-modal";
 import ReleaseEditorModal from "@/components/gantt/release-editor-modal";
@@ -616,10 +616,27 @@ export default function GanttPage() {
             
             {/* Main Navigation and Controls */}
             <div className="flex items-center space-x-3">
-              {/* Navigation */}
-              <div className="hidden md:block">
-                <Navigation className="text-white" />
-              </div>
+              {/* Page Navigation */}
+              <nav className="hidden md:flex items-center space-x-3">
+                <Link href="/checklist">
+                  <Button className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-0">
+                    <CheckSquare className="mr-2 h-4 w-4" />
+                    Checklist
+                  </Button>
+                </Link>
+                <Link href="/evergreen">
+                  <Button className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-0">
+                    <Megaphone className="mr-2 h-4 w-4" />
+                    Evergreen
+                  </Button>
+                </Link>
+                <Link href="/calendar">
+                  <Button className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-0">
+                    <Calendar className="mr-2 h-4 w-4" />
+                    Calendar
+                  </Button>
+                </Link>
+              </nav>
               
               {/* Add Project Button */}
               <Button 
