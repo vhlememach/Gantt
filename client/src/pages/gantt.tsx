@@ -55,7 +55,8 @@ export default function GanttPage() {
                 fetch('/api/evergreen-boxes', { method: 'DELETE' }),
                 fetch('/api/releases', { method: 'DELETE' }),
                 fetch('/api/release-groups', { method: 'DELETE' }),
-                fetch('/api/waterfall-cycles', { method: 'DELETE' })
+                fetch('/api/waterfall-cycles', { method: 'DELETE' }),
+                fetch('/api/task-social-media', { method: 'DELETE' })
               ]);
 
               console.log("Data cleared, starting sequential import...");
@@ -65,7 +66,8 @@ export default function GanttPage() {
                 groups: {},
                 waterfallCycles: {},
                 evergreenBoxes: {},
-                releases: {}
+                releases: {},
+                tasks: {}
               };
               
               // 1. Import groups first and store ID mappings
@@ -229,7 +231,8 @@ export default function GanttPage() {
                     contentFormatType: task.contentFormatType || null,
                     taskUrl: task.taskUrl || null,
                     priority: task.priority === true || task.priority === 'true',
-                    completed: task.completed === true || task.completed === 'true'
+                    completed: task.completed === true || task.completed === 'true',
+                    scheduledDate: task.scheduledDate || null
                   };
                   const response = await fetch('/api/checklist-tasks', {
                     method: 'POST',
@@ -237,9 +240,35 @@ export default function GanttPage() {
                     body: JSON.stringify(cleanTask)
                   });
                   if (response.ok) {
-                    console.log(`Task "${task.taskTitle || task.taskName}" imported successfully`);
+                    const newTask = await response.json();
+                    idMappings.tasks[task.id] = newTask.id;  // Store task ID mapping
+                    console.log(`Task "${task.taskTitle || task.taskName}" imported: ${task.id} -> ${newTask.id}`);
                   } else {
                     console.error(`Failed to import task:`, response.status);
+                  }
+                }
+              }
+
+              // 7. Import task social media data
+              if (data.taskSocialMedia) {
+                console.log("Importing task social media data:", data.taskSocialMedia.length);
+                for (const socialMedia of data.taskSocialMedia) {
+                  const newTaskId = idMappings.tasks[socialMedia.taskId] || socialMedia.taskId;  // Map to new task ID
+                  const cleanSocialMedia = {
+                    taskId: newTaskId,
+                    platforms: Array.isArray(socialMedia.platforms) ? socialMedia.platforms : [],
+                    linkUrl: socialMedia.linkUrl || null,
+                    scheduledTime: socialMedia.scheduledTime || null
+                  };
+                  const response = await fetch('/api/task-social-media', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(cleanSocialMedia)
+                  });
+                  if (response.ok) {
+                    console.log(`Task social media for task ${socialMedia.taskId} imported successfully`);
+                  } else {
+                    console.error(`Failed to import task social media for task ${socialMedia.taskId}:`, response.status);
                   }
                 }
               }
@@ -308,13 +337,14 @@ export default function GanttPage() {
     if (format === 'json') {
       try {
         // Fetch all data for complete backup
-        const [groupsRes, releasesRes, evergreenRes, waterfallRes, tasksRes, assignmentsRes] = await Promise.all([
+        const [groupsRes, releasesRes, evergreenRes, waterfallRes, tasksRes, assignmentsRes, socialMediaRes] = await Promise.all([
           fetch('/api/release-groups'),
           fetch('/api/releases'),
           fetch('/api/evergreen-boxes'),
           fetch('/api/waterfall-cycles'),
           fetch('/api/checklist-tasks'),
-          fetch('/api/content-format-assignments')
+          fetch('/api/content-format-assignments'),
+          fetch('/api/task-social-media')
         ]);
 
         const data = {
@@ -325,8 +355,9 @@ export default function GanttPage() {
           waterfallCycles: await waterfallRes.json(),
           checklistTasks: await tasksRes.json(),
           contentFormatAssignments: await assignmentsRes.json(),
+          taskSocialMedia: await socialMediaRes.json(),
           exportDate: new Date().toISOString(),
-          version: "1.0"
+          version: "1.1"  // Increment version for new export format
         };
         
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });

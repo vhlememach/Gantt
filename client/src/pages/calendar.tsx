@@ -321,19 +321,7 @@ export default function CalendarPage() {
     // The sidebar should ONLY show tasks that are completed in Team Checklist AND unscheduled
     const completedUnscheduledTasks = unscheduled.filter(task => {
       const originalTask = deduplicatedTasks.find(t => t.id === task.id);
-      const isCompleted = originalTask?.completed === true;
-      
-      // Debug all completed tasks specifically
-      if (isCompleted) {
-        console.log(`✅ COMPLETED unscheduled task "${task.taskTitle}" (${task.id}): releaseId=${task.releaseId}, evergreenBoxId=${(originalTask as any)?.evergreenBoxId}`);
-      }
-      
-      // Debug evergreen tasks specifically
-      if (task.releaseId === 'evergreen') {
-        console.log(`🔍 Evergreen task "${task.taskTitle}" (${task.id}): completed=${isCompleted}, scheduled=${!!task.scheduledDate}, originalCompleted=${originalTask?.completed}`);
-      }
-      
-      return isCompleted;
+      return originalTask?.completed === true;
     });
     
     const groupedTasks = completedUnscheduledTasks.reduce((acc, task) => {

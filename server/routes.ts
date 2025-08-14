@@ -724,6 +724,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Bulk delete all task social media
+  app.delete("/api/task-social-media", async (req, res) => {
+    try {
+      const allSocialMedia = await storage.getTaskSocialMedia();
+      for (const sm of allSocialMedia) {
+        await storage.deleteTaskSocialMedia(sm.id);
+      }
+      res.json({ success: true, message: "All task social media deleted" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete task social media" });
+    }
+  });
+
   app.delete("/api/task-social-media/:id", async (req, res) => {
     try {
       const { id } = req.params;
