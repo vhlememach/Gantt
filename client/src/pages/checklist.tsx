@@ -634,7 +634,9 @@ export default function ChecklistPage() {
                                     onClick={() => {
                                       setEditingTask(task);
                                       // Use the same display logic as shown in the UI
-                                      const displayTitle = task.evergreenBoxId ? `${task.assignedTo} > ${task.taskTitle}` : task.taskTitle;
+                                      const displayTitle = task.evergreenBoxId ? 
+                                        (task.taskTitle.includes(' > ') ? task.taskTitle : `${task.assignedTo} > ${task.taskTitle}`)
+                                        : task.taskTitle;
                                       setEditTitle(displayTitle);
                                       setEditUrl(task.taskUrl || "");
                                     }}
@@ -818,7 +820,9 @@ export default function ChecklistPage() {
                                     <div className={`font-medium ${
                                       task.completed ? 'line-through text-gray-500' : 'text-gray-900 dark:text-white'
                                     }`}>
-                                      {task.evergreenBoxId ? `${task.assignedTo} > ${task.taskTitle}` : task.taskTitle}
+                                      {task.evergreenBoxId ? 
+                                        (task.taskTitle.includes(' > ') ? task.taskTitle : `${task.assignedTo} > ${task.taskTitle}`)
+                                        : task.taskTitle}
                                     </div>
                                     {task.taskDescription && (
                                       <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -942,7 +946,9 @@ export default function ChecklistPage() {
                                       onClick={() => {
                                         setEditingTask(task);
                                         // Use the same display logic as shown in the UI
-                                        const displayTitle = task.evergreenBoxId ? `${task.assignedTo} > ${task.taskTitle}` : task.taskTitle;
+                                        const displayTitle = task.evergreenBoxId ? 
+                                          (task.taskTitle.includes(' > ') ? task.taskTitle : `${task.assignedTo} > ${task.taskTitle}`)
+                                          : task.taskTitle;
                                         setEditTitle(displayTitle);
                                         setEditUrl(task.taskUrl || "");
                                       }}
@@ -1056,7 +1062,9 @@ export default function ChecklistPage() {
                                         onClick={() => {
                                           setEditingTask(task);
                                           // Use the same display logic as shown in the UI
-                                          const displayTitle = task.evergreenBoxId ? `${task.assignedTo} > ${task.taskTitle}` : task.taskTitle;
+                                          const displayTitle = task.evergreenBoxId ? 
+                                            (task.taskTitle.includes(' > ') ? task.taskTitle : `${task.assignedTo} > ${task.taskTitle}`)
+                                            : task.taskTitle;
                                           setEditTitle(displayTitle);
                                           setEditUrl(task.taskUrl || "");
                                         }}
