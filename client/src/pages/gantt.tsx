@@ -1,11 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
-import { Palette, Ungroup, Download, Plus, ExpandIcon, ChevronDown, Settings, CheckSquare, Megaphone, Upload, Calendar } from "lucide-react";
+import { Plus, ExpandIcon } from "lucide-react";
 
 
 import HeaderCustomizationModal from "@/components/gantt/header-customization-modal";
@@ -597,127 +596,50 @@ export default function GanttPage() {
     fontFamily: settings.fontFamily,
   } : {};
 
+  // Listen for custom events from the top navigation
+  useEffect(() => {
+    const handleGroupsEvent = () => setIsGroupModalOpen(true);
+    const handleWaterfallEvent = () => setIsWaterfallModalOpen(true);
+    const handleHeaderEvent = () => setIsHeaderModalOpen(true);
+    const handleStatusEvent = () => setIsStatusColorModalOpen(true);
+    const handleExportEvent = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      handleExport(customEvent.detail);
+    };
+    const handleImportEvent = () => handleImport();
+
+    window.addEventListener('gantt:open-groups', handleGroupsEvent);
+    window.addEventListener('gantt:open-waterfall', handleWaterfallEvent);
+    window.addEventListener('gantt:open-header', handleHeaderEvent);
+    window.addEventListener('gantt:open-status', handleStatusEvent);
+    window.addEventListener('gantt:export', handleExportEvent);
+    window.addEventListener('gantt:import', handleImportEvent);
+
+    return () => {
+      window.removeEventListener('gantt:open-groups', handleGroupsEvent);
+      window.removeEventListener('gantt:open-waterfall', handleWaterfallEvent);
+      window.removeEventListener('gantt:open-header', handleHeaderEvent);
+      window.removeEventListener('gantt:open-status', handleStatusEvent);
+      window.removeEventListener('gantt:export', handleExportEvent);
+      window.removeEventListener('gantt:import', handleImportEvent);
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-slate-50 font-inter flex flex-col">
-      {/* Header */}
-      <header className="text-white shadow-lg" style={headerStyle}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-6">
-              <h1 
-                className="text-xl font-bold"
-                style={{
-                  color: settings?.headerTitleColor || '#1f2937'
-                }}
-              >
-                {settings?.headerTitle || "Palmyra"}
-              </h1>
-            </div>
-            
-            {/* Main Navigation and Controls */}
-            <div className="flex items-center space-x-3">
-              {/* Page Navigation */}
-              <nav className="hidden md:flex items-center space-x-3">
-                <Link href="/checklist">
-                  <Button className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-0">
-                    <CheckSquare className="mr-2 h-4 w-4" />
-                    Checklist
-                  </Button>
-                </Link>
-                <Link href="/evergreen">
-                  <Button className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-0">
-                    <Megaphone className="mr-2 h-4 w-4" />
-                    Evergreen
-                  </Button>
-                </Link>
-                <Link href="/calendar">
-                  <Button className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-0">
-                    <Calendar className="mr-2 h-4 w-4" />
-                    Calendar
-                  </Button>
-                </Link>
-              </nav>
-              
-              {/* Add Project Button */}
-              <Button 
-                onClick={() => handleReleaseEdit(null)} 
-                className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-0"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Add Project
-              </Button>
-              
-              {/* Customize Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-0"
-                  >
-                    <Palette className="mr-2 h-4 w-4" />
-                    Customize
-                    <ChevronDown className="ml-2 h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={() => setIsGroupModalOpen(true)}>
-                    <Ungroup className="mr-2 h-4 w-4" />
-                    Groups
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setIsWaterfallModalOpen(true)}>
-                    <Settings className="mr-2 h-4 w-4" />
-                    Waterfall Cycles
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setIsHeaderModalOpen(true)}>
-                    <Palette className="mr-2 h-4 w-4" />
-                    Header & Style
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setIsStatusColorModalOpen(true)}>
-                    <Settings className="mr-2 h-4 w-4" />
-                    Status Colors
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              {/* Export Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-0"
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    Export
-                    <ChevronDown className="ml-2 h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => handleExport('json')}>
-                    Export as JSON
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleImport}>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Import from JSON
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => handleExport('png')}>
-                    Export as PNG
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleExport('pdf')}>
-                    Export as PDF
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* View Controls */}
       <div className="bg-white border-b border-slate-200 px-4 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-4">
+            {/* Add Project Button */}
+            <Button 
+              onClick={() => handleReleaseEdit(null)} 
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Project
+            </Button>
+            
             <div className="flex items-center space-x-2">
               <label className="text-sm font-medium text-slate-700">View:</label>
               <Select value={viewMode} onValueChange={setViewMode}>

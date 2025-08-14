@@ -5,7 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2, LogOut, Settings, BarChart3, Calendar as CalendarIcon, CheckSquare, Repeat } from "lucide-react";
+import { Loader2, LogOut, Settings, BarChart3, Calendar as CalendarIcon, CheckSquare, Repeat, Palette, Download, ChevronDown, Upload, Ungroup } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import NotFound from "@/pages/not-found";
 import GanttPage from "@/pages/gantt";
 import ChecklistPage from "@/pages/checklist";
@@ -14,6 +15,69 @@ import CalendarPage from "@/pages/calendar";
 import Login from "@/pages/login";
 import Admin from "@/pages/admin";
 import AdminSimple from "@/pages/admin-simple";
+
+function GanttControls() {
+  return (
+    <div className="flex items-center space-x-3">
+      {/* Customize Dropdown */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm">
+            <Palette className="mr-2 h-4 w-4" />
+            Customize
+            <ChevronDown className="ml-2 h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:open-groups'))}>
+            <Ungroup className="mr-2 h-4 w-4" />
+            Groups
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:open-waterfall'))}>
+            <Settings className="mr-2 h-4 w-4" />
+            Waterfall Cycles
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:open-header'))}>
+            <Palette className="mr-2 h-4 w-4" />
+            Header & Style
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:open-status'))}>
+            <Settings className="mr-2 h-4 w-4" />
+            Status Colors
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Export Dropdown */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm">
+            <Download className="mr-2 h-4 w-4" />
+            Export
+            <ChevronDown className="ml-2 h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:export', { detail: 'json' }))}>
+            Export as JSON
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:import'))}>
+            <Upload className="mr-2 h-4 w-4" />
+            Import from JSON
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:export', { detail: 'png' }))}>
+            Export as PNG
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => window.dispatchEvent(new CustomEvent('gantt:export', { detail: 'pdf' }))}>
+            Export as PDF
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
 
 function Navigation() {
   const { user, logout, isLoggingOut } = useAuth();
@@ -59,6 +123,8 @@ function Navigation() {
         </div>
 
         <div className="flex items-center space-x-4">
+          {location === "/" && <GanttControls />}
+          
           <span className="text-sm text-gray-600 dark:text-gray-400">
             {user?.email}
           </span>
