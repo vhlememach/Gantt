@@ -6,9 +6,14 @@ import {
   type WaterfallCycle, type InsertWaterfallCycle,
   type ContentFormatAssignment, type InsertContentFormatAssignment,
   type EvergreenBox, type InsertEvergreenBox,
-  type TaskSocialMedia, type InsertTaskSocialMedia
+  type TaskSocialMedia, type InsertTaskSocialMedia,
+  type User, type InsertUser
 } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { db } from "./db";
+import { users, releaseGroups, releases, appSettings, waterfallCycles, contentFormatAssignments, evergreenBoxes, taskSocialMedia, checklistTasks } from "@shared/schema";
+import { eq } from "drizzle-orm";
+import bcrypt from "bcryptjs";
 
 export interface IStorage {
   // Release Groups
@@ -68,6 +73,14 @@ export interface IStorage {
   createTaskSocialMedia(socialMedia: InsertTaskSocialMedia): Promise<TaskSocialMedia>;
   updateTaskSocialMedia(id: string, socialMedia: Partial<InsertTaskSocialMedia>): Promise<TaskSocialMedia | undefined>;
   deleteTaskSocialMedia(id: string): Promise<boolean>;
+
+  // User Authentication
+  getUsers(): Promise<User[]>;
+  getUser(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  updateUser(id: string, user: Partial<InsertUser>): Promise<User | undefined>;
+  deleteUser(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -709,6 +722,248 @@ export class MemStorage implements IStorage {
   async deleteTaskSocialMedia(id: string): Promise<boolean> {
     return this.taskSocialMedia.delete(id);
   }
+
+  // User Authentication methods (for interface compliance)
+  async getUsers(): Promise<User[]> {
+    throw new Error("User authentication not supported in MemStorage");
+  }
+
+  async getUser(id: string): Promise<User | undefined> {
+    throw new Error("User authentication not supported in MemStorage");
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    throw new Error("User authentication not supported in MemStorage");
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    throw new Error("User authentication not supported in MemStorage");
+  }
+
+  async updateUser(id: string, user: Partial<InsertUser>): Promise<User | undefined> {
+    throw new Error("User authentication not supported in MemStorage");
+  }
+
+  async deleteUser(id: string): Promise<boolean> {
+    throw new Error("User authentication not supported in MemStorage");
+  }
 }
 
-export const storage = new MemStorage();
+// Database Storage Implementation
+export class DatabaseStorage implements IStorage {
+  // User Authentication
+  async getUsers(): Promise<User[]> {
+    return db.select().from(users);
+  }
+
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    const hashedPassword = await bcrypt.hash(user.password, 10);
+    const [newUser] = await db
+      .insert(users)
+      .values({ ...user, password: hashedPassword })
+      .returning();
+    return newUser;
+  }
+
+  async updateUser(id: string, user: Partial<InsertUser>): Promise<User | undefined> {
+    const updateData = { ...user };
+    if (updateData.password) {
+      updateData.password = await bcrypt.hash(updateData.password, 10);
+    }
+    
+    const [updatedUser] = await db
+      .update(users)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return updatedUser || undefined;
+  }
+
+  async deleteUser(id: string): Promise<boolean> {
+    const result = await db.delete(users).where(eq(users.id, id));
+    return result.rowCount > 0;
+  }
+
+  // All other methods delegate to MemStorage for now
+  private memStorage = new MemStorage();
+
+  async getReleaseGroups(): Promise<ReleaseGroup[]> {
+    return this.memStorage.getReleaseGroups();
+  }
+
+  async getReleaseGroup(id: string): Promise<ReleaseGroup | undefined> {
+    return this.memStorage.getReleaseGroup(id);
+  }
+
+  async createReleaseGroup(group: InsertReleaseGroup): Promise<ReleaseGroup> {
+    return this.memStorage.createReleaseGroup(group);
+  }
+
+  async updateReleaseGroup(id: string, group: Partial<InsertReleaseGroup>): Promise<ReleaseGroup | undefined> {
+    return this.memStorage.updateReleaseGroup(id, group);
+  }
+
+  async deleteReleaseGroup(id: string): Promise<boolean> {
+    return this.memStorage.deleteReleaseGroup(id);
+  }
+
+  async getReleases(): Promise<Release[]> {
+    return this.memStorage.getReleases();
+  }
+
+  async getRelease(id: string): Promise<Release | undefined> {
+    return this.memStorage.getRelease(id);
+  }
+
+  async getReleasesByGroupId(groupId: string): Promise<Release[]> {
+    return this.memStorage.getReleasesByGroupId(groupId);
+  }
+
+  async createRelease(release: InsertRelease): Promise<Release> {
+    return this.memStorage.createRelease(release);
+  }
+
+  async updateRelease(id: string, release: Partial<InsertRelease>): Promise<Release | undefined> {
+    return this.memStorage.updateRelease(id, release);
+  }
+
+  async deleteRelease(id: string): Promise<boolean> {
+    return this.memStorage.deleteRelease(id);
+  }
+
+  async getAppSettings(): Promise<AppSettings> {
+    return this.memStorage.getAppSettings();
+  }
+
+  async updateAppSettings(settings: Partial<InsertAppSettings>): Promise<AppSettings> {
+    return this.memStorage.updateAppSettings(settings);
+  }
+
+  async getChecklistTasks(): Promise<ChecklistTask[]> {
+    return this.memStorage.getChecklistTasks();
+  }
+
+  async getChecklistTask(id: string): Promise<ChecklistTask | undefined> {
+    return this.memStorage.getChecklistTask(id);
+  }
+
+  async getChecklistTasksByRelease(releaseId: string): Promise<ChecklistTask[]> {
+    return this.memStorage.getChecklistTasksByRelease(releaseId);
+  }
+
+  async getChecklistTasksByEvergreenBox(evergreenBoxId: string): Promise<ChecklistTask[]> {
+    return this.memStorage.getChecklistTasksByEvergreenBox(evergreenBoxId);
+  }
+
+  async getChecklistTasksByMember(assignedTo: string): Promise<ChecklistTask[]> {
+    return this.memStorage.getChecklistTasksByMember(assignedTo);
+  }
+
+  async createChecklistTask(task: InsertChecklistTask): Promise<ChecklistTask> {
+    return this.memStorage.createChecklistTask(task);
+  }
+
+  async updateChecklistTask(id: string, task: Partial<InsertChecklistTask>): Promise<ChecklistTask | undefined> {
+    return this.memStorage.updateChecklistTask(id, task);
+  }
+
+  async deleteChecklistTask(id: string): Promise<boolean> {
+    return this.memStorage.deleteChecklistTask(id);
+  }
+
+  async getWaterfallCycles(): Promise<WaterfallCycle[]> {
+    return this.memStorage.getWaterfallCycles();
+  }
+
+  async getWaterfallCycle(id: string): Promise<WaterfallCycle | undefined> {
+    return this.memStorage.getWaterfallCycle(id);
+  }
+
+  async createWaterfallCycle(cycle: InsertWaterfallCycle): Promise<WaterfallCycle> {
+    return this.memStorage.createWaterfallCycle(cycle);
+  }
+
+  async updateWaterfallCycle(id: string, cycle: Partial<InsertWaterfallCycle>): Promise<WaterfallCycle | undefined> {
+    return this.memStorage.updateWaterfallCycle(id, cycle);
+  }
+
+  async deleteWaterfallCycle(id: string): Promise<boolean> {
+    return this.memStorage.deleteWaterfallCycle(id);
+  }
+
+  async getContentFormatAssignments(): Promise<ContentFormatAssignment[]> {
+    return this.memStorage.getContentFormatAssignments();
+  }
+
+  async getContentFormatAssignment(id: string): Promise<ContentFormatAssignment | undefined> {
+    return this.memStorage.getContentFormatAssignment(id);
+  }
+
+  async createContentFormatAssignment(assignment: InsertContentFormatAssignment): Promise<ContentFormatAssignment> {
+    return this.memStorage.createContentFormatAssignment(assignment);
+  }
+
+  async updateContentFormatAssignment(id: string, assignment: Partial<InsertContentFormatAssignment>): Promise<ContentFormatAssignment | undefined> {
+    return this.memStorage.updateContentFormatAssignment(id, assignment);
+  }
+
+  async deleteContentFormatAssignment(id: string): Promise<boolean> {
+    return this.memStorage.deleteContentFormatAssignment(id);
+  }
+
+  async getEvergreenBoxes(): Promise<EvergreenBox[]> {
+    return this.memStorage.getEvergreenBoxes();
+  }
+
+  async getEvergreenBox(id: string): Promise<EvergreenBox | undefined> {
+    return this.memStorage.getEvergreenBox(id);
+  }
+
+  async getEvergreenBoxesByGroup(groupId: string): Promise<EvergreenBox[]> {
+    return this.memStorage.getEvergreenBoxesByGroup(groupId);
+  }
+
+  async createEvergreenBox(box: InsertEvergreenBox): Promise<EvergreenBox> {
+    return this.memStorage.createEvergreenBox(box);
+  }
+
+  async updateEvergreenBox(id: string, box: Partial<InsertEvergreenBox>): Promise<EvergreenBox | undefined> {
+    return this.memStorage.updateEvergreenBox(id, box);
+  }
+
+  async deleteEvergreenBox(id: string): Promise<boolean> {
+    return this.memStorage.deleteEvergreenBox(id);
+  }
+
+  async getTaskSocialMedia(): Promise<TaskSocialMedia[]> {
+    return this.memStorage.getTaskSocialMedia();
+  }
+
+  async getTaskSocialMediaByTask(taskId: string): Promise<TaskSocialMedia | undefined> {
+    return this.memStorage.getTaskSocialMediaByTask(taskId);
+  }
+
+  async createTaskSocialMedia(socialMedia: InsertTaskSocialMedia): Promise<TaskSocialMedia> {
+    return this.memStorage.createTaskSocialMedia(socialMedia);
+  }
+
+  async updateTaskSocialMedia(id: string, socialMedia: Partial<InsertTaskSocialMedia>): Promise<TaskSocialMedia | undefined> {
+    return this.memStorage.updateTaskSocialMedia(id, socialMedia);
+  }
+
+  async deleteTaskSocialMedia(id: string): Promise<boolean> {
+    return this.memStorage.deleteTaskSocialMedia(id);
+  }
+}
+
+export const storage = new DatabaseStorage();
