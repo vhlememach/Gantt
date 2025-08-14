@@ -614,12 +614,21 @@ export default function GanttPage() {
               </h1>
             </div>
             
-            {/* Center Navigation and Right Buttons */}
+            {/* Main Navigation and Controls */}
             <div className="flex items-center space-x-3">
               {/* Navigation */}
               <div className="hidden md:block">
                 <Navigation className="text-white" />
               </div>
+              
+              {/* Add Project Button */}
+              <Button 
+                onClick={() => handleReleaseEdit(null)} 
+                className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white border-0"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add Project
+              </Button>
               
               {/* Customize Dropdown */}
               <DropdownMenu>
@@ -688,14 +697,10 @@ export default function GanttPage() {
         </div>
       </header>
 
-      {/* Timeline Controls */}
+      {/* View Controls */}
       <div className="bg-white border-b border-slate-200 px-4 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <Button onClick={() => handleReleaseEdit(null)} className="hover:bg-blue-700 bg-[#7232d9]">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Project
-            </Button>
             <div className="flex items-center space-x-2">
               <label className="text-sm font-medium text-slate-700">View:</label>
               <Select value={viewMode} onValueChange={setViewMode}>
