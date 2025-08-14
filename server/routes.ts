@@ -250,7 +250,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Settings
   app.get("/api/settings", requireAuth, async (req, res) => {
     try {
-      const settings = await storage.getSettings();
+      const settings = await storage.getAppSettings();
       res.json(settings);
     } catch (error) {
       res.status(500).json({ message: "Failed to get settings" });
@@ -260,7 +260,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/settings", requireAuth, async (req, res) => {
     try {
       const validatedData = insertAppSettingsSchema.parse(req.body);
-      const settings = await storage.updateSettings(validatedData);
+      const settings = await storage.updateAppSettings(validatedData);
       res.json(settings);
     } catch (error) {
       res.status(400).json({ message: "Invalid settings data" });

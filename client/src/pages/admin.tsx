@@ -164,10 +164,33 @@ export default function Admin() {
     }
   };
 
-  if (authLoading || usersLoading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+  
+  if (usersLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="mb-8">
+          <Button
+            variant="outline"
+            onClick={() => navigate('/')}
+            className="mb-4"
+          >
+            ← Back to Dashboard
+          </Button>
+          
+          <h1 className="text-3xl font-bold">Admin Panel</h1>
+          <p className="text-muted-foreground mt-1">Loading...</p>
+        </div>
+        
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
       </div>
     );
   }
