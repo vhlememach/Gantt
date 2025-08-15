@@ -35,8 +35,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
     waterfallCycleId: ""
   });
 
-  // Debug logging for modal props
-  console.log('ReleaseEditorModal render:', { isOpen, releaseId });
+
 
   const { data: groups = [] } = useQuery<ReleaseGroup[]>({
     queryKey: ["/api/release-groups"],
@@ -53,15 +52,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
     enabled: isOpen,
   });
 
-  // Debug logging for query state
-  console.log('Query state:', { 
-    releaseId, 
-    hasRelease: !!release, 
-    releaseLoading, 
-    releaseError,
-    release: release ? { id: release.id, name: release.name } : null,
-    isQueryEnabled: isOpen && !!releaseId 
-  });
+
 
   // Reset form when modal closes
   useEffect(() => {
@@ -84,17 +75,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
 
   // Populate form when editing existing release
   useEffect(() => {
-    console.log('Form population effect:', { 
-      isOpen, 
-      releaseId, 
-      hasRelease: !!release, 
-      releaseLoading,
-      releaseError,
-      canPopulate: isOpen && releaseId && release && !releaseLoading
-    });
-    
     if (isOpen && releaseId && release && !releaseLoading) {
-      console.log('Populating form with release data:', release);
       setFormData({
         name: release.name || "",
         description: release.description || "",
@@ -114,7 +95,6 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
   // Set defaults for new release
   useEffect(() => {
     if (isOpen && !releaseId && groups.length > 0) {
-      console.log('Setting form defaults for new release');
       setFormData({
         name: "",
         description: "",
@@ -178,7 +158,6 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
 
   const createReleaseMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      console.log('Creating release with form data:', data);
       const payload = {
         ...data,
         startDate: new Date(data.startDate).toISOString(),
@@ -187,7 +166,6 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
         url: data.url || "",
         responsible: data.responsible || "",
       };
-      console.log('Sending payload:', payload);
       const response = await apiRequest("POST", "/api/releases", payload);
       return response.json();
     },
@@ -226,7 +204,6 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
 
   const updateReleaseMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      console.log('Updating release with form data:', data);
       const payload = {
         ...data,
         startDate: new Date(data.startDate).toISOString(),
@@ -235,7 +212,6 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
         url: data.url || "",
         responsible: data.responsible || "",
       };
-      console.log('Sending update payload:', payload);
       const response = await apiRequest("PUT", `/api/releases/${releaseId}`, payload);
       return response.json();
     },
@@ -248,7 +224,6 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
       // Keep manually created tasks intact
       if (updatedRelease.waterfallCycleId) {
         try {
-          console.log("Cleaning up existing waterfall tasks for release update...");
           const tasksResponse = await fetch("/api/checklist-tasks");
           const allTasks = await tasksResponse.json();
           
@@ -261,12 +236,10 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
             task.taskTitle.includes("x ")
           );
           
-          console.log("Waterfall tasks to delete for release update:", waterfallTasks.length);
           
           for (const task of waterfallTasks) {
             try {
               await fetch(`/api/checklist-tasks/${task.id}`, { method: "DELETE" });
-              console.log(`Deleted waterfall task ${task.id}: ${task.taskTitle}`);
             } catch (deleteError) {
               console.error(`Failed to delete task ${task.id}:`, deleteError);
             }
@@ -281,7 +254,6 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
       
       // Generate tasks if waterfall cycle is assigned
       if (updatedRelease.waterfallCycleId) {
-        console.log("Generating waterfall tasks for release update...");
         await generateWaterfallTasks(updatedRelease.id, updatedRelease.waterfallCycleId, updatedRelease.name);
       }
       
@@ -303,7 +275,6 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
       
       // First, clean up all related tasks for this release
       try {
-        console.log("Starting release deletion cleanup...");
         const tasksResponse = await fetch("/api/checklist-tasks");
         const allTasks = await tasksResponse.json();
         
@@ -312,23 +283,15 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
           task.releaseId === releaseId
         );
         
-        console.log("Tasks to delete for release:", tasksToDelete.length, tasksToDelete.map((t: any) => ({ 
-          id: t.id, 
-          title: t.taskTitle,
-          releaseId: t.releaseId
-        })));
-        
         // Delete all related tasks sequentially
         for (const task of tasksToDelete) {
           try {
             const deleteResponse = await fetch(`/api/checklist-tasks/${task.id}`, { method: "DELETE" });
-            console.log(`Deleted task ${task.id} (${task.taskTitle}):`, deleteResponse.status);
           } catch (deleteError) {
             console.error(`Failed to delete task ${task.id}:`, deleteError);
           }
         }
         
-        console.log("All related tasks deleted successfully");
         
         // Wait for deletions to fully process
         await new Promise(resolve => setTimeout(resolve, 1000));

@@ -60,7 +60,6 @@ export default function ChecklistPage() {
     
     // If we have evergreen boxes with cycles but no evergreen tasks, generate them
     if (boxesWithCycles.length > 0 && evergreenTasks.length === 0) {
-      console.log("No evergreen tasks found, generating them...");
       fetch("/api/evergreen-tasks/generate", { method: "POST" })
         .then(() => {
           queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });

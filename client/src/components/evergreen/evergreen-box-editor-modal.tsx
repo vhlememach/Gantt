@@ -174,19 +174,16 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
       
       // Always clean up existing tasks first to prevent duplicates
       try {
-        console.log("Cleaning up existing tasks for evergreen box update...");
         const tasksResponse = await fetch("/api/checklist-tasks");
         const allTasks = await tasksResponse.json();
         
         // Find and delete all tasks for this evergreen box
         const boxTasks = allTasks.filter((task: any) => task.evergreenBoxId === updatedBox.id);
         
-        console.log("Tasks to delete for evergreen box update:", boxTasks.length);
         
         for (const task of boxTasks) {
           try {
             await fetch(`/api/checklist-tasks/${task.id}`, { method: "DELETE" });
-            console.log(`Deleted task ${task.id} for evergreen box update`);
           } catch (deleteError) {
             console.error(`Failed to delete task ${task.id}:`, deleteError);
           }
@@ -219,7 +216,6 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
     mutationFn: async () => {
       // First, clean up all related tasks for this evergreen box
       try {
-        console.log("Starting evergreen box deletion cleanup...");
         const tasksResponse = await fetch("/api/checklist-tasks");
         const allTasks = await tasksResponse.json();
         
@@ -228,23 +224,15 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
           task.evergreenBoxId === boxId
         );
         
-        console.log("Tasks to delete for evergreen box:", tasksToDelete.length, tasksToDelete.map((t: any) => ({ 
-          id: t.id, 
-          title: t.taskTitle,
-          evergreenBoxId: t.evergreenBoxId
-        })));
-        
         // Delete all related tasks sequentially
         for (const task of tasksToDelete) {
           try {
             const deleteResponse = await fetch(`/api/checklist-tasks/${task.id}`, { method: "DELETE" });
-            console.log(`Deleted task ${task.id} (${task.taskTitle}):`, deleteResponse.status);
           } catch (deleteError) {
             console.error(`Failed to delete task ${task.id}:`, deleteError);
           }
         }
         
-        console.log("All related tasks deleted successfully");
         
         // Wait for deletions to fully process
         await new Promise(resolve => setTimeout(resolve, 1000));

@@ -45,10 +45,8 @@ export default function GanttPage() {
             const data = JSON.parse(event.target?.result as string);
             
             if (confirm('This will replace ALL current data. Are you sure you want to import?')) {
-              console.log("Starting import process...", data);
               
               // Clear all existing data first
-              console.log("Clearing existing data...");
               await Promise.all([
                 fetch('/api/checklist-tasks', { method: 'DELETE' }),
                 fetch('/api/content-format-assignments', { method: 'DELETE' }),
@@ -59,7 +57,6 @@ export default function GanttPage() {
                 fetch('/api/task-social-media', { method: 'DELETE' })
               ]);
 
-              console.log("Data cleared, starting sequential import...");
 
               // Import data sequentially to maintain relationships
               const idMappings: { [key: string]: { [key: string]: string } } = {
@@ -72,7 +69,6 @@ export default function GanttPage() {
               
               // 1. Import groups first and store ID mappings
               if (data.groups) {
-                console.log("Importing groups:", data.groups.length);
                 for (const group of data.groups) {
                   const cleanGroup = {
                     name: group.name,
@@ -87,13 +83,11 @@ export default function GanttPage() {
                   });
                   const newGroup = await response.json();
                   idMappings.groups[group.id] = newGroup.id;
-                  console.log(`Group "${group.name}" imported: ${group.id} -> ${newGroup.id}`);
                 }
               }
               
               // 2. Import waterfall cycles and store ID mappings
               if (data.waterfallCycles) {
-                console.log("Importing waterfall cycles:", data.waterfallCycles.length);
                 for (const cycle of data.waterfallCycles) {
                   const cleanCycle = {
                     name: cycle.name,
@@ -109,15 +103,12 @@ export default function GanttPage() {
                   });
                   const newCycle = await response.json();
                   idMappings.waterfallCycles[cycle.id] = newCycle.id;
-                  console.log(`Waterfall cycle "${cycle.name}" imported: ${cycle.id} -> ${newCycle.id}`);
                 }
               }
 
-              console.log("Groups and cycles imported");
 
               // 3. Import releases with proper group ID mapping
               if (data.releases) {
-                console.log("Importing releases:", data.releases.length);
                 for (const release of data.releases) {
                   const newGroupId = idMappings.groups[release.groupId] || release.groupId;
                   const newWaterfallCycleId = release.waterfallCycleId 
@@ -144,13 +135,11 @@ export default function GanttPage() {
                   });
                   const newRelease = await response.json();
                   idMappings.releases[release.id] = newRelease.id;
-                  console.log(`Release "${release.name}" imported: ${release.id} -> ${newRelease.id}`);
                 }
               }
 
               // 4. Import evergreen boxes with proper ID mapping
               if (data.evergreenBoxes) {
-                console.log("Importing evergreen boxes:", data.evergreenBoxes.length);
                 for (const box of data.evergreenBoxes) {
                   const newGroupId = idMappings.groups[box.groupId] || Object.values(idMappings.groups)[0] || null;
                   const newWaterfallCycleId = box.waterfallCycleId 
@@ -177,16 +166,13 @@ export default function GanttPage() {
                   } else {
                     const newBox = await response.json();
                     idMappings.evergreenBoxes[box.id] = newBox.id;
-                    console.log(`Evergreen box "${box.title}" imported: ${box.id} -> ${newBox.id}`);
                   }
                 }
               }
 
-              console.log("Releases and evergreen boxes imported");
 
               // 5. Import content format assignments
               if (data.contentFormatAssignments) {
-                console.log("Importing format assignments:", data.contentFormatAssignments.length);
                 for (const assignment of data.contentFormatAssignments) {
                   const cleanAssignment = {
                     formatType: assignment.formatType,
@@ -200,7 +186,6 @@ export default function GanttPage() {
                     body: JSON.stringify(cleanAssignment)
                   });
                   if (response.ok) {
-                    console.log(`Assignment "${assignment.formatType}" imported successfully`);
                   } else {
                     console.error(`Failed to import assignment ${assignment.formatType}:`, response.status);
                   }
@@ -209,7 +194,6 @@ export default function GanttPage() {
 
               // 6. Import checklist tasks with proper ID mapping
               if (data.checklistTasks) {
-                console.log("Importing checklist tasks:", data.checklistTasks.length);
                 for (const task of data.checklistTasks) {
                   const newReleaseId = task.releaseId 
                     ? idMappings.releases[task.releaseId] || null
@@ -242,7 +226,6 @@ export default function GanttPage() {
                   if (response.ok) {
                     const newTask = await response.json();
                     idMappings.tasks[task.id] = newTask.id;  // Store task ID mapping
-                    console.log(`Task "${task.taskTitle || task.taskName}" imported: ${task.id} -> ${newTask.id}`);
                   } else {
                     console.error(`Failed to import task:`, response.status);
                   }
@@ -251,7 +234,6 @@ export default function GanttPage() {
 
               // 7. Import task social media data
               if (data.taskSocialMedia) {
-                console.log("Importing task social media data:", data.taskSocialMedia.length);
                 for (const socialMedia of data.taskSocialMedia) {
                   const newTaskId = idMappings.tasks[socialMedia.taskId] || socialMedia.taskId;  // Map to new task ID
                   const cleanSocialMedia = {
@@ -266,21 +248,18 @@ export default function GanttPage() {
                     body: JSON.stringify(cleanSocialMedia)
                   });
                   if (response.ok) {
-                    console.log(`Task social media for task ${socialMedia.taskId} imported successfully`);
                   } else {
                     console.error(`Failed to import task social media for task ${socialMedia.taskId}:`, response.status);
                   }
                 }
               }
 
-              console.log("Import completed successfully!");
               
               // Trigger evergreen task generation after import
               await fetch('/api/evergreen-tasks/generate', { method: 'POST' });
 
               // Update settings if present
               if (data.settings) {
-                console.log("Importing settings");
                 const cleanSettings = {
                   id: data.settings.id,
                   headerTitle: data.settings.headerTitle || 'Palmyra Release Gantt Chart',
@@ -294,13 +273,11 @@ export default function GanttPage() {
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify(cleanSettings)
                 });
-                console.log("Settings imported");
               }
 
               // Invalidate all React Query caches to force refetch
               // Note: We'll rely on the page reload to refresh data
               
-              console.log("Import completed successfully");
               alert('Data imported successfully! Page will reload to show the imported data.');
               window.location.reload();
             }
@@ -316,7 +293,6 @@ export default function GanttPage() {
   };
 
   const handleReleaseEdit = (releaseId: string | null) => {
-    console.log('handleReleaseEdit called with:', releaseId);
     setSelectedReleaseId(releaseId);
     setIsReleaseModalOpen(true);
   };
