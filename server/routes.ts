@@ -780,49 +780,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/evergreen-tasks/generate", requireAuth, async (req, res) => {
     try {
       const boxes = await storage.getEvergreenBoxes();
+      const assignments = await storage.getContentFormatAssignments();
       console.log("📦 Generating evergreen tasks for boxes:", boxes.length);
+      console.log("📋 Using format assignments:", assignments.length);
+      
+      let tasksCreated = 0;
       
       for (const box of boxes) {
         if (box.waterfallCycleId) {
           const cycle = await storage.getWaterfallCycle(box.waterfallCycleId);
           if (cycle) {
-            // Get team members for assignment - use the correct team members
-            const teamMembers = ["Brian", "Alex", "Lucas", "Victor"];
-            console.log("👥 Generating tasks for team members:", teamMembers);
+            console.log(`🔄 Processing box: ${box.title} with cycle: ${cycle.name}`);
             
-            for (const member of teamMembers) {
-              // Extract format types from contentRequirements JSON
-              const contentRequirements = cycle.contentRequirements as Record<string, number> || {};
-              const formatTypes = Object.keys(contentRequirements);
-              console.log("🔧 Content requirements for cycle:", contentRequirements);
-              console.log("🔧 Format types extracted:", formatTypes);
+            // Use assignments to determine who should get tasks for each format type
+            for (const assignment of assignments) {
+              const formatType = assignment.formatType;
+              const requirement = (cycle.contentRequirements as Record<string, number>)[formatType] || 0;
               
-              for (const formatType of formatTypes) {
-                const taskTitle = `${box.title} - ${formatType} (${member})`;
-                
-                // Check if task already exists
-                const existingTasks = await storage.getChecklistTasks();
-                const taskExists = existingTasks.some(task => 
-                  task.taskTitle === taskTitle && 
-                  task.evergreenBoxId === box.id &&
-                  task.assignedTo === member
-                );
-                
-                if (!taskExists) {
-                  const newTask = await storage.createChecklistTask({
-                    taskTitle,
-                    taskDescription: `Generate ${formatType} content for ${box.title}`,
-                    assignedTo: member,
-                    evergreenBoxId: box.id,
-                    waterfallCycleId: cycle.id,
-                    contentFormatType: formatType,
-                    completed: false,
-                    priority: false,
-                    currentVersion: 1,
-                  });
-                  console.log("✅ Created evergreen task:", taskTitle, "for", member);
-                } else {
-                  console.log("⏭️ Task already exists:", taskTitle);
+              if (requirement > 0 && assignment.assignedMembers.length > 0) {
+                // Create tasks ONLY for assigned members for this format type
+                for (const member of assignment.assignedMembers) {
+                  const taskTitle = `${box.title} > ${formatType} (${member})`;
+                  
+                  // Check if task already exists
+                  const existingTasks = await storage.getChecklistTasks();
+                  const taskExists = existingTasks.some(task => 
+                    task.taskTitle === taskTitle && 
+                    task.evergreenBoxId === box.id &&
+                    task.assignedTo === member &&
+                    task.contentFormatType === formatType
+                  );
+                  
+                  if (!taskExists) {
+                    await storage.createChecklistTask({
+                      taskTitle,
+                      taskDescription: `Generate ${formatType} content for ${box.title}`,
+                      assignedTo: member,
+                      evergreenBoxId: box.id,
+                      waterfallCycleId: cycle.id,
+                      contentFormatType: formatType,
+                      completed: false,
+                      priority: false,
+                      currentVersion: 1,
+                    });
+                    tasksCreated++;
+                    console.log("✅ Created evergreen task:", taskTitle, "for", member);
+                  }
                 }
               }
             }
@@ -830,7 +833,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      res.json({ success: true, message: "Evergreen tasks generated successfully" });
+      res.json({ success: true, message: `Generated ${tasksCreated} evergreen tasks` });
     } catch (error) {
       console.error("Error generating evergreen tasks:", error);
       res.status(500).json({ message: "Failed to generate evergreen tasks" });

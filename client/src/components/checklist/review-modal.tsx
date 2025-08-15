@@ -112,11 +112,12 @@ export function ReviewModal({ isOpen, onClose, task, mode }: ReviewModalProps) {
   };
 
   const getTitle = () => {
+    const version = task?.currentVersion || 1;
     switch (mode) {
       case "request":
-        return `Request Review - V${(task?.currentVersion || 0) + 1}`;
+        return `Request Review - V${version}`;
       case "submit":
-        return `Submit V${(task?.currentVersion || 0) + 1}`;
+        return `Submit V${version}`;
       case "approve":
         return "Approve Review";
       default:
@@ -125,14 +126,15 @@ export function ReviewModal({ isOpen, onClose, task, mode }: ReviewModalProps) {
   };
 
   const getButtonText = () => {
+    const version = task?.currentVersion || 1;
     switch (mode) {
       case "request":
-        return `Request V${(task?.currentVersion || 0) + 1}`;
+        return `Request Review V${version}`;
       case "submit":
-        return `Submit V${task?.currentVersion || 1}`;
+        return `Submit V${version}`;
       case "approve":
-        return changes.trim() && (task?.currentVersion || 0) < 9 
-          ? `Request V${(task?.currentVersion || 0) + 1}` 
+        return changes.trim() && version < 9 
+          ? `Request V${version + 1}` 
           : "Approve";
       default:
         return "Save";
