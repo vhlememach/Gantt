@@ -30,49 +30,12 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isEditing = !!boxId;
-  
-  // Direct state management for box data
-  const [box, setBox] = useState<EvergreenBox | null>(null);
-  const [boxLoading, setBoxLoading] = useState(false);
-  const [boxError, setBoxError] = useState<Error | null>(null);
 
-  // Direct fetch for box data
-  useEffect(() => {
-    if (isEditing && isOpen && boxId) {
-      console.log('Starting direct fetch for box:', boxId);
-      setBoxLoading(true);
-      setBoxError(null);
-      
-      fetch(`/api/evergreen-boxes/${boxId}`, { credentials: 'include' })
-        .then(async response => {
-          console.log('Fetch response:', response.status, response.ok);
-          if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
-          
-          const text = await response.text();
-          console.log('Raw response text:', text);
-          
-          try {
-            const data = JSON.parse(text);
-            console.log('Parsed box data:', data);
-            setBox(data);
-            setBoxLoading(false);
-          } catch (parseError) {
-            console.error('JSON parse error:', parseError);
-            console.error('Response was:', text);
-            throw new Error(`Failed to parse response: ${parseError}`);
-          }
-        })
-        .catch(error => {
-          console.error('Fetch error:', error);
-          setBoxError(error);
-          setBoxLoading(false);
-        });
-    } else {
-      setBox(null);
-      setBoxLoading(false);
-      setBoxError(null);
-    }
-  }, [isEditing, isOpen, boxId]);
+  // Fetch existing box data for editing
+  const { data: box } = useQuery<EvergreenBox>({
+    queryKey: ["/api/evergreen-boxes", boxId],
+    enabled: isEditing && isOpen,
+  });
 
   // Fetch groups and waterfall cycles for dropdowns
   const { data: groups = [] } = useQuery<ReleaseGroup[]>({
@@ -98,35 +61,19 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
     },
   });
 
-  // Reset form when box data loads or modal opens
+  // Reset form when box data loads
   useEffect(() => {
-    console.log('useEffect triggered - box:', box, 'isEditing:', isEditing, 'isOpen:', isOpen, 'boxLoading:', boxLoading, 'boxId:', boxId, 'boxError:', boxError);
-    
-    if (isEditing && isOpen && box && !boxLoading) {
-      console.log('Populating form with box data:', box);
-      const formData = {
-        title: box.title || "",
+    if (box && isEditing) {
+      form.reset({
+        title: box.title,
         description: box.description || "",
-        groupId: box.groupId || "",
+        groupId: box.groupId,
         responsible: box.responsible || "",
-        icon: box.icon || "lucide-megaphone",
+        icon: box.icon,
         waterfallCycleId: box.waterfallCycleId || "none",
         url: box.url || "",
-      };
-      console.log('Form data being set:', formData);
-      
-      // Reset form first, then set individual values
-      form.reset(formData);
-      
-      // Double-check by setting each field explicitly with a small delay
-      setTimeout(() => {
-        Object.entries(formData).forEach(([key, value]) => {
-          form.setValue(key as keyof typeof formData, value);
-          console.log(`Set ${key} to:`, value);
-        });
-      }, 50);
-    } else if (!isEditing && isOpen) {
-      console.log('Resetting form for new box');
+      });
+    } else if (!isEditing) {
       form.reset({
         title: "",
         description: "",
@@ -137,7 +84,7 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
         url: "",
       });
     }
-  }, [box, isEditing, isOpen, boxLoading, boxId, boxError, form]);
+  }, [box, isEditing, form]);
 
   // Function to generate evergreen tasks based on waterfall cycle assignments
   const generateEvergreenTasks = async (boxId: string, waterfallCycleId: string, boxTitle: string) => {

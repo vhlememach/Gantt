@@ -71,7 +71,7 @@ export function ReviewModal({ isOpen, onClose, task, mode }: ReviewModalProps) {
 
   const requestNextVersionMutation = useMutation({
     mutationFn: async ({ taskId, changes }: { taskId: string; changes: string }) => {
-      const response = await apiRequest('POST', `/api/checklist-tasks/${taskId}/request-next-version`, { changes });
+      const response = await apiRequest('POST', `/api/checklist-tasks/${taskId}/request-review`, { changes });
       return await response.json();
     },
     onSuccess: () => {
@@ -101,7 +101,7 @@ export function ReviewModal({ isOpen, onClose, task, mode }: ReviewModalProps) {
       }
       submitReviewMutation.mutate({ taskId: task.id, submissionUrl });
     } else if (mode === "approve") {
-      if (changes.trim() && (task?.currentVersion || 0) < 9) {
+      if (changes.trim() && (task?.currentVersion || 2) < 10) {
         // Request next version instead of approving
         requestNextVersionMutation.mutate({ taskId: task.id, changes });
       } else {
@@ -112,12 +112,11 @@ export function ReviewModal({ isOpen, onClose, task, mode }: ReviewModalProps) {
   };
 
   const getTitle = () => {
-    const version = task?.currentVersion || 1;
     switch (mode) {
       case "request":
-        return `Request Review - V${version}`;
+        return `Request Review - V${(task?.currentVersion || 1) + 1}`;
       case "submit":
-        return `Submit V${version}`;
+        return `Submit V${task?.currentVersion || 2}`;
       case "approve":
         return "Approve Review";
       default:
@@ -126,16 +125,13 @@ export function ReviewModal({ isOpen, onClose, task, mode }: ReviewModalProps) {
   };
 
   const getButtonText = () => {
-    const version = task?.currentVersion || 1;
     switch (mode) {
       case "request":
-        return `Request Review V${version}`;
+        return `Request V${(task?.currentVersion || 1) + 1}`;
       case "submit":
-        return `Submit V${version}`;
+        return "Submit for Approval";
       case "approve":
-        return changes.trim() && version < 9 
-          ? `Request V${version + 1}` 
-          : "Approve";
+        return "Approve";
       default:
         return "Save";
     }
@@ -188,7 +184,7 @@ export function ReviewModal({ isOpen, onClose, task, mode }: ReviewModalProps) {
               
               <div>
                 <Label htmlFor="submissionUrl" className="text-sm font-medium">
-                  V{(task?.currentVersion || 0) + 1} Submission URL
+                  V{task?.currentVersion || 2} Submission URL
                 </Label>
                 <Input
                   id="submissionUrl"
@@ -235,10 +231,10 @@ export function ReviewModal({ isOpen, onClose, task, mode }: ReviewModalProps) {
               )}
 
               {/* Option to request next version instead of approving */}
-              {(task?.currentVersion || 0) < 9 && (
+              {(task?.currentVersion || 2) < 10 && (
                 <div>
                   <Label htmlFor="nextVersionChanges" className="text-sm font-medium">
-                    Or request V{(task?.currentVersion || 0) + 1} (optional):
+                    Or request V{(task?.currentVersion || 2) + 1} (optional):
                   </Label>
                   <Textarea
                     id="nextVersionChanges"
@@ -258,13 +254,13 @@ export function ReviewModal({ isOpen, onClose, task, mode }: ReviewModalProps) {
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          {mode === "approve" && changes.trim() && (task?.currentVersion || 0) < 9 ? (
+          {mode === "approve" && changes.trim() && (task?.currentVersion || 2) < 10 ? (
             <Button 
               onClick={handleSubmit}
               disabled={requestReviewMutation.isPending || submitReviewMutation.isPending || approveReviewMutation.isPending || requestNextVersionMutation.isPending}
               className="bg-purple-600 hover:bg-purple-700 text-white"
             >
-              Request V{(task?.currentVersion || 0) + 1}
+              Request V{(task?.currentVersion || 2) + 1}
             </Button>
           ) : (
             <Button 

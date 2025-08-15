@@ -58,32 +58,6 @@ export default function ChecklistPage() {
     const evergreenTasks = allTasks.filter(task => task.evergreenBoxId);
     const boxesWithCycles = evergreenBoxes.filter(box => box.waterfallCycleId);
     
-    // Debug logging for evergreen tasks
-    console.log("🔍 All tasks count:", allTasks.length);
-    console.log("🔍 Evergreen tasks found:", evergreenTasks.length);
-    console.log("🔍 Evergreen boxes:", evergreenBoxes.length);
-    console.log("🔍 Selected member:", selectedMember);
-    console.log("🔍 Sample task:", allTasks[0]);
-    console.log("🔍 Evergreen tasks by assignedTo:", allTasks.filter(task => task.evergreenBoxId).map(t => ({ id: t.id, assignedTo: t.assignedTo, title: t.taskTitle })));
-    console.log("🔍 Member evergreen tasks:", allTasks.filter(task => task.evergreenBoxId && task.assignedTo === selectedMember));
-    
-    // Check for tasks with wrong team member names and fix them
-    const wrongNameTasks = evergreenTasks.filter(task => 
-      !teamMembers.includes(task.assignedTo) && 
-      ["Alice", "Bob", "Charlie", "Diana"].includes(task.assignedTo)
-    );
-    
-    if (wrongNameTasks.length > 0) {
-      console.log("🔄 Found tasks with wrong team member names, fixing...");
-      // Delete and regenerate with correct team members
-      Promise.all(wrongNameTasks.map(task => 
-        fetch(`/api/checklist-tasks/${task.id}`, { method: 'DELETE' })
-      )).then(() => {
-        fetch("/api/evergreen-tasks/generate", { method: "POST" })
-          .then(() => queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] }));
-      });
-    }
-    
     // If we have evergreen boxes with cycles but no evergreen tasks, generate them
     if (boxesWithCycles.length > 0 && evergreenTasks.length === 0) {
       console.log("No evergreen tasks found, generating them...");
@@ -93,7 +67,7 @@ export default function ChecklistPage() {
         })
         .catch(console.error);
     }
-  }, [allTasks, evergreenBoxes, queryClient, selectedMember]);
+  }, [allTasks, evergreenBoxes, queryClient]);
 
   // Fetch all releases for the dropdown
   const { data: releases = [] } = useQuery<Release[]>({
@@ -112,18 +86,13 @@ export default function ChecklistPage() {
   // Filter tasks by selected member
   const memberTasks = allTasks.filter(task => task.assignedTo === selectedMember);
 
-  // Group tasks by release - include waterfall tasks in release groups
+  // Group tasks by release and evergreen - always include evergreen section
   const tasksByRelease = memberTasks.reduce((acc, task) => {
     let groupId;
     if (task.evergreenBoxId) {
       groupId = 'evergreen';
-    } else if (task.waterfallCycleId && task.contentFormatType && task.releaseId) {
-      // Project waterfall tasks go to their release - ALWAYS show them
-      console.log(`🎯 Waterfall task "${task.taskTitle}" assigned to release:`, task.releaseId);
-      // Waterfall tasks should be grouped with their release, not separately
-      groupId = task.releaseId;
     } else {
-      groupId = task.releaseId || 'general';
+      groupId = task.releaseId || 'unassigned';
     }
     if (!acc[groupId]) {
       acc[groupId] = [];
@@ -726,7 +695,7 @@ export default function ChecklistPage() {
                                     className="bg-blue-500 text-white cursor-pointer hover:bg-blue-600 transition-colors text-xs"
                                     onClick={() => handleSubmitReview(task)}
                                   >
-                                    Submit V{(task.currentVersion || 0) + 2}
+                                    Submit V{task.currentVersion || 2}
                                   </Badge>
                                 )}
                                 
@@ -767,15 +736,15 @@ export default function ChecklistPage() {
               })}
             </div>
 
-                {/* Column 2: Evergreen Content */}
+                {/* Column 2: Evergreen and General */}
                 <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b pb-2">Evergreen Content</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b pb-2">Other Tasks</h3>
                   
-                  {/* Evergreen Tasks */}
+                  {/* Evergreen Content */}
                   {Object.entries(tasksByRelease)
                     .filter(([releaseId]) => releaseId === 'evergreen')
                     .map(([releaseId, tasks]) => {
-                      const memberSortOption = sortBy[`${selectedMember}-general`] || "priority";
+                      const memberSortOption = sortBy[`${selectedMember}-evergreen`] || "priority";
                       const sortedTasks = getSortedTasks(tasks, memberSortOption);
                       
                       return (
@@ -949,7 +918,7 @@ export default function ChecklistPage() {
                                           className="bg-blue-500 text-white cursor-pointer hover:bg-blue-600 transition-colors text-xs"
                                           onClick={() => handleSubmitReview(task)}
                                         >
-                                          Submit V{(task.currentVersion || 0) + 2}
+                                          Submit V{task.currentVersion || 2}
                                         </Badge>
                                       )}
                                       

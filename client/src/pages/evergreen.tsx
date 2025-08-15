@@ -205,17 +205,6 @@ export default function EvergreenPage({}: EvergreenPageProps) {
                           {getBoxProgress(box.id)}% Complete
                         </Badge>
                       </div>
-                      
-                      {/* Show tasks count for this box */}
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-500 dark:text-gray-400">Tasks:</span>
-                        <Badge 
-                          variant="secondary"
-                          className="text-xs"
-                        >
-                          {allTasks.filter(task => task.evergreenBoxId === box.id).length} tasks
-                        </Badge>
-                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -239,8 +228,6 @@ export default function EvergreenPage({}: EvergreenPageProps) {
             </div>
           </div>
         ))}
-
-        {/* Removed unwanted Evergreen Content section as requested */}
 
         {boxes.length === 0 && (
           <div className="text-center py-12">

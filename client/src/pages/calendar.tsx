@@ -74,7 +74,6 @@ export default function CalendarPage() {
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth());
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
   const [draggedTask, setDraggedTask] = useState<CalendarTask | null>(null);
-  console.log('Current draggedTask state:', draggedTask?.taskTitle || 'none');
   const [priorityCells, setPriorityCells] = useState<Set<string>>(new Set());
   const [editingReleaseAccent, setEditingReleaseAccent] = useState<string | null>(null);
   const [releaseAccentColors, setReleaseAccentColors] = useState<Map<string, string>>(new Map());
@@ -304,13 +303,26 @@ export default function CalendarPage() {
       completed: task.completed || false // Add completion status, handle null
     }));
     
-    // Show ALL scheduled tasks regardless of completion status
-    const scheduled = processedTasks.filter(task => task.scheduledDate);
+    // Only show scheduled tasks that are actually completed in Team Checklist
+    const scheduled = processedTasks.filter(task => {
+      if (!task.scheduledDate) return false;
+      // Find the current completion status from the original task data
+      const originalTask = deduplicatedTasks.find(t => t.id === task.id);
+      const isCompleted = originalTask?.completed === true;
+      if (task.scheduledDate) {
+        console.log(`Task "${task.taskTitle}" (${task.id}): scheduled=${!!task.scheduledDate}, completed=${isCompleted}, originalCompleted=${originalTask?.completed}`);
+      }
+      return isCompleted;
+    });
     const unscheduled = processedTasks.filter(task => !task.scheduledDate);
     console.log('Scheduled:', scheduled.length, 'Unscheduled:', unscheduled.length);
 
-    // Group ALL unscheduled tasks by release - show both completed and incomplete
-    const completedUnscheduledTasks = unscheduled;
+    // Group COMPLETED unscheduled tasks by release with strict deduplication
+    // The sidebar should ONLY show tasks that are completed in Team Checklist AND unscheduled
+    const completedUnscheduledTasks = unscheduled.filter(task => {
+      const originalTask = deduplicatedTasks.find(t => t.id === task.id);
+      return originalTask?.completed === true;
+    });
     
     const groupedTasks = completedUnscheduledTasks.reduce((acc, task) => {
       const releaseId = task.releaseId || 'evergreen';
@@ -607,12 +619,9 @@ export default function CalendarPage() {
                               console.log('onDragStart called for:', task.taskTitle);
                               handleDragStart(task);
                               e.dataTransfer.effectAllowed = 'move';
-                              e.dataTransfer.setData('text/plain', JSON.stringify(task));
-                              e.currentTarget.style.opacity = '0.5';
                             }}
                             onDragEnd={(e) => {
                               console.log('onDragEnd called');
-                              e.currentTarget.style.opacity = '1';
                               setDraggedTask(null);
                             }}
                             className="p-3 bg-gray-50 dark:bg-gray-700 rounded text-xs cursor-move hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors min-h-[3rem] flex items-center"

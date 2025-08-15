@@ -244,17 +244,39 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
       queryClient.invalidateQueries({ queryKey: ["/api/releases", releaseId] });
       queryClient.refetchQueries({ queryKey: ["/api/releases"] });
       
-      // Clean up existing waterfall tasks when cycle changes or is removed
-      try {
-        console.log("Cleaning up existing waterfall tasks for release update...");
-        // Always delete existing waterfall tasks first to prevent duplicates
-        await fetch(`/api/releases/${updatedRelease.id}/waterfall-tasks`, { method: "DELETE" });
-        console.log("Successfully cleaned up existing waterfall tasks");
-        
-        // Wait for deletions to process
-        await new Promise(resolve => setTimeout(resolve, 100));
-      } catch (error) {
-        console.error("Failed to cleanup waterfall tasks:", error);
+      // Only clean up AUTO-GENERATED waterfall cycle tasks to prevent duplicates
+      // Keep manually created tasks intact
+      if (updatedRelease.waterfallCycleId) {
+        try {
+          console.log("Cleaning up existing waterfall tasks for release update...");
+          const tasksResponse = await fetch("/api/checklist-tasks");
+          const allTasks = await tasksResponse.json();
+          
+          // Only delete tasks that were auto-generated from waterfall cycles
+          // These tasks have specific naming patterns like "Cycle Name > Nx Format"
+          const waterfallTasks = allTasks.filter((task: any) => 
+            task.releaseId === updatedRelease.id && 
+            task.taskTitle && 
+            task.taskTitle.includes(" > ") && 
+            task.taskTitle.includes("x ")
+          );
+          
+          console.log("Waterfall tasks to delete for release update:", waterfallTasks.length);
+          
+          for (const task of waterfallTasks) {
+            try {
+              await fetch(`/api/checklist-tasks/${task.id}`, { method: "DELETE" });
+              console.log(`Deleted waterfall task ${task.id}: ${task.taskTitle}`);
+            } catch (deleteError) {
+              console.error(`Failed to delete task ${task.id}:`, deleteError);
+            }
+          }
+          
+          // Wait for deletions to process
+          await new Promise(resolve => setTimeout(resolve, 100));
+        } catch (error) {
+          console.error("Failed to cleanup waterfall tasks:", error);
+        }
       }
       
       // Generate tasks if waterfall cycle is assigned

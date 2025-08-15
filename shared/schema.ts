@@ -1,26 +1,7 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, jsonb, boolean, integer, uuid, index } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, jsonb, boolean, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-
-// Users table for authentication
-export const users = pgTable("users", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  email: varchar("email", { length: 255 }).notNull().unique(),
-  password: varchar("password", { length: 255 }).notNull(),
-  isAdmin: boolean("is_admin").default(false).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-// Sessions table for authentication
-export const sessions = pgTable("sessions", {
-  sid: varchar("sid", { length: 255 }).primaryKey(),
-  sess: jsonb("sess").notNull(),
-  expire: timestamp("expire").notNull(),
-}, (table) => [
-  index("sessions_expire_idx").on(table.expire),
-]);
 
 export const releaseGroups = pgTable("release_groups", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -191,19 +172,3 @@ export type TaskSocialMedia = typeof taskSocialMedia.$inferSelect;
 
 export type InsertChecklistTask = z.infer<typeof insertChecklistTaskSchema>;
 export type ChecklistTask = typeof checklistTasks.$inferSelect;
-
-// User schema types
-export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(1, "Password is required"),
-});
-
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
-export type LoginData = z.infer<typeof loginSchema>;

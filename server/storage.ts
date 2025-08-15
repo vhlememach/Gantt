@@ -6,14 +6,9 @@ import {
   type WaterfallCycle, type InsertWaterfallCycle,
   type ContentFormatAssignment, type InsertContentFormatAssignment,
   type EvergreenBox, type InsertEvergreenBox,
-  type TaskSocialMedia, type InsertTaskSocialMedia,
-  type User, type InsertUser
+  type TaskSocialMedia, type InsertTaskSocialMedia
 } from "@shared/schema";
 import { randomUUID } from "crypto";
-import { db } from "./db";
-import { users, releaseGroups, releases, appSettings, waterfallCycles, contentFormatAssignments, evergreenBoxes, taskSocialMedia, checklistTasks } from "@shared/schema";
-import { eq } from "drizzle-orm";
-import bcrypt from "bcryptjs";
 
 export interface IStorage {
   // Release Groups
@@ -58,7 +53,6 @@ export interface IStorage {
   createContentFormatAssignment(assignment: InsertContentFormatAssignment): Promise<ContentFormatAssignment>;
   updateContentFormatAssignment(id: string, assignment: Partial<InsertContentFormatAssignment>): Promise<ContentFormatAssignment | undefined>;
   deleteContentFormatAssignment(id: string): Promise<boolean>;
-  clearAllContentFormatAssignments(): Promise<boolean>;
 
   // Evergreen Boxes
   getEvergreenBoxes(): Promise<EvergreenBox[]>;
@@ -74,15 +68,6 @@ export interface IStorage {
   createTaskSocialMedia(socialMedia: InsertTaskSocialMedia): Promise<TaskSocialMedia>;
   updateTaskSocialMedia(id: string, socialMedia: Partial<InsertTaskSocialMedia>): Promise<TaskSocialMedia | undefined>;
   deleteTaskSocialMedia(id: string): Promise<boolean>;
-
-  // User Authentication
-  getUsers(): Promise<User[]>;
-  getUser(id: string): Promise<User | undefined>;
-  getUserByEmail(email: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
-  updateUser(id: string, user: Partial<InsertUser>): Promise<User | undefined>;
-  updateUserPassword(id: string, password: string): Promise<boolean>;
-  deleteUser(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -93,7 +78,6 @@ export class MemStorage implements IStorage {
   private contentFormatAssignments: Map<string, ContentFormatAssignment>;
   private evergreenBoxes: Map<string, EvergreenBox>;
   private taskSocialMedia: Map<string, TaskSocialMedia>;
-  private users: Map<string, User>;
   private appSettings: AppSettings;
 
   constructor() {
@@ -104,10 +88,9 @@ export class MemStorage implements IStorage {
     this.contentFormatAssignments = new Map();
     this.evergreenBoxes = new Map();
     this.taskSocialMedia = new Map();
-    this.users = new Map();
     this.appSettings = {
       id: randomUUID(),
-      headerTitle: "Palmyra",
+      headerTitle: "Release Gantt Chart",
       headerBackgroundColor: "#3B82F6",
       headerTitleColor: "#FFFFFF",
       fontFamily: "Inter",
@@ -120,7 +103,6 @@ export class MemStorage implements IStorage {
 
     // Initialize with sample data
     this.initializeSampleData();
-    this.initializeSampleUsers();
   }
 
   private initializeSampleData() {
@@ -240,28 +222,6 @@ export class MemStorage implements IStorage {
 
     // Initialize sample checklist tasks
     this.initializeSampleChecklistTasks(releases);
-    
-    // CRITICAL FIX: Assign waterfall cycles to releases
-    this.assignWaterfallCyclesToReleases();
-  }
-
-  private assignWaterfallCyclesToReleases() {
-    const releases = Array.from(this.releases.values());
-    const cycles = Array.from(this.waterfallCycles.values());
-    
-    if (cycles.length === 0) {
-      console.log("⚠️ No waterfall cycles available to assign to releases");
-      return;
-    }
-
-    // Assign cycles to releases for waterfall task generation
-    releases.forEach((release, index) => {
-      const cycleIndex = index % cycles.length; // Rotate through available cycles
-      const assignedCycle = cycles[cycleIndex];
-      release.waterfallCycleId = assignedCycle.id;
-      this.releases.set(release.id, release);
-      console.log(`🔗 Assigned "${assignedCycle.name}" to release "${release.name}"`);
-    });
   }
 
   private initializeSampleWaterfallCycles() {
@@ -269,7 +229,6 @@ export class MemStorage implements IStorage {
       {
         id: randomUUID(),
         name: "Monthly Waterfall Cycle",
-        type: "monthly", // FIXED: Added missing type field
         description: "Comprehensive content creation for major releases",
         contentRequirements: {
           article: 1,
@@ -282,8 +241,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: randomUUID(),
-        name: "Weekly Waterfall Cycle", 
-        type: "weekly", // FIXED: Added missing type field
+        name: "Weekly Waterfall Cycle",
         description: "Regular content creation for ongoing engagement",
         contentRequirements: {
           thread: 1,
@@ -295,7 +253,6 @@ export class MemStorage implements IStorage {
       {
         id: randomUUID(),
         name: "Simple Waterfall Cycle",
-        type: "simple", // FIXED: Added missing type field
         description: "Minimal content creation for quick releases",
         contentRequirements: {
           thread: 1,
@@ -447,14 +404,6 @@ export class MemStorage implements IStorage {
             completed: isCompleted,
             createdAt: new Date(),
             completedAt: isCompleted ? new Date() : null,
-            paused: false,
-            blockerReason: null,
-            blockerRequestedBy: null,
-            scheduledDate: null,
-            reviewStatus: null,
-            reviewChanges: null,
-            reviewSubmissionUrl: null,
-            currentVersion: 1,
           };
           this.checklistTasks.set(taskId, task);
         }
@@ -593,14 +542,6 @@ export class MemStorage implements IStorage {
       completed: task.completed || false,
       createdAt: new Date(),
       completedAt: null,
-      paused: task.paused || false,
-      blockerReason: task.blockerReason || null,
-      blockerRequestedBy: task.blockerRequestedBy || null,
-      scheduledDate: task.scheduledDate || null,
-      reviewStatus: task.reviewStatus || null,
-      reviewChanges: task.reviewChanges || null,
-      reviewSubmissionUrl: task.reviewSubmissionUrl || null,
-      currentVersion: task.currentVersion || 1,
     };
     this.checklistTasks.set(id, newTask);
     return newTask;
@@ -694,11 +635,6 @@ export class MemStorage implements IStorage {
     return this.contentFormatAssignments.delete(id);
   }
 
-  async clearAllContentFormatAssignments(): Promise<boolean> {
-    this.contentFormatAssignments.clear();
-    return true;
-  }
-
   // Evergreen Boxes
   async getEvergreenBoxes(): Promise<EvergreenBox[]> {
     return Array.from(this.evergreenBoxes.values());
@@ -755,7 +691,6 @@ export class MemStorage implements IStorage {
     const newSocialMedia: TaskSocialMedia = {
       ...socialMedia,
       id,
-      linkUrl: socialMedia.linkUrl || null,
       createdAt: new Date(),
     };
     this.taskSocialMedia.set(id, newSocialMedia);
@@ -774,322 +709,6 @@ export class MemStorage implements IStorage {
   async deleteTaskSocialMedia(id: string): Promise<boolean> {
     return this.taskSocialMedia.delete(id);
   }
-
-  // User Authentication Methods
-  async getUsers(): Promise<User[]> {
-    return Array.from(this.users.values());
-  }
-
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
-  }
-
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.email === email);
-  }
-
-  async createUser(userData: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const hashedPassword = await bcrypt.hash(userData.password, 10);
-    const user: User = {
-      ...userData,
-      id,
-      password: hashedPassword,
-      isAdmin: userData.isAdmin || false,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    this.users.set(id, user);
-    return user;
-  }
-
-  async updateUser(id: string, userData: Partial<InsertUser>): Promise<User | undefined> {
-    const existing = this.users.get(id);
-    if (!existing) return undefined;
-
-    const updated: User = { 
-      ...existing, 
-      ...userData,
-      updatedAt: new Date()
-    };
-    if (userData.password) {
-      updated.password = await bcrypt.hash(userData.password, 10);
-    }
-    this.users.set(id, updated);
-    return updated;
-  }
-
-  async updateUserPassword(id: string, password: string): Promise<boolean> {
-    const user = this.users.get(id);
-    if (!user) return false;
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const updated: User = { 
-      ...user, 
-      password: hashedPassword,
-      updatedAt: new Date()
-    };
-    this.users.set(id, updated);
-    return true;
-  }
-
-  async deleteUser(id: string): Promise<boolean> {
-    return this.users.delete(id);
-  }
-
-  private async initializeSampleUsers() {
-    // Create actual team users
-    const users = [
-      {
-        email: "victor.leme@zengate.global",
-        password: "h3izTMt8DBThwM45Xw9pd5@S^XCU",
-        isAdmin: true
-      },
-      {
-        email: "brian.dill@zengate.global", 
-        password: "ABY9DDLbpf^Vpqv5Pr28yA4bymJk",
-        isAdmin: false
-      },
-      {
-        email: "alex.schwartz@zengate.global",
-        password: "f7YG5FAHNLT6Re#np7bC&nhVTNDY", 
-        isAdmin: false
-      },
-      {
-        email: "lucas.marinho@zengate.global",
-        password: "QX9dJZ$Au272Pi#oTXE7hiB#NU9&",
-        isAdmin: false
-      },
-      {
-        email: "theodore.morisis@zengate.global",
-        password: "$Psmm9VaWFBt2bgCqDvmwWRHne8K",
-        isAdmin: false
-      }
-    ];
-
-    for (const userData of users) {
-      const user: User = {
-        id: randomUUID(),
-        email: userData.email,
-        password: await bcrypt.hash(userData.password, 10),
-        isAdmin: userData.isAdmin,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      this.users.set(user.id, user);
-      console.log(`✅ Created user: ${userData.email} (${userData.isAdmin ? 'Admin' : 'User'})`);
-    }
-  }
-
-
 }
 
-// Database Storage Implementation
-export class DatabaseStorage implements IStorage {
-  private memStorage = new MemStorage();
-
-  // User Authentication
-  async getUsers(): Promise<User[]> {
-    return this.memStorage.getUsers();
-  }
-
-  async getUser(id: string): Promise<User | undefined> {
-    return this.memStorage.getUser(id);
-  }
-
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    return this.memStorage.getUserByEmail(email);
-  }
-
-  async createUser(userData: InsertUser): Promise<User> {
-    return this.memStorage.createUser(userData);
-  }
-
-  async updateUser(id: string, userData: Partial<InsertUser>): Promise<User | undefined> {
-    return this.memStorage.updateUser(id, userData);
-  }
-
-  async updateUserPassword(id: string, password: string): Promise<boolean> {
-    return this.memStorage.updateUserPassword(id, password);
-  }
-
-  async deleteUser(id: string): Promise<boolean> {
-    return this.memStorage.deleteUser(id);
-  }
-
-  // All other methods delegate to memStorage
-
-  async getReleaseGroups(): Promise<ReleaseGroup[]> {
-    return this.memStorage.getReleaseGroups();
-  }
-
-  async getReleaseGroup(id: string): Promise<ReleaseGroup | undefined> {
-    return this.memStorage.getReleaseGroup(id);
-  }
-
-  async createReleaseGroup(group: InsertReleaseGroup): Promise<ReleaseGroup> {
-    return this.memStorage.createReleaseGroup(group);
-  }
-
-  async updateReleaseGroup(id: string, group: Partial<InsertReleaseGroup>): Promise<ReleaseGroup | undefined> {
-    return this.memStorage.updateReleaseGroup(id, group);
-  }
-
-  async deleteReleaseGroup(id: string): Promise<boolean> {
-    return this.memStorage.deleteReleaseGroup(id);
-  }
-
-  async getReleases(): Promise<Release[]> {
-    return this.memStorage.getReleases();
-  }
-
-  async getRelease(id: string): Promise<Release | undefined> {
-    return this.memStorage.getRelease(id);
-  }
-
-  async getReleasesByGroupId(groupId: string): Promise<Release[]> {
-    return this.memStorage.getReleasesByGroupId(groupId);
-  }
-
-  async createRelease(release: InsertRelease): Promise<Release> {
-    return this.memStorage.createRelease(release);
-  }
-
-  async updateRelease(id: string, release: Partial<InsertRelease>): Promise<Release | undefined> {
-    return this.memStorage.updateRelease(id, release);
-  }
-
-  async deleteRelease(id: string): Promise<boolean> {
-    return this.memStorage.deleteRelease(id);
-  }
-
-  async getAppSettings(): Promise<AppSettings> {
-    return this.memStorage.getAppSettings();
-  }
-
-  async updateAppSettings(settings: Partial<InsertAppSettings>): Promise<AppSettings> {
-    return this.memStorage.updateAppSettings(settings);
-  }
-
-  async getChecklistTasks(): Promise<ChecklistTask[]> {
-    return this.memStorage.getChecklistTasks();
-  }
-
-  async getChecklistTask(id: string): Promise<ChecklistTask | undefined> {
-    return this.memStorage.getChecklistTask(id);
-  }
-
-  async getChecklistTasksByRelease(releaseId: string): Promise<ChecklistTask[]> {
-    return this.memStorage.getChecklistTasksByRelease(releaseId);
-  }
-
-  async getChecklistTasksByEvergreenBox(evergreenBoxId: string): Promise<ChecklistTask[]> {
-    return this.memStorage.getChecklistTasksByEvergreenBox(evergreenBoxId);
-  }
-
-  async getChecklistTasksByMember(assignedTo: string): Promise<ChecklistTask[]> {
-    return this.memStorage.getChecklistTasksByMember(assignedTo);
-  }
-
-  async createChecklistTask(task: InsertChecklistTask): Promise<ChecklistTask> {
-    return this.memStorage.createChecklistTask(task);
-  }
-
-  async updateChecklistTask(id: string, task: Partial<InsertChecklistTask>): Promise<ChecklistTask | undefined> {
-    return this.memStorage.updateChecklistTask(id, task);
-  }
-
-  async deleteChecklistTask(id: string): Promise<boolean> {
-    return this.memStorage.deleteChecklistTask(id);
-  }
-
-  async getWaterfallCycles(): Promise<WaterfallCycle[]> {
-    return this.memStorage.getWaterfallCycles();
-  }
-
-  async getWaterfallCycle(id: string): Promise<WaterfallCycle | undefined> {
-    return this.memStorage.getWaterfallCycle(id);
-  }
-
-  async createWaterfallCycle(cycle: InsertWaterfallCycle): Promise<WaterfallCycle> {
-    return this.memStorage.createWaterfallCycle(cycle);
-  }
-
-  async updateWaterfallCycle(id: string, cycle: Partial<InsertWaterfallCycle>): Promise<WaterfallCycle | undefined> {
-    return this.memStorage.updateWaterfallCycle(id, cycle);
-  }
-
-  async deleteWaterfallCycle(id: string): Promise<boolean> {
-    return this.memStorage.deleteWaterfallCycle(id);
-  }
-
-  async getContentFormatAssignments(): Promise<ContentFormatAssignment[]> {
-    return this.memStorage.getContentFormatAssignments();
-  }
-
-  async getContentFormatAssignment(id: string): Promise<ContentFormatAssignment | undefined> {
-    return this.memStorage.getContentFormatAssignment(id);
-  }
-
-  async createContentFormatAssignment(assignment: InsertContentFormatAssignment): Promise<ContentFormatAssignment> {
-    return this.memStorage.createContentFormatAssignment(assignment);
-  }
-
-  async updateContentFormatAssignment(id: string, assignment: Partial<InsertContentFormatAssignment>): Promise<ContentFormatAssignment | undefined> {
-    return this.memStorage.updateContentFormatAssignment(id, assignment);
-  }
-
-  async deleteContentFormatAssignment(id: string): Promise<boolean> {
-    return this.memStorage.deleteContentFormatAssignment(id);
-  }
-
-  async clearAllContentFormatAssignments(): Promise<boolean> {
-    return this.memStorage.clearAllContentFormatAssignments();
-  }
-
-  async getEvergreenBoxes(): Promise<EvergreenBox[]> {
-    return this.memStorage.getEvergreenBoxes();
-  }
-
-  async getEvergreenBox(id: string): Promise<EvergreenBox | undefined> {
-    return this.memStorage.getEvergreenBox(id);
-  }
-
-  async getEvergreenBoxesByGroup(groupId: string): Promise<EvergreenBox[]> {
-    return this.memStorage.getEvergreenBoxesByGroup(groupId);
-  }
-
-  async createEvergreenBox(box: InsertEvergreenBox): Promise<EvergreenBox> {
-    return this.memStorage.createEvergreenBox(box);
-  }
-
-  async updateEvergreenBox(id: string, box: Partial<InsertEvergreenBox>): Promise<EvergreenBox | undefined> {
-    return this.memStorage.updateEvergreenBox(id, box);
-  }
-
-  async deleteEvergreenBox(id: string): Promise<boolean> {
-    return this.memStorage.deleteEvergreenBox(id);
-  }
-
-  async getTaskSocialMedia(): Promise<TaskSocialMedia[]> {
-    return this.memStorage.getTaskSocialMedia();
-  }
-
-  async getTaskSocialMediaByTask(taskId: string): Promise<TaskSocialMedia | undefined> {
-    return this.memStorage.getTaskSocialMediaByTask(taskId);
-  }
-
-  async createTaskSocialMedia(socialMedia: InsertTaskSocialMedia): Promise<TaskSocialMedia> {
-    return this.memStorage.createTaskSocialMedia(socialMedia);
-  }
-
-  async updateTaskSocialMedia(id: string, socialMedia: Partial<InsertTaskSocialMedia>): Promise<TaskSocialMedia | undefined> {
-    return this.memStorage.updateTaskSocialMedia(id, socialMedia);
-  }
-
-  async deleteTaskSocialMedia(id: string): Promise<boolean> {
-    return this.memStorage.deleteTaskSocialMedia(id);
-  }
-}
-
-export const storage = new DatabaseStorage();
+export const storage = new MemStorage();
