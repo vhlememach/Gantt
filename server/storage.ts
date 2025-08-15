@@ -240,6 +240,28 @@ export class MemStorage implements IStorage {
 
     // Initialize sample checklist tasks
     this.initializeSampleChecklistTasks(releases);
+    
+    // CRITICAL FIX: Assign waterfall cycles to releases
+    this.assignWaterfallCyclesToReleases();
+  }
+
+  private assignWaterfallCyclesToReleases() {
+    const releases = Array.from(this.releases.values());
+    const cycles = Array.from(this.waterfallCycles.values());
+    
+    if (cycles.length === 0) {
+      console.log("⚠️ No waterfall cycles available to assign to releases");
+      return;
+    }
+
+    // Assign cycles to releases for waterfall task generation
+    releases.forEach((release, index) => {
+      const cycleIndex = index % cycles.length; // Rotate through available cycles
+      const assignedCycle = cycles[cycleIndex];
+      release.waterfallCycleId = assignedCycle.id;
+      this.releases.set(release.id, release);
+      console.log(`🔗 Assigned "${assignedCycle.name}" to release "${release.name}"`);
+    });
   }
 
   private initializeSampleWaterfallCycles() {
@@ -247,6 +269,7 @@ export class MemStorage implements IStorage {
       {
         id: randomUUID(),
         name: "Monthly Waterfall Cycle",
+        type: "monthly", // FIXED: Added missing type field
         description: "Comprehensive content creation for major releases",
         contentRequirements: {
           article: 1,
@@ -259,7 +282,8 @@ export class MemStorage implements IStorage {
       },
       {
         id: randomUUID(),
-        name: "Weekly Waterfall Cycle",
+        name: "Weekly Waterfall Cycle", 
+        type: "weekly", // FIXED: Added missing type field
         description: "Regular content creation for ongoing engagement",
         contentRequirements: {
           thread: 1,
@@ -271,6 +295,7 @@ export class MemStorage implements IStorage {
       {
         id: randomUUID(),
         name: "Simple Waterfall Cycle",
+        type: "simple", // FIXED: Added missing type field
         description: "Minimal content creation for quick releases",
         contentRequirements: {
           thread: 1,
@@ -795,18 +820,47 @@ export class MemStorage implements IStorage {
   }
 
   private async initializeSampleUsers() {
-    // Create default admin user
-    const adminUser: User = {
-      id: randomUUID(),
-      email: "admin@palmyra.com",
-      password: await bcrypt.hash("admin123", 10),
-      isAdmin: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    this.users.set(adminUser.id, adminUser);
-    
-    console.log("✅ Created default admin user: admin@palmyra.com / admin123");
+    // Create actual team users
+    const users = [
+      {
+        email: "victor.leme@zengate.global",
+        password: "h3izTMt8DBThwM45Xw9pd5@S^XCU",
+        isAdmin: true
+      },
+      {
+        email: "brian.dill@zengate.global", 
+        password: "ABY9DDLbpf^Vpqv5Pr28yA4bymJk",
+        isAdmin: false
+      },
+      {
+        email: "alex.schwartz@zengate.global",
+        password: "f7YG5FAHNLT6Re#np7bC&nhVTNDY", 
+        isAdmin: false
+      },
+      {
+        email: "lucas.marinho@zengate.global",
+        password: "QX9dJZ$Au272Pi#oTXE7hiB#NU9&",
+        isAdmin: false
+      },
+      {
+        email: "theodore.morisis@zengate.global",
+        password: "$Psmm9VaWFBt2bgCqDvmwWRHne8K",
+        isAdmin: false
+      }
+    ];
+
+    for (const userData of users) {
+      const user: User = {
+        id: randomUUID(),
+        email: userData.email,
+        password: await bcrypt.hash(userData.password, 10),
+        isAdmin: userData.isAdmin,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      this.users.set(user.id, user);
+      console.log(`✅ Created user: ${userData.email} (${userData.isAdmin ? 'Admin' : 'User'})`);
+    }
   }
 
 
