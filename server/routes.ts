@@ -718,7 +718,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log("👥 Generating tasks for team members:", teamMembers);
             
             for (const member of teamMembers) {
-              for (const formatType of cycle.contentFormatTypes) {
+              // Extract format types from contentRequirements JSON
+              const contentRequirements = cycle.contentRequirements as Record<string, number> || {};
+              const formatTypes = Object.keys(contentRequirements);
+              
+              for (const formatType of formatTypes) {
                 const taskTitle = `${box.title} - ${formatType} (${member})`;
                 
                 // Check if task already exists

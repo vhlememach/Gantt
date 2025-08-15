@@ -88,12 +88,10 @@ function AdminDropdown() {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         {/* Admin Panel */}
-        <Link href="/admin">
-          <DropdownMenuItem>
-            <Settings className="mr-2 h-4 w-4" />
-            Admin Panel
-          </DropdownMenuItem>
-        </Link>
+        <DropdownMenuItem onClick={(e) => { e.preventDefault(); window.location.href = '/admin'; }}>
+          <Settings className="mr-2 h-4 w-4" />
+          Admin Panel
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
