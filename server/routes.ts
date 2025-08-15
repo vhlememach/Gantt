@@ -543,6 +543,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete all content format assignments
+  app.delete("/api/content-format-assignments", requireAuth, async (req, res) => {
+    try {
+      await storage.clearAllContentFormatAssignments();
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to clear content format assignments" });
+    }
+  });
+
   app.delete("/api/content-format-assignments/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;

@@ -129,9 +129,11 @@ export function ReviewModal({ isOpen, onClose, task, mode }: ReviewModalProps) {
       case "request":
         return `Request V${(task?.currentVersion || 0) + 1}`;
       case "submit":
-        return "Submit for Approval";
+        return `Submit V${task?.currentVersion || 1}`;
       case "approve":
-        return "Approve";
+        return changes.trim() && (task?.currentVersion || 0) < 9 
+          ? `Request V${(task?.currentVersion || 0) + 1}` 
+          : "Approve";
       default:
         return "Save";
     }

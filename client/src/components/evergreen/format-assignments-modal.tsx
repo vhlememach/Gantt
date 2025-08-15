@@ -66,27 +66,10 @@ export default function FormatAssignmentsModal({ isOpen, onClose }: FormatAssign
         return acc;
       }, {} as Record<string, string[]>);
 
-      // Optimized cleanup - only delete format-specific tasks
-      try {
-        const tasksResponse = await fetch("/api/checklist-tasks");
-        const allTasks = await tasksResponse.json();
-        
-        // Only delete tasks with contentFormatType to avoid deleting ALL waterfall tasks
-        const tasksToDelete = allTasks.filter((task: any) => task.contentFormatType);
-        
-        // Delete in parallel for better performance
-        if (tasksToDelete.length > 0) {
-          await Promise.all(
-            tasksToDelete.map((task: any) => 
-              fetch(`/api/checklist-tasks/${task.id}`, { method: "DELETE" })
-            )
-          );
-        }
-      } catch (error) {
-        console.error("Failed to cleanup existing format tasks:", error);
-      }
+      // Clear existing assignments first - CRUCIAL fix
+      await fetch("/api/content-format-assignments", { method: "DELETE" });
 
-      // Create assignments directly - faster approach
+      // Create new assignments
       const assignmentPromises = Object.entries(assignmentData)
         .filter(([_, members]) => members.length > 0)
         .map(([formatType, members]) =>

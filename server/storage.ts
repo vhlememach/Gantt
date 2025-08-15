@@ -58,6 +58,7 @@ export interface IStorage {
   createContentFormatAssignment(assignment: InsertContentFormatAssignment): Promise<ContentFormatAssignment>;
   updateContentFormatAssignment(id: string, assignment: Partial<InsertContentFormatAssignment>): Promise<ContentFormatAssignment | undefined>;
   deleteContentFormatAssignment(id: string): Promise<boolean>;
+  clearAllContentFormatAssignments(): Promise<boolean>;
 
   // Evergreen Boxes
   getEvergreenBoxes(): Promise<EvergreenBox[]>;
@@ -649,6 +650,11 @@ export class MemStorage implements IStorage {
     return this.contentFormatAssignments.delete(id);
   }
 
+  async clearAllContentFormatAssignments(): Promise<boolean> {
+    this.contentFormatAssignments.clear();
+    return true;
+  }
+
   // Evergreen Boxes
   async getEvergreenBoxes(): Promise<EvergreenBox[]> {
     return Array.from(this.evergreenBoxes.values());
@@ -933,6 +939,10 @@ export class DatabaseStorage implements IStorage {
 
   async deleteContentFormatAssignment(id: string): Promise<boolean> {
     return this.memStorage.deleteContentFormatAssignment(id);
+  }
+
+  async clearAllContentFormatAssignments(): Promise<boolean> {
+    return this.memStorage.clearAllContentFormatAssignments();
   }
 
   async getEvergreenBoxes(): Promise<EvergreenBox[]> {
