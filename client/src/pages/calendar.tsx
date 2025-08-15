@@ -304,26 +304,13 @@ export default function CalendarPage() {
       completed: task.completed || false // Add completion status, handle null
     }));
     
-    // Only show scheduled tasks that are actually completed in Team Checklist
-    const scheduled = processedTasks.filter(task => {
-      if (!task.scheduledDate) return false;
-      // Find the current completion status from the original task data
-      const originalTask = deduplicatedTasks.find(t => t.id === task.id);
-      const isCompleted = originalTask?.completed === true;
-      if (task.scheduledDate) {
-        console.log(`Task "${task.taskTitle}" (${task.id}): scheduled=${!!task.scheduledDate}, completed=${isCompleted}, originalCompleted=${originalTask?.completed}`);
-      }
-      return isCompleted;
-    });
+    // Show ALL scheduled tasks regardless of completion status
+    const scheduled = processedTasks.filter(task => task.scheduledDate);
     const unscheduled = processedTasks.filter(task => !task.scheduledDate);
     console.log('Scheduled:', scheduled.length, 'Unscheduled:', unscheduled.length);
 
-    // Group COMPLETED unscheduled tasks by release with strict deduplication
-    // The sidebar should ONLY show tasks that are completed in Team Checklist AND unscheduled
-    const completedUnscheduledTasks = unscheduled.filter(task => {
-      const originalTask = deduplicatedTasks.find(t => t.id === task.id);
-      return originalTask?.completed === true;
-    });
+    // Group ALL unscheduled tasks by release - show both completed and incomplete
+    const completedUnscheduledTasks = unscheduled;
     
     const groupedTasks = completedUnscheduledTasks.reduce((acc, task) => {
       const releaseId = task.releaseId || 'evergreen';

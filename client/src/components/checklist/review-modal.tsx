@@ -184,7 +184,7 @@ export function ReviewModal({ isOpen, onClose, task, mode }: ReviewModalProps) {
               
               <div>
                 <Label htmlFor="submissionUrl" className="text-sm font-medium">
-                  V{(task?.currentVersion || 0) + 2} Submission URL
+                  V{(task?.currentVersion || 0) + 1} Submission URL
                 </Label>
                 <Input
                   id="submissionUrl"

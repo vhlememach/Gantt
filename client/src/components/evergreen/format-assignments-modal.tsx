@@ -86,13 +86,8 @@ export default function FormatAssignmentsModal({ isOpen, onClose }: FormatAssign
         console.error("Failed to cleanup existing format tasks:", error);
       }
 
-      // Clear existing assignments and create new ones
-      await fetch("/api/content-format-assignments", {
-        method: "DELETE",
-      });
-
-      // Create new assignments
-      const promises = Object.entries(assignmentData)
+      // Create assignments directly - faster approach
+      const assignmentPromises = Object.entries(assignmentData)
         .filter(([_, members]) => members.length > 0)
         .map(([formatType, members]) =>
           fetch("/api/content-format-assignments", {
@@ -105,96 +100,32 @@ export default function FormatAssignmentsModal({ isOpen, onClose }: FormatAssign
           })
         );
 
-      await Promise.all(promises);
+      await Promise.all(assignmentPromises);
     },
     onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ["/api/content-format-assignments"] });
       queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
       
-      // Regenerate tasks for existing boxes and releases with waterfall cycles
+      // Generate tasks for all releases with waterfall cycles
       try {
-        // Get all current data
-        const [boxesResponse, releasesResponse, cyclesResponse] = await Promise.all([
-          fetch("/api/evergreen-boxes"),
-          fetch("/api/releases"),
-          fetch("/api/waterfall-cycles")
-        ]);
-        
-        const boxes = await boxesResponse.json();
+        const releasesResponse = await fetch("/api/releases");
         const releases = await releasesResponse.json();
-        const cycles = await cyclesResponse.json();
         
-        // Get new assignments
-        const assignmentsResponse = await fetch("/api/content-format-assignments");
-        const assignments = await assignmentsResponse.json();
+        const generatePromises = releases
+          .filter((release: any) => release.waterfallCycleId)
+          .map((release: any) => 
+            fetch(`/api/releases/${release.id}/generate-waterfall-tasks`, { method: "POST" })
+          );
         
-        // Regenerate tasks for evergreen boxes - but only create ONE task per format/box combination
-        for (const box of boxes) {
-          if (box.waterfallCycleId) {
-            const cycle = cycles.find((c: any) => c.id === box.waterfallCycleId);
-            if (cycle) {
-              for (const assignment of assignments) {
-                const formatType = assignment.formatType;
-                const requirement = cycle.contentRequirements[formatType] || 0;
-                
-                if (requirement > 0 && assignment.assignedMembers.length > 0) {
-                  // Create ONE task for this format type, assigned to the first member
-                  const assignedMember = assignment.assignedMembers[0];
-                  const taskName = `${box.title} > ${formatType.charAt(0).toUpperCase() + formatType.slice(1)}`;
-                  
-                  await fetch("/api/checklist-tasks", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      taskTitle: taskName,
-                      assignedTo: assignedMember,
-                      evergreenBoxId: box.id,
-                      waterfallCycleId: box.waterfallCycleId,
-                      contentFormatType: formatType,
-                      completed: false
-                    }),
-                  });
-                }
-              }
-            }
-          }
-        }
+        await Promise.all(generatePromises);
         
-        // Regenerate tasks for releases - but only create ONE task per format/release combination
-        for (const release of releases) {
-          if (release.waterfallCycleId) {
-            const cycle = cycles.find((c: any) => c.id === release.waterfallCycleId);
-            if (cycle) {
-              for (const assignment of assignments) {
-                const formatType = assignment.formatType;
-                const requirement = cycle.contentRequirements[formatType] || 0;
-                
-                if (requirement > 0 && assignment.assignedMembers.length > 0) {
-                  // Create ONE task for this format type, assigned to the first member
-                  const assignedMember = assignment.assignedMembers[0];
-                  const taskName = `${cycle.name} > ${requirement}x ${formatType.charAt(0).toUpperCase() + formatType.slice(1)}`;
-                  
-                  await fetch("/api/checklist-tasks", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      taskTitle: taskName,
-                      assignedTo: assignedMember,
-                      releaseId: release.id,
-                      waterfallCycleId: release.waterfallCycleId,
-                      contentFormatType: formatType,
-                      completed: false
-                    }),
-                  });
-                }
-              }
-            }
-          }
-        }
+        // Also generate evergreen tasks
+        await fetch("/api/evergreen-tasks/generate", { method: "POST" });
         
         queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
+        console.log("🎯 Successfully generated all waterfall and evergreen tasks");
       } catch (error) {
-        console.error("Failed to regenerate tasks:", error);
+        console.error("Failed to generate tasks:", error);
       }
       
       toast({ title: "Format assignments saved successfully" });

@@ -703,6 +703,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Generate Project Waterfall Tasks for specific release
+  app.post("/api/releases/:releaseId/generate-waterfall-tasks", requireAuth, async (req, res) => {
+    try {
+      const { releaseId } = req.params;
+      console.log("🎯 Generating waterfall tasks for release:", releaseId);
+      
+      const release = await storage.getRelease(releaseId);
+      if (!release || !release.waterfallCycleId) {
+        return res.status(400).json({ message: "Release has no waterfall cycle" });
+      }
+      
+      const cycle = await storage.getWaterfallCycle(release.waterfallCycleId);
+      if (!cycle) {
+        return res.status(404).json({ message: "Waterfall cycle not found" });
+      }
+      
+      const assignments = await storage.getContentFormatAssignments();
+      let tasksCreated = 0;
+      
+      for (const assignment of assignments) {
+        const formatType = assignment.formatType;
+        const requirement = (cycle.contentRequirements as Record<string, number>)[formatType] || 0;
+        
+        if (requirement > 0 && assignment.assignedMembers.length > 0) {
+          for (const member of assignment.assignedMembers) {
+            const taskTitle = `${cycle.name} > ${formatType} (${member})`;
+            
+            // Check if task already exists
+            const existingTasks = await storage.getChecklistTasks();
+            const taskExists = existingTasks.some(task => 
+              task.taskTitle === taskTitle && 
+              task.releaseId === releaseId &&
+              task.waterfallCycleId === cycle.id &&
+              task.contentFormatType === formatType &&
+              task.assignedTo === member
+            );
+            
+            if (!taskExists) {
+              await storage.createChecklistTask({
+                taskTitle,
+                taskDescription: `Generate ${formatType} content for ${cycle.name}`,
+                assignedTo: member,
+                releaseId,
+                waterfallCycleId: cycle.id,
+                contentFormatType: formatType,
+                completed: false,
+                priority: false,
+                currentVersion: 1,
+              });
+              tasksCreated++;
+              console.log("✅ Created project waterfall task:", taskTitle);
+            }
+          }
+        }
+      }
+      
+      res.json({ success: true, message: `Generated ${tasksCreated} project waterfall tasks` });
+    } catch (error) {
+      console.error("Error generating project waterfall tasks:", error);
+      res.status(500).json({ message: "Failed to generate project waterfall tasks" });
+    }
+  });
+
   // Generate Evergreen Tasks
   app.post("/api/evergreen-tasks/generate", requireAuth, async (req, res) => {
     try {
