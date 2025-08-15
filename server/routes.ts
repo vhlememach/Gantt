@@ -714,6 +714,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Generate Project Waterfall Tasks for specific release
+  // Delete waterfall tasks when waterfallCycleId is set to null/"None"
+  app.delete("/api/releases/:releaseId/waterfall-tasks", requireAuth, async (req, res) => {
+    try {
+      const { releaseId } = req.params;
+      console.log("🗑️ Deleting waterfall tasks for release:", releaseId);
+      
+      const tasks = await storage.getChecklistTasks();
+      const waterfallTasks = tasks.filter(task => 
+        task.releaseId === releaseId && 
+        task.waterfallCycleId && 
+        task.contentFormatType
+      );
+      
+      let deletedCount = 0;
+      for (const task of waterfallTasks) {
+        await storage.deleteChecklistTask(task.id);
+        deletedCount++;
+        console.log("🗑️ Deleted waterfall task:", task.taskTitle);
+      }
+      
+      res.json({ success: true, message: `Deleted ${deletedCount} waterfall tasks` });
+    } catch (error) {
+      console.error("Error deleting waterfall tasks:", error);
+      res.status(500).json({ message: "Failed to delete waterfall tasks" });
+    }
+  });
+
   app.post("/api/releases/:releaseId/generate-waterfall-tasks", requireAuth, async (req, res) => {
     try {
       const { releaseId } = req.params;

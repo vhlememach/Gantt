@@ -767,13 +767,13 @@ export default function ChecklistPage() {
               })}
             </div>
 
-                {/* Column 2: General Tasks Only */}
+                {/* Column 2: Evergreen Content */}
                 <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b pb-2">General Tasks</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b pb-2">Evergreen Content</h3>
                   
-                  {/* General Tasks Only */}
+                  {/* Evergreen Tasks */}
                   {Object.entries(tasksByRelease)
-                    .filter(([releaseId]) => releaseId === 'general')
+                    .filter(([releaseId]) => releaseId === 'evergreen')
                     .map(([releaseId, tasks]) => {
                       const memberSortOption = sortBy[`${selectedMember}-general`] || "priority";
                       const sortedTasks = getSortedTasks(tasks, memberSortOption);

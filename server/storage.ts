@@ -447,6 +447,14 @@ export class MemStorage implements IStorage {
             completed: isCompleted,
             createdAt: new Date(),
             completedAt: isCompleted ? new Date() : null,
+            paused: false,
+            blockerReason: null,
+            blockerRequestedBy: null,
+            scheduledDate: null,
+            reviewStatus: null,
+            reviewChanges: null,
+            reviewSubmissionUrl: null,
+            currentVersion: 1,
           };
           this.checklistTasks.set(taskId, task);
         }
@@ -585,6 +593,14 @@ export class MemStorage implements IStorage {
       completed: task.completed || false,
       createdAt: new Date(),
       completedAt: null,
+      paused: task.paused || false,
+      blockerReason: task.blockerReason || null,
+      blockerRequestedBy: task.blockerRequestedBy || null,
+      scheduledDate: task.scheduledDate || null,
+      reviewStatus: task.reviewStatus || null,
+      reviewChanges: task.reviewChanges || null,
+      reviewSubmissionUrl: task.reviewSubmissionUrl || null,
+      currentVersion: task.currentVersion || 1,
     };
     this.checklistTasks.set(id, newTask);
     return newTask;
@@ -739,6 +755,7 @@ export class MemStorage implements IStorage {
     const newSocialMedia: TaskSocialMedia = {
       ...socialMedia,
       id,
+      linkUrl: socialMedia.linkUrl || null,
       createdAt: new Date(),
     };
     this.taskSocialMedia.set(id, newSocialMedia);
@@ -778,6 +795,7 @@ export class MemStorage implements IStorage {
       ...userData,
       id,
       password: hashedPassword,
+      isAdmin: userData.isAdmin || false,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
