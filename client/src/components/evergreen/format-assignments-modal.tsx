@@ -66,49 +66,22 @@ export default function FormatAssignmentsModal({ isOpen, onClose }: FormatAssign
         return acc;
       }, {} as Record<string, string[]>);
 
-      // Clean up ALL existing format-based tasks to prevent duplicates
+      // Optimized cleanup - only delete format-specific tasks
       try {
-        console.log("Starting complete task cleanup...");
         const tasksResponse = await fetch("/api/checklist-tasks");
         const allTasks = await tasksResponse.json();
         
-        // Delete ALL tasks that have either waterfallCycleId OR contentFormatType OR evergreenBoxId
-        // Also delete tasks whose title contains format keywords (backup cleanup)
-        const tasksToDelete = allTasks.filter((task: any) => 
-          task.waterfallCycleId || 
-          task.contentFormatType || 
-          task.evergreenBoxId ||
-          (task.taskTitle && (
-            task.taskTitle.toLowerCase().includes('article') ||
-            task.taskTitle.toLowerCase().includes('thread') ||
-            task.taskTitle.toLowerCase().includes('video') ||
-            task.taskTitle.toLowerCase().includes('animation') ||
-            task.taskTitle.toLowerCase().includes('visual')
-          ))
-        );
+        // Only delete tasks with contentFormatType to avoid deleting ALL waterfall tasks
+        const tasksToDelete = allTasks.filter((task: any) => task.contentFormatType);
         
-        console.log("Tasks to delete:", tasksToDelete.length, tasksToDelete.map((t: any) => ({ 
-          id: t.id, 
-          title: t.taskTitle, 
-          type: t.evergreenBoxId ? 'evergreen' : 'release',
-          waterfallCycleId: t.waterfallCycleId,
-          contentFormatType: t.contentFormatType
-        })));
-        
-        // Delete all tasks sequentially to ensure proper cleanup
-        for (const task of tasksToDelete) {
-          try {
-            const deleteResponse = await fetch(`/api/checklist-tasks/${task.id}`, { method: "DELETE" });
-            console.log(`Deleted task ${task.id} (${task.taskTitle}):`, deleteResponse.status);
-          } catch (deleteError) {
-            console.error(`Failed to delete task ${task.id}:`, deleteError);
-          }
+        // Delete in parallel for better performance
+        if (tasksToDelete.length > 0) {
+          await Promise.all(
+            tasksToDelete.map((task: any) => 
+              fetch(`/api/checklist-tasks/${task.id}`, { method: "DELETE" })
+            )
+          );
         }
-        
-        console.log("All format tasks deleted successfully");
-        
-        // Wait for deletions to fully process
-        await new Promise(resolve => setTimeout(resolve, 1500));
       } catch (error) {
         console.error("Failed to cleanup existing format tasks:", error);
       }

@@ -118,6 +118,8 @@ export default function ChecklistPage() {
     if (task.evergreenBoxId) {
       groupId = 'evergreen';
     } else if (task.waterfallCycleId && task.contentFormatType && task.releaseId) {
+      // Project waterfall tasks go to their release - ALWAYS show them
+      console.log(`🎯 Waterfall task "${task.taskTitle}" assigned to release:`, task.releaseId);
       // Waterfall tasks should be grouped with their release, not separately
       groupId = task.releaseId;
     } else {

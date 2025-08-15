@@ -101,7 +101,7 @@ export function ReviewModal({ isOpen, onClose, task, mode }: ReviewModalProps) {
       }
       submitReviewMutation.mutate({ taskId: task.id, submissionUrl });
     } else if (mode === "approve") {
-      if (changes.trim() && (task?.currentVersion || 0) + 1 < 10) {
+      if (changes.trim() && (task?.currentVersion || 0) < 9) {
         // Request next version instead of approving
         requestNextVersionMutation.mutate({ taskId: task.id, changes });
       } else {
@@ -114,9 +114,9 @@ export function ReviewModal({ isOpen, onClose, task, mode }: ReviewModalProps) {
   const getTitle = () => {
     switch (mode) {
       case "request":
-        return `Request Review - V${(task?.currentVersion || 0) + 2}`;
+        return `Request Review - V${(task?.currentVersion || 0) + 1}`;
       case "submit":
-        return `Submit V${(task?.currentVersion || 0) + 2}`;
+        return `Submit V${(task?.currentVersion || 0) + 1}`;
       case "approve":
         return "Approve Review";
       default:
@@ -127,7 +127,7 @@ export function ReviewModal({ isOpen, onClose, task, mode }: ReviewModalProps) {
   const getButtonText = () => {
     switch (mode) {
       case "request":
-        return `Request V${(task?.currentVersion || 0) + 2}`;
+        return `Request V${(task?.currentVersion || 0) + 1}`;
       case "submit":
         return "Submit for Approval";
       case "approve":
@@ -231,10 +231,10 @@ export function ReviewModal({ isOpen, onClose, task, mode }: ReviewModalProps) {
               )}
 
               {/* Option to request next version instead of approving */}
-              {(task?.currentVersion || 0) + 1 < 10 && (
+              {(task?.currentVersion || 0) < 9 && (
                 <div>
                   <Label htmlFor="nextVersionChanges" className="text-sm font-medium">
-                    Or request V{(task?.currentVersion || 0) + 2} (optional):
+                    Or request V{(task?.currentVersion || 0) + 1} (optional):
                   </Label>
                   <Textarea
                     id="nextVersionChanges"
@@ -254,13 +254,13 @@ export function ReviewModal({ isOpen, onClose, task, mode }: ReviewModalProps) {
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          {mode === "approve" && changes.trim() && (task?.currentVersion || 0) + 1 < 10 ? (
+          {mode === "approve" && changes.trim() && (task?.currentVersion || 0) < 9 ? (
             <Button 
               onClick={handleSubmit}
               disabled={requestReviewMutation.isPending || submitReviewMutation.isPending || approveReviewMutation.isPending || requestNextVersionMutation.isPending}
               className="bg-purple-600 hover:bg-purple-700 text-white"
             >
-              Request V{(task?.currentVersion || 0) + 2}
+              Request V{(task?.currentVersion || 0) + 1}
             </Button>
           ) : (
             <Button 
