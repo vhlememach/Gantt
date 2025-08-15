@@ -267,7 +267,14 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
     }
   }, [isDragging, isResizing, startX, originalDates]);
 
-
+  // Debug logging for timeline bars
+  console.log(`Timeline bar for ${release.name}:`, {
+    startDate: release.startDate,
+    endDate: release.endDate,
+    leftPosition,
+    width,
+    releaseId: release.id
+  });
 
   return (
     <div className="relative w-full h-full"> {/* Full width container */}
@@ -285,6 +292,7 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
           outlineOffset: release.highPriority ? '2px' : '0'
         }}
         onClick={(e) => {
+          console.log('Timeline bar clicked:', release.id);
           onEdit();
         }}
         onMouseDown={(e) => handleMouseDown(e, 'drag')}

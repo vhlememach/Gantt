@@ -187,6 +187,7 @@ export default function CalendarPage() {
     
     // If we have evergreen boxes with cycles but no evergreen tasks, generate them
     if (boxesWithCycles.length > 0 && evergreenTasks.length === 0) {
+      console.log("No evergreen tasks found on calendar, generating them...");
       fetch("/api/evergreen-tasks/generate", { method: "POST" })
         .then(() => {
           queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
@@ -198,10 +199,12 @@ export default function CalendarPage() {
   // Schedule task mutation
   const scheduleTaskMutation = useMutation({
     mutationFn: async ({ taskId, date }: { taskId: string; date: string }) => {
+      console.log('Making API request to schedule task:', taskId, 'on date:', date);
       const response = await apiRequest('PATCH', `/api/checklist-tasks/${taskId}/schedule`, { scheduledDate: date });
       return await response.json();
     },
     onSuccess: () => {
+      console.log('Task scheduled successfully, invalidating cache');
       queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
       setDraggedTask(null);
     },
@@ -214,10 +217,12 @@ export default function CalendarPage() {
   // Unschedule task mutation
   const unscheduleTaskMutation = useMutation({
     mutationFn: async (taskId: string) => {
+      console.log('Making API request to unschedule task:', taskId);
       const response = await apiRequest('PATCH', `/api/checklist-tasks/${taskId}/unschedule`, {});
       return await response.json();
     },
     onSuccess: () => {
+      console.log('Task unscheduled successfully, invalidating cache');
       queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
     },
     onError: (error) => {
@@ -267,6 +272,7 @@ export default function CalendarPage() {
 
   // Use useMemo to prevent re-computation and ensure stable task grouping
   const { tasks, scheduledTasks, unscheduledTasks, tasksByRelease } = useMemo(() => {
+    console.log('Processing tasks - Raw count:', allTasks.length);
     
     // Deduplicate tasks by ID first
     const uniqueTasksMap = new Map<string, ChecklistTask>();
@@ -274,6 +280,7 @@ export default function CalendarPage() {
       uniqueTasksMap.set(task.id, task);
     });
     const deduplicatedTasks = Array.from(uniqueTasksMap.values());
+    console.log('After deduplication:', deduplicatedTasks.length);
     
     // Transform tasks - include completion status
     const processedTasks: CalendarTask[] = deduplicatedTasks.map(task => ({
@@ -302,11 +309,13 @@ export default function CalendarPage() {
       // Find the current completion status from the original task data
       const originalTask = deduplicatedTasks.find(t => t.id === task.id);
       const isCompleted = originalTask?.completed === true;
-
+      if (task.scheduledDate) {
+        console.log(`Task "${task.taskTitle}" (${task.id}): scheduled=${!!task.scheduledDate}, completed=${isCompleted}, originalCompleted=${originalTask?.completed}`);
+      }
       return isCompleted;
     });
     const unscheduled = processedTasks.filter(task => !task.scheduledDate);
-
+    console.log('Scheduled:', scheduled.length, 'Unscheduled:', unscheduled.length);
 
     // Group COMPLETED unscheduled tasks by release with strict deduplication
     // The sidebar should ONLY show tasks that are completed in Team Checklist AND unscheduled
@@ -334,7 +343,7 @@ export default function CalendarPage() {
     const cleanGroupedTasks: Record<string, { tasks: CalendarTask[] }> = {};
     Object.entries(groupedTasks).forEach(([releaseId, data]) => {
       cleanGroupedTasks[releaseId] = { tasks: data.tasks };
-
+      console.log(`Release ${releaseId}: ${data.tasks.length} unique tasks`);
     });
 
     return {
@@ -346,6 +355,7 @@ export default function CalendarPage() {
   }, [allTasks, releases, releaseGroups]);
 
   const handleDragStart = (task: CalendarTask) => {
+    console.log('Drag started for task:', task.taskTitle);
     setDraggedTask(task);
   };
 
@@ -355,6 +365,7 @@ export default function CalendarPage() {
 
   const handleDrop = (e: React.DragEvent, day?: number) => {
     e.preventDefault();
+    console.log('Drop event on day:', day, 'draggedTask:', draggedTask?.taskTitle);
     
     if (draggedTask && day) {
       // Check if the task has a release and if the day is within the release date range
@@ -377,6 +388,7 @@ export default function CalendarPage() {
       }
       
       const dateString = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      console.log('Scheduling task to:', dateString);
       
       scheduleTaskMutation.mutate({ taskId: draggedTask.id, date: dateString });
     }
@@ -408,6 +420,7 @@ export default function CalendarPage() {
         // Double-check completion status from original task data
         const originalTask = allTasks.find(t => t.id === task.id);
         const isCurrentlyCompleted = originalTask?.completed === true;
+        console.log(`Task "${task.taskTitle}" for day ${day}: completed=${isCurrentlyCompleted}, originalCompleted=${originalTask?.completed}`);
         return isCurrentlyCompleted;
       }
       
@@ -492,6 +505,7 @@ export default function CalendarPage() {
                   if (duplicates.length > 0) {
                     console.error(`❌ DUPLICATES FOUND in release ${release?.name || releaseId}:`, duplicates);
                   } else {
+                    console.log(`✅ No duplicates in release ${release?.name || releaseId} (${taskList.length} unique tasks)`);
                   }
                   const group = release ? releaseGroups.find(g => g.id === release.groupId) : null;
                   
@@ -602,10 +616,12 @@ export default function CalendarPage() {
                             key={task.id}
                             draggable
                             onDragStart={(e) => {
+                              console.log('onDragStart called for:', task.taskTitle);
                               handleDragStart(task);
                               e.dataTransfer.effectAllowed = 'move';
                             }}
                             onDragEnd={(e) => {
+                              console.log('onDragEnd called');
                               setDraggedTask(null);
                             }}
                             className="p-3 bg-gray-50 dark:bg-gray-700 rounded text-xs cursor-move hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors min-h-[3rem] flex items-center"

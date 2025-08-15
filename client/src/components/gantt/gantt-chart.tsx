@@ -82,7 +82,18 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
     releases: releases.filter(release => release.groupId === group.id),
   }));
 
-
+  // Debug logging
+  useEffect(() => {
+    console.log('GanttChart data updated:', {
+      groupsCount: groups.length,
+      releasesCount: releases.length,
+      releasesByGroup: releasesByGroup.map(({ group, releases }) => ({
+        groupName: group.name,
+        releaseCount: releases.length,
+        releases: releases.map(r => ({ name: r.name, id: r.id }))
+      }))
+    });
+  }, [groups, releases, releasesByGroup]);
 
   // Generate timeline based on view mode and actual release dates
   const getTimelineData = (mode: string) => {
@@ -414,12 +425,14 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                             const sourceIndex = parseInt(e.dataTransfer.getData("sourceIndex"));
                             
                             if (draggedReleaseId !== release.id) {
+                              console.log('Reordering release:', { draggedReleaseId, targetReleaseId: release.id, sourceGroupId, targetGroupId: group.id });
                             }
                           }}
                         >
                           <div 
                             className="flex-1 flex items-center cursor-pointer"
                             onClick={() => {
+                              console.log('Sidebar release clicked:', release.id);
                               onReleaseEdit(release.id);
                             }}
                           >
