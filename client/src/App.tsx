@@ -26,11 +26,12 @@ function AdminDropdown() {
   }
 
   const handleAdminAction = (action: string, detail?: any) => {
-    // Prevent default behavior that causes navigation
+    // Prevent navigation issues by using proper routing
     if (action.startsWith('gantt:')) {
       // Navigate to gantt page if not there, then execute action
       if (location !== '/') {
-        window.location.href = '/';
+        // Use wouter's navigation instead of window.location
+        window.history.pushState({}, '', '/');
         setTimeout(() => {
           window.dispatchEvent(new CustomEvent(action, detail ? { detail } : undefined));
         }, 100);
@@ -88,7 +89,15 @@ function AdminDropdown() {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         {/* Admin Panel */}
-        <DropdownMenuItem onClick={(e) => { e.preventDefault(); window.location.href = '/admin'; }}>
+        <DropdownMenuItem 
+          onClick={(e) => { 
+            e.preventDefault(); 
+            e.stopPropagation();
+            // Use proper navigation
+            window.history.pushState({}, '', '/admin');
+            window.location.reload();
+          }}
+        >
           <Settings className="mr-2 h-4 w-4" />
           Admin Panel
         </DropdownMenuItem>

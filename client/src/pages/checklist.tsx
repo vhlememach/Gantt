@@ -63,7 +63,26 @@ export default function ChecklistPage() {
     console.log("🔍 Evergreen tasks found:", evergreenTasks.length);
     console.log("🔍 Evergreen boxes:", evergreenBoxes.length);
     console.log("🔍 Selected member:", selectedMember);
+    console.log("🔍 Sample task:", allTasks[0]);
+    console.log("🔍 Evergreen tasks by assignedTo:", allTasks.filter(task => task.evergreenBoxId).map(t => ({ id: t.id, assignedTo: t.assignedTo, title: t.taskTitle })));
     console.log("🔍 Member evergreen tasks:", allTasks.filter(task => task.evergreenBoxId && task.assignedTo === selectedMember));
+    
+    // Check for tasks with wrong team member names and fix them
+    const wrongNameTasks = evergreenTasks.filter(task => 
+      !teamMembers.includes(task.assignedTo) && 
+      ["Alice", "Bob", "Charlie", "Diana"].includes(task.assignedTo)
+    );
+    
+    if (wrongNameTasks.length > 0) {
+      console.log("🔄 Found tasks with wrong team member names, fixing...");
+      // Delete and regenerate with correct team members
+      Promise.all(wrongNameTasks.map(task => 
+        fetch(`/api/checklist-tasks/${task.id}`, { method: 'DELETE' })
+      )).then(() => {
+        fetch("/api/evergreen-tasks/generate", { method: "POST" })
+          .then(() => queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] }));
+      });
+    }
     
     // If we have evergreen boxes with cycles but no evergreen tasks, generate them
     if (boxesWithCycles.length > 0 && evergreenTasks.length === 0) {
@@ -704,7 +723,7 @@ export default function ChecklistPage() {
                                     className="bg-blue-500 text-white cursor-pointer hover:bg-blue-600 transition-colors text-xs"
                                     onClick={() => handleSubmitReview(task)}
                                   >
-                                    Submit V{task.currentVersion || 1}
+                                    Submit V{(task.currentVersion || 1) + 1}
                                   </Badge>
                                 )}
                                 
@@ -927,7 +946,7 @@ export default function ChecklistPage() {
                                           className="bg-blue-500 text-white cursor-pointer hover:bg-blue-600 transition-colors text-xs"
                                           onClick={() => handleSubmitReview(task)}
                                         >
-                                          Submit V{task.currentVersion || 1}
+                                          Submit V{(task.currentVersion || 1) + 1}
                                         </Badge>
                                       )}
                                       

@@ -713,14 +713,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (box.waterfallCycleId) {
           const cycle = await storage.getWaterfallCycle(box.waterfallCycleId);
           if (cycle) {
-            // Get team members for assignment
-            const teamMembers = ["Alice", "Bob", "Charlie", "Diana"];
+            // Get team members for assignment - use the correct team members
+            const teamMembers = ["Brian", "Alex", "Lucas", "Victor"];
             console.log("👥 Generating tasks for team members:", teamMembers);
             
             for (const member of teamMembers) {
               // Extract format types from contentRequirements JSON
               const contentRequirements = cycle.contentRequirements as Record<string, number> || {};
               const formatTypes = Object.keys(contentRequirements);
+              console.log("🔧 Content requirements for cycle:", contentRequirements);
+              console.log("🔧 Format types extracted:", formatTypes);
               
               for (const formatType of formatTypes) {
                 const taskTitle = `${box.title} - ${formatType} (${member})`;
