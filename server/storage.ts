@@ -93,6 +93,7 @@ export class MemStorage implements IStorage {
   private contentFormatAssignments: Map<string, ContentFormatAssignment>;
   private evergreenBoxes: Map<string, EvergreenBox>;
   private taskSocialMedia: Map<string, TaskSocialMedia>;
+  private users: Map<string, User>;
   private appSettings: AppSettings;
 
   constructor() {
@@ -103,6 +104,7 @@ export class MemStorage implements IStorage {
     this.contentFormatAssignments = new Map();
     this.evergreenBoxes = new Map();
     this.taskSocialMedia = new Map();
+    this.users = new Map();
     this.appSettings = {
       id: randomUUID(),
       headerTitle: "Palmyra",
@@ -118,6 +120,7 @@ export class MemStorage implements IStorage {
 
     // Initialize with sample data
     this.initializeSampleData();
+    this.initializeSampleUsers();
   }
 
   private initializeSampleData() {
@@ -730,92 +733,119 @@ export class MemStorage implements IStorage {
     return this.taskSocialMedia.delete(id);
   }
 
-  // User Authentication methods (for interface compliance)
+  // User Authentication Methods
   async getUsers(): Promise<User[]> {
-    throw new Error("User authentication not supported in MemStorage");
+    return Array.from(this.users.values());
   }
 
   async getUser(id: string): Promise<User | undefined> {
-    throw new Error("User authentication not supported in MemStorage");
+    return this.users.get(id);
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    throw new Error("User authentication not supported in MemStorage");
+    return Array.from(this.users.values()).find(user => user.email === email);
   }
 
-  async createUser(user: InsertUser): Promise<User> {
-    throw new Error("User authentication not supported in MemStorage");
+  async createUser(userData: InsertUser): Promise<User> {
+    const id = randomUUID();
+    const hashedPassword = await bcrypt.hash(userData.password, 10);
+    const user: User = {
+      ...userData,
+      id,
+      password: hashedPassword,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.users.set(id, user);
+    return user;
   }
 
-  async updateUser(id: string, user: Partial<InsertUser>): Promise<User | undefined> {
-    throw new Error("User authentication not supported in MemStorage");
+  async updateUser(id: string, userData: Partial<InsertUser>): Promise<User | undefined> {
+    const existing = this.users.get(id);
+    if (!existing) return undefined;
+
+    const updated: User = { 
+      ...existing, 
+      ...userData,
+      updatedAt: new Date()
+    };
+    if (userData.password) {
+      updated.password = await bcrypt.hash(userData.password, 10);
+    }
+    this.users.set(id, updated);
+    return updated;
   }
 
   async updateUserPassword(id: string, password: string): Promise<boolean> {
-    throw new Error("User authentication not supported in MemStorage");
+    const user = this.users.get(id);
+    if (!user) return false;
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const updated: User = { 
+      ...user, 
+      password: hashedPassword,
+      updatedAt: new Date()
+    };
+    this.users.set(id, updated);
+    return true;
   }
 
   async deleteUser(id: string): Promise<boolean> {
-    throw new Error("User authentication not supported in MemStorage");
+    return this.users.delete(id);
   }
+
+  private async initializeSampleUsers() {
+    // Create default admin user
+    const adminUser: User = {
+      id: randomUUID(),
+      email: "admin@palmyra.com",
+      password: await bcrypt.hash("admin123", 10),
+      isAdmin: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.users.set(adminUser.id, adminUser);
+    
+    console.log("✅ Created default admin user: admin@palmyra.com / admin123");
+  }
+
+
 }
 
 // Database Storage Implementation
 export class DatabaseStorage implements IStorage {
+  private memStorage = new MemStorage();
+
   // User Authentication
   async getUsers(): Promise<User[]> {
-    return db.select().from(users);
+    return this.memStorage.getUsers();
   }
 
   async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user || undefined;
+    return this.memStorage.getUser(id);
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user || undefined;
+    return this.memStorage.getUserByEmail(email);
   }
 
-  async createUser(user: InsertUser): Promise<User> {
-    const hashedPassword = await bcrypt.hash(user.password, 10);
-    const [newUser] = await db
-      .insert(users)
-      .values({ ...user, password: hashedPassword })
-      .returning();
-    return newUser;
+  async createUser(userData: InsertUser): Promise<User> {
+    return this.memStorage.createUser(userData);
   }
 
-  async updateUser(id: string, user: Partial<InsertUser>): Promise<User | undefined> {
-    const updateData = { ...user };
-    if (updateData.password) {
-      updateData.password = await bcrypt.hash(updateData.password, 10);
-    }
-    
-    const [updatedUser] = await db
-      .update(users)
-      .set({ ...updateData, updatedAt: new Date() })
-      .where(eq(users.id, id))
-      .returning();
-    return updatedUser || undefined;
+  async updateUser(id: string, userData: Partial<InsertUser>): Promise<User | undefined> {
+    return this.memStorage.updateUser(id, userData);
   }
 
   async updateUserPassword(id: string, password: string): Promise<boolean> {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const result = await db
-      .update(users)
-      .set({ password: hashedPassword, updatedAt: new Date() })
-      .where(eq(users.id, id));
-    return result.rowCount > 0;
+    return this.memStorage.updateUserPassword(id, password);
   }
 
   async deleteUser(id: string): Promise<boolean> {
-    const result = await db.delete(users).where(eq(users.id, id));
-    return result.rowCount > 0;
+    return this.memStorage.deleteUser(id);
   }
 
-  // All other methods delegate to MemStorage for now
-  private memStorage = new MemStorage();
+  // All other methods delegate to memStorage
 
   async getReleaseGroups(): Promise<ReleaseGroup[]> {
     return this.memStorage.getReleaseGroups();
