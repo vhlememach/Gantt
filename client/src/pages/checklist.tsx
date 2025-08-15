@@ -112,15 +112,16 @@ export default function ChecklistPage() {
   // Filter tasks by selected member
   const memberTasks = allTasks.filter(task => task.assignedTo === selectedMember);
 
-  // Group tasks by release and evergreen - always include evergreen section
+  // Group tasks by release - include waterfall tasks in release groups
   const tasksByRelease = memberTasks.reduce((acc, task) => {
     let groupId;
     if (task.evergreenBoxId) {
       groupId = 'evergreen';
-    } else if (task.waterfallCycleId && task.contentFormatType) {
-      groupId = `monthly-${task.releaseId}`;
+    } else if (task.waterfallCycleId && task.contentFormatType && task.releaseId) {
+      // Waterfall tasks should be grouped with their release, not separately
+      groupId = task.releaseId;
     } else {
-      groupId = task.releaseId || 'unassigned';
+      groupId = task.releaseId || 'general';
     }
     if (!acc[groupId]) {
       acc[groupId] = [];
@@ -723,7 +724,7 @@ export default function ChecklistPage() {
                                     className="bg-blue-500 text-white cursor-pointer hover:bg-blue-600 transition-colors text-xs"
                                     onClick={() => handleSubmitReview(task)}
                                   >
-                                    Submit V{(task.currentVersion || 1) + 1}
+                                    Submit V{(task.currentVersion || 0) + 2}
                                   </Badge>
                                 )}
                                 
@@ -764,15 +765,15 @@ export default function ChecklistPage() {
               })}
             </div>
 
-                {/* Column 2: Evergreen and General */}
+                {/* Column 2: General Tasks Only */}
                 <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b pb-2">Other Tasks</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b pb-2">General Tasks</h3>
                   
-                  {/* Evergreen Content */}
+                  {/* General Tasks Only */}
                   {Object.entries(tasksByRelease)
-                    .filter(([releaseId]) => releaseId === 'evergreen')
+                    .filter(([releaseId]) => releaseId === 'general')
                     .map(([releaseId, tasks]) => {
-                      const memberSortOption = sortBy[`${selectedMember}-evergreen`] || "priority";
+                      const memberSortOption = sortBy[`${selectedMember}-general`] || "priority";
                       const sortedTasks = getSortedTasks(tasks, memberSortOption);
                       
                       return (
@@ -946,7 +947,7 @@ export default function ChecklistPage() {
                                           className="bg-blue-500 text-white cursor-pointer hover:bg-blue-600 transition-colors text-xs"
                                           onClick={() => handleSubmitReview(task)}
                                         >
-                                          Submit V{(task.currentVersion || 1) + 1}
+                                          Submit V{(task.currentVersion || 0) + 2}
                                         </Badge>
                                       )}
                                       
