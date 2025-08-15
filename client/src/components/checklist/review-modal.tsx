@@ -101,7 +101,7 @@ export function ReviewModal({ isOpen, onClose, task, mode }: ReviewModalProps) {
       }
       submitReviewMutation.mutate({ taskId: task.id, submissionUrl });
     } else if (mode === "approve") {
-      if (changes.trim() && (task?.currentVersion || 2) < 10) {
+      if (changes.trim() && (task?.currentVersion || 0) + 1 < 10) {
         // Request next version instead of approving
         requestNextVersionMutation.mutate({ taskId: task.id, changes });
       } else {
@@ -231,10 +231,10 @@ export function ReviewModal({ isOpen, onClose, task, mode }: ReviewModalProps) {
               )}
 
               {/* Option to request next version instead of approving */}
-              {(task?.currentVersion || 2) < 10 && (
+              {(task?.currentVersion || 0) + 1 < 10 && (
                 <div>
                   <Label htmlFor="nextVersionChanges" className="text-sm font-medium">
-                    Or request V{(task?.currentVersion || 2) + 1} (optional):
+                    Or request V{(task?.currentVersion || 0) + 2} (optional):
                   </Label>
                   <Textarea
                     id="nextVersionChanges"
@@ -254,13 +254,13 @@ export function ReviewModal({ isOpen, onClose, task, mode }: ReviewModalProps) {
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          {mode === "approve" && changes.trim() && (task?.currentVersion || 2) < 10 ? (
+          {mode === "approve" && changes.trim() && (task?.currentVersion || 0) + 1 < 10 ? (
             <Button 
               onClick={handleSubmit}
               disabled={requestReviewMutation.isPending || submitReviewMutation.isPending || approveReviewMutation.isPending || requestNextVersionMutation.isPending}
               className="bg-purple-600 hover:bg-purple-700 text-white"
             >
-              Request V{(task?.currentVersion || 2) + 1}
+              Request V{(task?.currentVersion || 0) + 2}
             </Button>
           ) : (
             <Button 
