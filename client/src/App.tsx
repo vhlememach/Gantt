@@ -26,14 +26,17 @@ function AdminDropdown() {
   }
 
   const handleAdminAction = (action: string, detail?: any) => {
-    // Navigate to gantt page if not there, then execute action
-    if (location !== '/' && action.startsWith('gantt:')) {
-      window.location.href = '/';
-      setTimeout(() => {
+    // Prevent default behavior that causes navigation
+    if (action.startsWith('gantt:')) {
+      // Navigate to gantt page if not there, then execute action
+      if (location !== '/') {
+        window.location.href = '/';
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent(action, detail ? { detail } : undefined));
+        }, 100);
+      } else {
         window.dispatchEvent(new CustomEvent(action, detail ? { detail } : undefined));
-      }, 100);
-    } else {
-      window.dispatchEvent(new CustomEvent(action, detail ? { detail } : undefined));
+      }
     }
   };
 

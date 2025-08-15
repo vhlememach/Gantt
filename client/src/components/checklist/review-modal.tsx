@@ -116,7 +116,7 @@ export function ReviewModal({ isOpen, onClose, task, mode }: ReviewModalProps) {
       case "request":
         return `Request Review - V${(task?.currentVersion || 1) + 1}`;
       case "submit":
-        return `Submit V${task?.currentVersion || 2}`;
+        return `Submit V${task?.currentVersion || 1}`;
       case "approve":
         return "Approve Review";
       default:

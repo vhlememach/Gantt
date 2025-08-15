@@ -98,7 +98,7 @@ export default function ChecklistPage() {
     let groupId;
     if (task.evergreenBoxId) {
       groupId = 'evergreen';
-    } else if (task.waterfallCycleType === 'Monthly') {
+    } else if (task.waterfallCycleId && task.contentFormatType) {
       groupId = `monthly-${task.releaseId}`;
     } else {
       groupId = task.releaseId || 'unassigned';
@@ -704,7 +704,7 @@ export default function ChecklistPage() {
                                     className="bg-blue-500 text-white cursor-pointer hover:bg-blue-600 transition-colors text-xs"
                                     onClick={() => handleSubmitReview(task)}
                                   >
-                                    Submit V{task.currentVersion || 2}
+                                    Submit V{task.currentVersion || 1}
                                   </Badge>
                                 )}
                                 
@@ -927,7 +927,7 @@ export default function ChecklistPage() {
                                           className="bg-blue-500 text-white cursor-pointer hover:bg-blue-600 transition-colors text-xs"
                                           onClick={() => handleSubmitReview(task)}
                                         >
-                                          Submit V{task.currentVersion || 2}
+                                          Submit V{task.currentVersion || 1}
                                         </Badge>
                                       )}
                                       

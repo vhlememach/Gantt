@@ -320,8 +320,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update task status to indicate review requested
       const task = await storage.updateChecklistTask(id, { 
         reviewStatus: "requested",
-        reviewChanges: changes,
-        reviewRequestedAt: new Date().toISOString()
+        reviewChanges: changes
       });
       
       if (!task) {
@@ -341,8 +340,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { submissionUrl } = req.body;
       
       const task = await storage.updateChecklistTask(id, { 
-        reviewSubmissionUrl: submissionUrl,
-        reviewSubmittedAt: new Date().toISOString()
+        reviewSubmissionUrl: submissionUrl
       });
       
       if (!task) {
@@ -362,7 +360,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const task = await storage.updateChecklistTask(id, { 
         reviewStatus: "approved",
-        reviewApprovedAt: new Date().toISOString(),
         completed: true
       });
       
@@ -393,7 +390,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const task = await storage.updateChecklistTask(id, { 
         reviewStatus: "requested",
         reviewChanges: changes,
-        reviewRequestedAt: new Date().toISOString(),
         currentVersion: nextVersion,
         reviewSubmissionUrl: null // Reset submission URL for new version
       });
@@ -704,6 +700,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ message: "Failed to export data" });
+    }
+  });
+
+  // Generate Evergreen Tasks
+  app.post("/api/evergreen-tasks/generate", requireAuth, async (req, res) => {
+    try {
+      const boxes = await storage.getEvergreenBoxes();
+      console.log("📦 Generating evergreen tasks for boxes:", boxes.length);
+      
+      for (const box of boxes) {
+        if (box.waterfallCycleId) {
+          const cycle = await storage.getWaterfallCycle(box.waterfallCycleId);
+          if (cycle) {
+            // Get team members for assignment
+            const teamMembers = ["Alice", "Bob", "Charlie", "Diana"];
+            console.log("👥 Generating tasks for team members:", teamMembers);
+            
+            for (const member of teamMembers) {
+              for (const formatType of cycle.contentFormatTypes) {
+                const taskTitle = `${box.title} - ${formatType} (${member})`;
+                
+                // Check if task already exists
+                const existingTasks = await storage.getChecklistTasks();
+                const taskExists = existingTasks.some(task => 
+                  task.taskTitle === taskTitle && 
+                  task.evergreenBoxId === box.id &&
+                  task.assignedTo === member
+                );
+                
+                if (!taskExists) {
+                  const newTask = await storage.createChecklistTask({
+                    taskTitle,
+                    taskDescription: `Generate ${formatType} content for ${box.title}`,
+                    assignedTo: member,
+                    evergreenBoxId: box.id,
+                    waterfallCycleId: cycle.id,
+                    contentFormatType: formatType,
+                    completed: false,
+                    priority: false,
+                    currentVersion: 1,
+                  });
+                  console.log("✅ Created evergreen task:", taskTitle, "for", member);
+                } else {
+                  console.log("⏭️ Task already exists:", taskTitle);
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      res.json({ success: true, message: "Evergreen tasks generated successfully" });
+    } catch (error) {
+      console.error("Error generating evergreen tasks:", error);
+      res.status(500).json({ message: "Failed to generate evergreen tasks" });
     }
   });
 
