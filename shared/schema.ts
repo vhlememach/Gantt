@@ -116,6 +116,7 @@ export const insertReleaseSchema = createInsertSchema(releases).omit({
 }).extend({
   startDate: z.string().or(z.date()).transform((val) => new Date(val)),
   endDate: z.string().or(z.date()).transform((val) => new Date(val)),
+  waterfallCycleId: z.string().optional().transform((val) => val === "" || val === undefined ? null : val),
 });
 
 export const insertAppSettingsSchema = createInsertSchema(appSettings).omit({
@@ -136,6 +137,8 @@ export const insertContentFormatAssignmentSchema = createInsertSchema(contentFor
 export const insertEvergreenBoxSchema = createInsertSchema(evergreenBoxes).omit({
   id: true,
   createdAt: true,
+}).extend({
+  waterfallCycleId: z.string().optional().transform((val) => val === "" || val === undefined ? null : val),
 });
 
 export const insertTaskSocialMediaSchema = createInsertSchema(taskSocialMedia).omit({
@@ -147,6 +150,10 @@ export const insertChecklistTaskSchema = createInsertSchema(checklistTasks).omit
   id: true,
   createdAt: true,
   completedAt: true,
+}).extend({
+  waterfallCycleId: z.string().optional().transform((val) => val === "" || val === undefined ? null : val),
+  releaseId: z.string().optional().transform((val) => val === "" || val === undefined ? null : val),
+  evergreenBoxId: z.string().optional().transform((val) => val === "" || val === undefined ? null : val),
 });
 
 export type InsertReleaseGroup = z.infer<typeof insertReleaseGroupSchema>;

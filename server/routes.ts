@@ -459,6 +459,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   const taskData = {
                     taskTitle: taskName,
                     assignedTo: assignedMember,
+                    releaseId: null, // Evergreen tasks are not tied to releases
                     evergreenBoxId: box.id,
                     waterfallCycleId: box.waterfallCycleId,
                     contentFormatType: formatType,

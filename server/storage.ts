@@ -122,13 +122,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createRelease(release: InsertRelease): Promise<Release> {
-    const [newRelease] = await db.insert(releases).values(release).returning();
+    // Convert empty strings to null for foreign key fields
+    const cleanedRelease = {
+      ...release,
+      waterfallCycleId: release.waterfallCycleId === "" ? null : release.waterfallCycleId
+    };
+    const [newRelease] = await db.insert(releases).values(cleanedRelease).returning();
     return newRelease;
   }
 
   async updateRelease(id: string, release: Partial<InsertRelease>): Promise<Release | undefined> {
+    // Convert empty strings to null for foreign key fields
+    const cleanedRelease = {
+      ...release,
+      ...(release.waterfallCycleId !== undefined && { waterfallCycleId: release.waterfallCycleId === "" ? null : release.waterfallCycleId })
+    };
     const [updated] = await db.update(releases)
-      .set(release)
+      .set(cleanedRelease)
       .where(eq(releases.id, id))
       .returning();
     return updated || undefined;
@@ -192,13 +202,27 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createChecklistTask(task: InsertChecklistTask): Promise<ChecklistTask> {
-    const [newTask] = await db.insert(checklistTasks).values(task).returning();
+    // Convert empty strings to null for foreign key fields
+    const cleanedTask = {
+      ...task,
+      releaseId: task.releaseId === "" ? null : task.releaseId,
+      evergreenBoxId: task.evergreenBoxId === "" ? null : task.evergreenBoxId,
+      waterfallCycleId: task.waterfallCycleId === "" ? null : task.waterfallCycleId
+    };
+    const [newTask] = await db.insert(checklistTasks).values(cleanedTask).returning();
     return newTask;
   }
 
   async updateChecklistTask(id: string, task: Partial<InsertChecklistTask>): Promise<ChecklistTask | undefined> {
+    // Convert empty strings to null for foreign key fields
+    const cleanedTask = {
+      ...task,
+      ...(task.releaseId !== undefined && { releaseId: task.releaseId === "" ? null : task.releaseId }),
+      ...(task.evergreenBoxId !== undefined && { evergreenBoxId: task.evergreenBoxId === "" ? null : task.evergreenBoxId }),
+      ...(task.waterfallCycleId !== undefined && { waterfallCycleId: task.waterfallCycleId === "" ? null : task.waterfallCycleId })
+    };
     const [updated] = await db.update(checklistTasks)
-      .set(task)
+      .set(cleanedTask)
       .where(eq(checklistTasks.id, id))
       .returning();
     return updated || undefined;
@@ -279,13 +303,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createEvergreenBox(box: InsertEvergreenBox): Promise<EvergreenBox> {
-    const [newBox] = await db.insert(evergreenBoxes).values(box).returning();
+    // Convert empty strings to null for foreign key fields
+    const cleanedBox = {
+      ...box,
+      waterfallCycleId: box.waterfallCycleId === "" ? null : box.waterfallCycleId
+    };
+    const [newBox] = await db.insert(evergreenBoxes).values(cleanedBox).returning();
     return newBox;
   }
 
   async updateEvergreenBox(id: string, box: Partial<InsertEvergreenBox>): Promise<EvergreenBox | undefined> {
+    // Convert empty strings to null for foreign key fields
+    const cleanedBox = {
+      ...box,
+      ...(box.waterfallCycleId !== undefined && { waterfallCycleId: box.waterfallCycleId === "" ? null : box.waterfallCycleId })
+    };
     const [updated] = await db.update(evergreenBoxes)
-      .set(box)
+      .set(cleanedBox)
       .where(eq(evergreenBoxes.id, id))
       .returning();
     return updated || undefined;
