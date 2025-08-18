@@ -147,6 +147,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/releases/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      console.log('Patching release', id, 'with data:', req.body);
+      const validatedData = insertReleaseSchema.partial().parse(req.body);
+      console.log('Validated data:', validatedData);
+      const release = await storage.updateRelease(id, validatedData);
+      if (!release) {
+        return res.status(404).json({ message: "Release not found" });
+      }
+      res.json(release);
+    } catch (error) {
+      console.error('Release patch error:', error);
+      if (error instanceof Error && error.name === 'ZodError') {
+        res.status(400).json({ message: "Validation failed", errors: (error as any).errors });
+      } else if (error instanceof Error) {
+        res.status(400).json({ message: "Invalid release data", error: error.message });
+      } else {
+        res.status(400).json({ message: "Invalid release data", error: String(error) });
+      }
+    }
+  });
+
   // Bulk delete all releases
   app.delete("/api/releases", async (req, res) => {
     try {
@@ -623,6 +646,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.put("/api/evergreen-boxes/:id", async (req, res) => {
+    try {
+      const validatedData = insertEvergreenBoxSchema.partial().parse(req.body);
+      const box = await storage.updateEvergreenBox(req.params.id, validatedData);
+      if (!box) {
+        return res.status(404).json({ message: "Evergreen box not found" });
+      }
+      res.json(box);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid evergreen box data" });
+    }
+  });
+
+  app.patch("/api/evergreen-boxes/:id", async (req, res) => {
     try {
       const validatedData = insertEvergreenBoxSchema.partial().parse(req.body);
       const box = await storage.updateEvergreenBox(req.params.id, validatedData);

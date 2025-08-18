@@ -90,11 +90,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createReleaseGroup(group: InsertReleaseGroup): Promise<ReleaseGroup> {
-    const [newGroup] = await db.insert(releaseGroups).values({
-      ...group,
-      id: randomUUID(),
-      createdAt: new Date()
-    }).returning();
+    const [newGroup] = await db.insert(releaseGroups).values(group).returning();
     return newGroup;
   }
 
@@ -126,11 +122,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createRelease(release: InsertRelease): Promise<Release> {
-    const [newRelease] = await db.insert(releases).values({
-      ...release,
-      id: randomUUID(),
-      createdAt: new Date()
-    }).returning();
+    const [newRelease] = await db.insert(releases).values(release).returning();
     return newRelease;
   }
 
@@ -153,7 +145,6 @@ export class DatabaseStorage implements IStorage {
     if (!settings) {
       // Create default settings if none exist
       const defaultSettings = {
-        id: randomUUID(),
         headerTitle: "Release Gantt Chart",
         headerBackgroundColor: "#3B82F6",
         headerTitleColor: "#FFFFFF",
@@ -162,7 +153,6 @@ export class DatabaseStorage implements IStorage {
         buttonStyle: "rounded",
         currentDayLineColor: "#000000",
         currentDayLineThickness: 2,
-        updatedAt: new Date(),
       };
       const [newSettings] = await db.insert(appSettings).values(defaultSettings).returning();
       return newSettings;
@@ -173,7 +163,7 @@ export class DatabaseStorage implements IStorage {
   async updateAppSettings(settings: Partial<InsertAppSettings>): Promise<AppSettings> {
     const current = await this.getAppSettings();
     const [updated] = await db.update(appSettings)
-      .set({ ...settings, updatedAt: new Date() })
+      .set(settings)
       .where(eq(appSettings.id, current.id))
       .returning();
     return updated;
@@ -202,11 +192,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createChecklistTask(task: InsertChecklistTask): Promise<ChecklistTask> {
-    const [newTask] = await db.insert(checklistTasks).values({
-      ...task,
-      id: randomUUID(),
-      createdAt: new Date()
-    }).returning();
+    const [newTask] = await db.insert(checklistTasks).values(task).returning();
     return newTask;
   }
 
@@ -234,11 +220,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createWaterfallCycle(cycle: InsertWaterfallCycle): Promise<WaterfallCycle> {
-    const [newCycle] = await db.insert(waterfallCycles).values({
-      ...cycle,
-      id: randomUUID(),
-      createdAt: new Date()
-    }).returning();
+    const [newCycle] = await db.insert(waterfallCycles).values(cycle).returning();
     return newCycle;
   }
 
@@ -265,11 +247,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createContentFormatAssignment(assignment: InsertContentFormatAssignment): Promise<ContentFormatAssignment> {
-    const [newAssignment] = await db.insert(contentFormatAssignments).values({
-      ...assignment,
-      id: randomUUID(),
-      createdAt: new Date()
-    }).returning();
+    const [newAssignment] = await db.insert(contentFormatAssignments).values(assignment).returning();
     return newAssignment;
   }
 
@@ -301,11 +279,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createEvergreenBox(box: InsertEvergreenBox): Promise<EvergreenBox> {
-    const [newBox] = await db.insert(evergreenBoxes).values({
-      ...box,
-      id: randomUUID(),
-      createdAt: new Date()
-    }).returning();
+    const [newBox] = await db.insert(evergreenBoxes).values(box).returning();
     return newBox;
   }
 
@@ -333,11 +307,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTaskSocialMedia(socialMedia: InsertTaskSocialMedia): Promise<TaskSocialMedia> {
-    const [newSocial] = await db.insert(taskSocialMedia).values({
-      ...socialMedia,
-      id: randomUUID(),
-      createdAt: new Date()
-    }).returning();
+    const [newSocial] = await db.insert(taskSocialMedia).values(socialMedia).returning();
     return newSocial;
   }
 
