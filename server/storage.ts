@@ -6,9 +6,13 @@ import {
   type WaterfallCycle, type InsertWaterfallCycle,
   type ContentFormatAssignment, type InsertContentFormatAssignment,
   type EvergreenBox, type InsertEvergreenBox,
-  type TaskSocialMedia, type InsertTaskSocialMedia
+  type TaskSocialMedia, type InsertTaskSocialMedia,
+  releaseGroups, releases, appSettings, checklistTasks, evergreenBoxes, 
+  waterfallCycles, contentFormatAssignments, taskSocialMedia
 } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { db } from "./db";
+import { eq, and } from "drizzle-orm";
 
 export interface IStorage {
   // Release Groups
@@ -49,7 +53,7 @@ export interface IStorage {
 
   // Content Format Assignments
   getContentFormatAssignments(): Promise<ContentFormatAssignment[]>;
-  getContentFormatAssignment(id: string): Promise<ContentFormatAssignment | undefined>;
+  getContentFormatAssignmentsByWaterfallCycle(waterfallCycleId: string): Promise<ContentFormatAssignment[]>;
   createContentFormatAssignment(assignment: InsertContentFormatAssignment): Promise<ContentFormatAssignment>;
   updateContentFormatAssignment(id: string, assignment: Partial<InsertContentFormatAssignment>): Promise<ContentFormatAssignment | undefined>;
   deleteContentFormatAssignment(id: string): Promise<boolean>;
@@ -70,645 +74,285 @@ export interface IStorage {
   deleteTaskSocialMedia(id: string): Promise<boolean>;
 }
 
-export class MemStorage implements IStorage {
-  private releaseGroups: Map<string, ReleaseGroup>;
-  private releases: Map<string, Release>;
-  private checklistTasks: Map<string, ChecklistTask>;
-  private waterfallCycles: Map<string, WaterfallCycle>;
-  private contentFormatAssignments: Map<string, ContentFormatAssignment>;
-  private evergreenBoxes: Map<string, EvergreenBox>;
-  private taskSocialMedia: Map<string, TaskSocialMedia>;
-  private appSettings: AppSettings;
-
+export class DatabaseStorage implements IStorage {
   constructor() {
-    this.releaseGroups = new Map();
-    this.releases = new Map();
-    this.checklistTasks = new Map();
-    this.waterfallCycles = new Map();
-    this.contentFormatAssignments = new Map();
-    this.evergreenBoxes = new Map();
-    this.taskSocialMedia = new Map();
-    this.appSettings = {
-      id: randomUUID(),
-      headerTitle: "Release Gantt Chart",
-      headerBackgroundColor: "#3B82F6",
-      headerTitleColor: "#FFFFFF",
-      fontFamily: "Inter",
-      buttonColor: "#8B5CF6",
-      buttonStyle: "rounded",
-      currentDayLineColor: "#000000",
-      currentDayLineThickness: 2,
-      updatedAt: new Date(),
-    };
-
-    // Initialize with sample data
-    this.initializeSampleData();
+    // Database storage - no need for in-memory maps
   }
 
-  private initializeSampleData() {
-    // Create sample groups
-    const productGroup: ReleaseGroup = {
-      id: randomUUID(),
-      name: "Product",
-      color: "#8B5CF6",
-      gradientEnabled: "true",
-      gradientSecondaryColor: "#DDD6FE",
-      createdAt: new Date(),
-    };
-
-    const infraGroup: ReleaseGroup = {
-      id: randomUUID(),
-      name: "Infrastructure",
-      color: "#10B981",
-      gradientEnabled: "true",
-      gradientSecondaryColor: "#D1FAE5",
-      createdAt: new Date(),
-    };
-
-    this.releaseGroups.set(productGroup.id, productGroup);
-    this.releaseGroups.set(infraGroup.id, infraGroup);
-
-    // Create sample releases
-    const releases: Release[] = [
-      {
-        id: randomUUID(),
-        name: "Data Lake v2",
-        description: "Next generation data lake infrastructure for improved analytics with enhanced machine learning capabilities, automated data pipeline integration, real-time processing, and comprehensive security features. This platform will serve as the foundation for all our data-driven initiatives and provide scalable solutions for business intelligence.",
-        url: "https://docs.example.com/data-lake-v2",
-        groupId: productGroup.id,
-        startDate: new Date("2025-01-15"),
-        endDate: new Date("2025-03-20"),
-        icon: "fas fa-database",
-        responsible: "Sarah Johnson",
-        status: "in-progress",
-        highPriority: false,
-        waterfallCycleId: null,
-        createdAt: new Date(),
-      },
-      {
-        id: randomUUID(),
-        name: "Mobile App v3.1",
-        description: "Enhanced mobile experience with new features",
-        url: "",
-        groupId: productGroup.id,
-        startDate: new Date("2025-02-01"),
-        endDate: new Date("2025-04-15"),
-        icon: "fas fa-mobile-alt",
-        responsible: "Mike Chen",
-        status: "upcoming",
-        highPriority: false,
-        waterfallCycleId: null,
-        createdAt: new Date(),
-      },
-      {
-        id: randomUUID(),
-        name: "Analytics Dashboard",
-        description: "Real-time business intelligence dashboard",
-        url: "",
-        groupId: productGroup.id,
-        startDate: new Date("2025-03-10"),
-        endDate: new Date("2025-05-30"),
-        icon: "fas fa-chart-line",
-        responsible: "Emily Davis",
-        status: "upcoming",
-        highPriority: false,
-        waterfallCycleId: null,
-        createdAt: new Date(),
-      },
-      {
-        id: randomUUID(),
-        name: "AWS Migration",
-        description: "Complete infrastructure migration to AWS cloud",
-        url: "",
-        groupId: infraGroup.id,
-        startDate: new Date("2025-01-01"),
-        endDate: new Date("2025-06-30"),
-        icon: "fas fa-cloud",
-        responsible: "Alex Turner",
-        status: "in-progress",
-        highPriority: false,
-        waterfallCycleId: null,
-        createdAt: new Date(),
-      },
-      {
-        id: randomUUID(),
-        name: "CI/CD Pipeline v2",
-        description: "Automated deployment pipeline improvements",
-        url: "",
-        groupId: infraGroup.id,
-        startDate: new Date("2025-04-01"),
-        endDate: new Date("2025-07-15"),
-        icon: "fas fa-cog",
-        responsible: "David Wilson",
-        status: "upcoming",
-        highPriority: false,
-        waterfallCycleId: null,
-        createdAt: new Date(),
-      },
-    ];
-
-    releases.forEach(release => {
-      this.releases.set(release.id, release);
-    });
-
-    // Initialize sample waterfall cycles
-    this.initializeSampleWaterfallCycles();
-
-    // Initialize sample content format assignments
-    this.initializeSampleContentFormatAssignments();
-
-    // Initialize sample evergreen boxes
-    this.initializeSampleEvergreenBoxes([productGroup, infraGroup]);
-
-    // Initialize sample checklist tasks
-    this.initializeSampleChecklistTasks(releases);
-  }
-
-  private initializeSampleWaterfallCycles() {
-    const cycles: WaterfallCycle[] = [
-      {
-        id: randomUUID(),
-        name: "Monthly Waterfall Cycle",
-        description: "Comprehensive content creation for major releases",
-        contentRequirements: {
-          article: 1,
-          thread: 1,
-          video: 1,
-          animation: 1,
-          visual: 1
-        },
-        createdAt: new Date(),
-      },
-      {
-        id: randomUUID(),
-        name: "Weekly Waterfall Cycle",
-        description: "Regular content creation for ongoing engagement",
-        contentRequirements: {
-          thread: 1,
-          animation: 1,
-          visual: 1
-        },
-        createdAt: new Date(),
-      },
-      {
-        id: randomUUID(),
-        name: "Simple Waterfall Cycle",
-        description: "Minimal content creation for quick releases",
-        contentRequirements: {
-          thread: 1,
-          visual: 1
-        },
-        createdAt: new Date(),
-      },
-    ];
-
-    cycles.forEach(cycle => {
-      this.waterfallCycles.set(cycle.id, cycle);
-    });
-  }
-
-  private initializeSampleContentFormatAssignments() {
-    const assignments: ContentFormatAssignment[] = [
-      {
-        id: randomUUID(),
-        formatType: "article",
-        assignedMembers: ["Brian", "Alex"],
-        createdAt: new Date(),
-      },
-      {
-        id: randomUUID(),
-        formatType: "thread",
-        assignedMembers: ["Brian", "Alex", "Victor"],
-        createdAt: new Date(),
-      },
-      {
-        id: randomUUID(),
-        formatType: "video",
-        assignedMembers: ["Lucas"],
-        createdAt: new Date(),
-      },
-      {
-        id: randomUUID(),
-        formatType: "animation",
-        assignedMembers: ["Lucas", "Victor"],
-        createdAt: new Date(),
-      },
-      {
-        id: randomUUID(),
-        formatType: "visual",
-        assignedMembers: ["Victor", "Alex"],
-        createdAt: new Date(),
-      },
-    ];
-
-    assignments.forEach(assignment => {
-      this.contentFormatAssignments.set(assignment.id, assignment);
-    });
-  }
-
-  private initializeSampleEvergreenBoxes(groups: ReleaseGroup[]) {
-    const [productGroup, infraGroup] = groups;
-    const cycleIds = Array.from(this.waterfallCycles.keys());
-    
-    const boxes: EvergreenBox[] = [
-      {
-        id: randomUUID(),
-        title: "Social Media Call To Action",
-        description: "Monthly social media engagement campaigns and follow prompts",
-        responsible: "Brian",
-        groupId: productGroup.id,
-        waterfallCycleId: cycleIds[0], // Monthly cycle
-        icon: "lucide-megaphone",
-        url: "https://social.palmyra.com/campaigns",
-        createdAt: new Date(),
-      },
-      {
-        id: randomUUID(),
-        title: "Community Newsletter",
-        description: "Weekly newsletter content and subscriber engagement",
-        responsible: "Alex",
-        groupId: productGroup.id,
-        waterfallCycleId: cycleIds[1], // Weekly cycle
-        icon: "lucide-mail",
-        url: "https://newsletter.palmyra.com",
-        createdAt: new Date(),
-      },
-      {
-        id: randomUUID(),
-        title: "Technical Blog Posts",
-        description: "Infrastructure insights and technical thought leadership",
-        responsible: "Victor",
-        groupId: infraGroup.id,
-        waterfallCycleId: cycleIds[2], // Simple cycle
-        icon: "lucide-file-text",
-        url: null,
-        createdAt: new Date(),
-      },
-    ];
-
-    boxes.forEach(box => {
-      this.evergreenBoxes.set(box.id, box);
-    });
-  }
-
-  private initializeSampleChecklistTasks(releases: Release[]) {
-    const teamMembers = ["Brian", "Alex", "Lucas", "Victor"];
-    const sampleTasks = [
-      "Design UI mockups",
-      "Write technical documentation",
-      "Set up development environment", 
-      "Create test cases",
-      "Review code implementation",
-      "Perform quality assurance testing",
-      "Update user documentation",
-      "Deploy to staging environment"
-    ];
-
-    releases.forEach(release => {
-      // Create a shuffled copy of tasks for this release to ensure uniqueness
-      const availableTasks = [...sampleTasks];
-      let taskIndex = 0;
-      
-      teamMembers.forEach(member => {
-        // Create exactly 2 unique tasks per member per release
-        const taskCount = 2;
-        for (let i = 0; i < taskCount; i++) {
-          // If we've run out of tasks, shuffle the array again
-          if (taskIndex >= availableTasks.length) {
-            // Shuffle the array to get different order
-            for (let j = availableTasks.length - 1; j > 0; j--) {
-              const k = Math.floor(Math.random() * (j + 1));
-              [availableTasks[j], availableTasks[k]] = [availableTasks[k], availableTasks[j]];
-            }
-            taskIndex = 0;
-          }
-          
-          const baseTask = availableTasks[taskIndex];
-          taskIndex++;
-          
-          const taskTitle = `${baseTask} - ${release.name}`;
-          const taskId = randomUUID();
-          const isCompleted = Math.random() > 0.7; // 30% completed randomly
-          
-          const task: ChecklistTask = {
-            id: taskId,
-            releaseId: release.id,
-            evergreenBoxId: null,
-            assignedTo: member,
-            taskTitle: taskTitle,
-            taskDescription: `${member}'s task for ${release.name}`,
-            taskUrl: Math.random() > 0.5 ? `https://docs.example.com/${taskId}` : null,
-            priority: false, // Priority is determined by release.highPriority
-            waterfallCycleId: null,
-            contentFormatType: null,
-            completed: isCompleted,
-            createdAt: new Date(),
-            completedAt: isCompleted ? new Date() : null,
-          };
-          this.checklistTasks.set(taskId, task);
-        }
-      });
-    });
-  }
-
-  // Release Groups
+  // Release Groups  
   async getReleaseGroups(): Promise<ReleaseGroup[]> {
-    return Array.from(this.releaseGroups.values());
+    return await db.select().from(releaseGroups);
   }
 
   async getReleaseGroup(id: string): Promise<ReleaseGroup | undefined> {
-    return this.releaseGroups.get(id);
+    const [group] = await db.select().from(releaseGroups).where(eq(releaseGroups.id, id));
+    return group || undefined;
   }
 
   async createReleaseGroup(group: InsertReleaseGroup): Promise<ReleaseGroup> {
-    const id = randomUUID();
-    const newGroup: ReleaseGroup = {
+    const [newGroup] = await db.insert(releaseGroups).values({
       ...group,
-      id,
-      gradientEnabled: group.gradientEnabled || "true",
-      gradientSecondaryColor: group.gradientSecondaryColor || "#FFFFFF",
-      createdAt: new Date(),
-    };
-    this.releaseGroups.set(id, newGroup);
+      id: randomUUID(),
+      createdAt: new Date()
+    }).returning();
     return newGroup;
   }
 
   async updateReleaseGroup(id: string, group: Partial<InsertReleaseGroup>): Promise<ReleaseGroup | undefined> {
-    const existing = this.releaseGroups.get(id);
-    if (!existing) return undefined;
-
-    const updated: ReleaseGroup = { ...existing, ...group };
-    this.releaseGroups.set(id, updated);
-    return updated;
+    const [updated] = await db.update(releaseGroups)
+      .set(group)
+      .where(eq(releaseGroups.id, id))
+      .returning();
+    return updated || undefined;
   }
 
   async deleteReleaseGroup(id: string): Promise<boolean> {
-    // First delete all releases in this group
-    const releases = await this.getReleasesByGroupId(id);
-    releases.forEach(release => {
-      this.releases.delete(release.id);
-    });
-
-    return this.releaseGroups.delete(id);
+    const result = await db.delete(releaseGroups).where(eq(releaseGroups.id, id));
+    return (result.rowCount || 0) > 0;
   }
 
   // Releases
   async getReleases(): Promise<Release[]> {
-    return Array.from(this.releases.values());
+    return await db.select().from(releases);
   }
 
   async getRelease(id: string): Promise<Release | undefined> {
-    return this.releases.get(id);
+    const [release] = await db.select().from(releases).where(eq(releases.id, id));
+    return release || undefined;
   }
 
   async getReleasesByGroupId(groupId: string): Promise<Release[]> {
-    return Array.from(this.releases.values()).filter(release => release.groupId === groupId);
+    return await db.select().from(releases).where(eq(releases.groupId, groupId));
   }
 
   async createRelease(release: InsertRelease): Promise<Release> {
-    const id = randomUUID();
-    const newRelease: Release = {
+    const [newRelease] = await db.insert(releases).values({
       ...release,
-      id,
-      createdAt: new Date(),
-      status: release.status || "upcoming",
-      description: release.description || "",
-      url: release.url || "",
-      responsible: release.responsible || "",
-      icon: release.icon || "lucide-rocket",
-      highPriority: release.highPriority || false,
-      waterfallCycleId: release.waterfallCycleId || null,
-    };
-    this.releases.set(id, newRelease);
+      id: randomUUID(),
+      createdAt: new Date()
+    }).returning();
     return newRelease;
   }
 
   async updateRelease(id: string, release: Partial<InsertRelease>): Promise<Release | undefined> {
-    const existing = this.releases.get(id);
-    if (!existing) return undefined;
-
-    const updated: Release = { ...existing, ...release };
-    this.releases.set(id, updated);
-    return updated;
+    const [updated] = await db.update(releases)
+      .set(release)
+      .where(eq(releases.id, id))
+      .returning();
+    return updated || undefined;
   }
 
   async deleteRelease(id: string): Promise<boolean> {
-    return this.releases.delete(id);
+    const result = await db.delete(releases).where(eq(releases.id, id));
+    return (result.rowCount || 0) > 0;
   }
 
   // App Settings
   async getAppSettings(): Promise<AppSettings> {
-    return this.appSettings;
+    const [settings] = await db.select().from(appSettings).limit(1);
+    if (!settings) {
+      // Create default settings if none exist
+      const defaultSettings = {
+        id: randomUUID(),
+        headerTitle: "Release Gantt Chart",
+        headerBackgroundColor: "#3B82F6",
+        headerTitleColor: "#FFFFFF",
+        fontFamily: "Inter",
+        buttonColor: "#8B5CF6",
+        buttonStyle: "rounded",
+        currentDayLineColor: "#000000",
+        currentDayLineThickness: 2,
+        updatedAt: new Date(),
+      };
+      const [newSettings] = await db.insert(appSettings).values(defaultSettings).returning();
+      return newSettings;
+    }
+    return settings;
   }
 
   async updateAppSettings(settings: Partial<InsertAppSettings>): Promise<AppSettings> {
-    this.appSettings = {
-      ...this.appSettings,
-      ...settings,
-      updatedAt: new Date(),
-    };
-    return this.appSettings;
+    const current = await this.getAppSettings();
+    const [updated] = await db.update(appSettings)
+      .set({ ...settings, updatedAt: new Date() })
+      .where(eq(appSettings.id, current.id))
+      .returning();
+    return updated;
   }
 
   // Checklist Tasks
   async getChecklistTasks(): Promise<ChecklistTask[]> {
-    return Array.from(this.checklistTasks.values());
+    return await db.select().from(checklistTasks);
   }
 
   async getChecklistTask(id: string): Promise<ChecklistTask | undefined> {
-    return this.checklistTasks.get(id);
+    const [task] = await db.select().from(checklistTasks).where(eq(checklistTasks.id, id));
+    return task || undefined;
   }
 
   async getChecklistTasksByRelease(releaseId: string): Promise<ChecklistTask[]> {
-    return Array.from(this.checklistTasks.values()).filter(task => task.releaseId === releaseId);
+    return await db.select().from(checklistTasks).where(eq(checklistTasks.releaseId, releaseId));
+  }
+
+  async getChecklistTasksByEvergreenBox(evergreenBoxId: string): Promise<ChecklistTask[]> {
+    return await db.select().from(checklistTasks).where(eq(checklistTasks.evergreenBoxId, evergreenBoxId));
   }
 
   async getChecklistTasksByMember(assignedTo: string): Promise<ChecklistTask[]> {
-    return Array.from(this.checklistTasks.values()).filter(task => task.assignedTo === assignedTo);
+    return await db.select().from(checklistTasks).where(eq(checklistTasks.assignedTo, assignedTo));
   }
 
   async createChecklistTask(task: InsertChecklistTask): Promise<ChecklistTask> {
-    const id = randomUUID();
-    const newTask: ChecklistTask = {
+    const [newTask] = await db.insert(checklistTasks).values({
       ...task,
-      id,
-      releaseId: task.releaseId || null,
-      evergreenBoxId: task.evergreenBoxId || null,
-      taskDescription: task.taskDescription || null,
-      taskUrl: task.taskUrl || null,
-      priority: task.priority || false,
-      waterfallCycleId: task.waterfallCycleId || null,
-      contentFormatType: task.contentFormatType || null,
-      completed: task.completed || false,
-      createdAt: new Date(),
-      completedAt: null,
-    };
-    this.checklistTasks.set(id, newTask);
+      id: randomUUID(),
+      createdAt: new Date()
+    }).returning();
     return newTask;
   }
 
   async updateChecklistTask(id: string, task: Partial<InsertChecklistTask>): Promise<ChecklistTask | undefined> {
-    const existing = this.checklistTasks.get(id);
-    if (!existing) return undefined;
-
-    const updated: ChecklistTask = { 
-      ...existing, 
-      ...task,
-      completedAt: task.completed ? new Date() : (task.completed === false ? null : existing.completedAt)
-    };
-    this.checklistTasks.set(id, updated);
-    return updated;
+    const [updated] = await db.update(checklistTasks)
+      .set(task)
+      .where(eq(checklistTasks.id, id))
+      .returning();
+    return updated || undefined;
   }
 
   async deleteChecklistTask(id: string): Promise<boolean> {
-    return this.checklistTasks.delete(id);
-  }
-
-  async getChecklistTasksByEvergreenBox(evergreenBoxId: string): Promise<ChecklistTask[]> {
-    return Array.from(this.checklistTasks.values()).filter(task => task.evergreenBoxId === evergreenBoxId);
+    const result = await db.delete(checklistTasks).where(eq(checklistTasks.id, id));
+    return (result.rowCount || 0) > 0;
   }
 
   // Waterfall Cycles
   async getWaterfallCycles(): Promise<WaterfallCycle[]> {
-    return Array.from(this.waterfallCycles.values());
+    return await db.select().from(waterfallCycles);
   }
 
   async getWaterfallCycle(id: string): Promise<WaterfallCycle | undefined> {
-    return this.waterfallCycles.get(id);
+    const [cycle] = await db.select().from(waterfallCycles).where(eq(waterfallCycles.id, id));
+    return cycle || undefined;
   }
 
   async createWaterfallCycle(cycle: InsertWaterfallCycle): Promise<WaterfallCycle> {
-    const id = randomUUID();
-    const newCycle: WaterfallCycle = {
+    const [newCycle] = await db.insert(waterfallCycles).values({
       ...cycle,
-      id,
-      description: cycle.description || null,
-      createdAt: new Date(),
-    };
-    this.waterfallCycles.set(id, newCycle);
+      id: randomUUID(),
+      createdAt: new Date()
+    }).returning();
     return newCycle;
   }
 
   async updateWaterfallCycle(id: string, cycle: Partial<InsertWaterfallCycle>): Promise<WaterfallCycle | undefined> {
-    const existing = this.waterfallCycles.get(id);
-    if (!existing) return undefined;
-
-    const updated: WaterfallCycle = { ...existing, ...cycle };
-    this.waterfallCycles.set(id, updated);
-    return updated;
+    const [updated] = await db.update(waterfallCycles)
+      .set(cycle)
+      .where(eq(waterfallCycles.id, id))
+      .returning();
+    return updated || undefined;
   }
 
   async deleteWaterfallCycle(id: string): Promise<boolean> {
-    return this.waterfallCycles.delete(id);
+    const result = await db.delete(waterfallCycles).where(eq(waterfallCycles.id, id));
+    return (result.rowCount || 0) > 0;
   }
 
   // Content Format Assignments
   async getContentFormatAssignments(): Promise<ContentFormatAssignment[]> {
-    return Array.from(this.contentFormatAssignments.values());
+    return await db.select().from(contentFormatAssignments);
   }
 
-  async getContentFormatAssignment(id: string): Promise<ContentFormatAssignment | undefined> {
-    return this.contentFormatAssignments.get(id);
+  async getContentFormatAssignmentsByWaterfallCycle(waterfallCycleId: string): Promise<ContentFormatAssignment[]> {
+    return await db.select().from(contentFormatAssignments).where(eq(contentFormatAssignments.formatType, waterfallCycleId));
   }
 
   async createContentFormatAssignment(assignment: InsertContentFormatAssignment): Promise<ContentFormatAssignment> {
-    const id = randomUUID();
-    const newAssignment: ContentFormatAssignment = {
+    const [newAssignment] = await db.insert(contentFormatAssignments).values({
       ...assignment,
-      id,
-      createdAt: new Date(),
-    };
-    this.contentFormatAssignments.set(id, newAssignment);
+      id: randomUUID(),
+      createdAt: new Date()
+    }).returning();
     return newAssignment;
   }
 
   async updateContentFormatAssignment(id: string, assignment: Partial<InsertContentFormatAssignment>): Promise<ContentFormatAssignment | undefined> {
-    const existing = this.contentFormatAssignments.get(id);
-    if (!existing) return undefined;
-
-    const updated: ContentFormatAssignment = { ...existing, ...assignment };
-    this.contentFormatAssignments.set(id, updated);
-    return updated;
+    const [updated] = await db.update(contentFormatAssignments)
+      .set(assignment)
+      .where(eq(contentFormatAssignments.id, id))
+      .returning();
+    return updated || undefined;
   }
 
   async deleteContentFormatAssignment(id: string): Promise<boolean> {
-    return this.contentFormatAssignments.delete(id);
+    const result = await db.delete(contentFormatAssignments).where(eq(contentFormatAssignments.id, id));
+    return (result.rowCount || 0) > 0;
   }
 
   // Evergreen Boxes
   async getEvergreenBoxes(): Promise<EvergreenBox[]> {
-    return Array.from(this.evergreenBoxes.values());
+    return await db.select().from(evergreenBoxes);
   }
 
   async getEvergreenBox(id: string): Promise<EvergreenBox | undefined> {
-    return this.evergreenBoxes.get(id);
+    const [box] = await db.select().from(evergreenBoxes).where(eq(evergreenBoxes.id, id));
+    return box || undefined;
   }
 
   async getEvergreenBoxesByGroup(groupId: string): Promise<EvergreenBox[]> {
-    return Array.from(this.evergreenBoxes.values()).filter(box => box.groupId === groupId);
+    return await db.select().from(evergreenBoxes).where(eq(evergreenBoxes.groupId, groupId));
   }
 
   async createEvergreenBox(box: InsertEvergreenBox): Promise<EvergreenBox> {
-    const id = randomUUID();
-    const newBox: EvergreenBox = {
+    const [newBox] = await db.insert(evergreenBoxes).values({
       ...box,
-      id,
-      description: box.description || "",
-      responsible: box.responsible || "",
-      icon: box.icon || "lucide-box",
-      waterfallCycleId: box.waterfallCycleId || null,
-      url: box.url || null,
-      createdAt: new Date(),
-    };
-    this.evergreenBoxes.set(id, newBox);
+      id: randomUUID(),
+      createdAt: new Date()
+    }).returning();
     return newBox;
   }
 
   async updateEvergreenBox(id: string, box: Partial<InsertEvergreenBox>): Promise<EvergreenBox | undefined> {
-    const existing = this.evergreenBoxes.get(id);
-    if (!existing) return undefined;
-
-    const updated: EvergreenBox = { ...existing, ...box };
-    this.evergreenBoxes.set(id, updated);
-    return updated;
+    const [updated] = await db.update(evergreenBoxes)
+      .set(box)
+      .where(eq(evergreenBoxes.id, id))
+      .returning();
+    return updated || undefined;
   }
 
   async deleteEvergreenBox(id: string): Promise<boolean> {
-    return this.evergreenBoxes.delete(id);
+    const result = await db.delete(evergreenBoxes).where(eq(evergreenBoxes.id, id));
+    return (result.rowCount || 0) > 0;
   }
 
   // Task Social Media
   async getTaskSocialMedia(): Promise<TaskSocialMedia[]> {
-    return Array.from(this.taskSocialMedia.values());
+    return await db.select().from(taskSocialMedia);
   }
 
   async getTaskSocialMediaByTask(taskId: string): Promise<TaskSocialMedia | undefined> {
-    return Array.from(this.taskSocialMedia.values()).find(sm => sm.taskId === taskId);
+    const [social] = await db.select().from(taskSocialMedia).where(eq(taskSocialMedia.taskId, taskId));
+    return social || undefined;
   }
 
   async createTaskSocialMedia(socialMedia: InsertTaskSocialMedia): Promise<TaskSocialMedia> {
-    const id = randomUUID();
-    const newSocialMedia: TaskSocialMedia = {
+    const [newSocial] = await db.insert(taskSocialMedia).values({
       ...socialMedia,
-      id,
-      createdAt: new Date(),
-    };
-    this.taskSocialMedia.set(id, newSocialMedia);
-    return newSocialMedia;
+      id: randomUUID(),
+      createdAt: new Date()
+    }).returning();
+    return newSocial;
   }
 
   async updateTaskSocialMedia(id: string, socialMedia: Partial<InsertTaskSocialMedia>): Promise<TaskSocialMedia | undefined> {
-    const existing = this.taskSocialMedia.get(id);
-    if (!existing) return undefined;
-
-    const updated: TaskSocialMedia = { ...existing, ...socialMedia };
-    this.taskSocialMedia.set(id, updated);
-    return updated;
+    const [updated] = await db.update(taskSocialMedia)
+      .set(socialMedia)
+      .where(eq(taskSocialMedia.id, id))
+      .returning();
+    return updated || undefined;
   }
 
   async deleteTaskSocialMedia(id: string): Promise<boolean> {
-    return this.taskSocialMedia.delete(id);
+    const result = await db.delete(taskSocialMedia).where(eq(taskSocialMedia.id, id));
+    return (result.rowCount || 0) > 0;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

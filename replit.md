@@ -26,10 +26,11 @@ Preferred communication style: Simple, everyday language.
 - **Build System**: ESBuild for production bundling with platform-specific optimizations
 
 ## Data Management
-- **Database**: PostgreSQL with Drizzle ORM for schema management and migrations
-- **Schema**: Three main entities - Release Groups, Releases, and App Settings
-- **Storage Interface**: Abstracted storage layer allowing for easy switching between memory and database implementations
+- **Database**: PostgreSQL with Drizzle ORM for schema management and migrations (MIGRATED FROM IN-MEMORY)
+- **Schema**: Complete entities - Release Groups, Releases, App Settings, Checklist Tasks, Evergreen Boxes, Waterfall Cycles, Content Format Assignments, and Task Social Media
+- **Storage Interface**: DatabaseStorage implementation with full PostgreSQL persistence
 - **Type Safety**: Full TypeScript integration with generated types from database schema
+- **Data Persistence**: All user data now permanently stored in PostgreSQL database
 
 ## Development Environment
 - **Monorepo Structure**: Client, server, and shared code in organized directories

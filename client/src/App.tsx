@@ -10,9 +10,6 @@ import EvergreenPage from "@/pages/evergreen";
 import CalendarPage from "@/pages/calendar";
 
 function Router() {
-  const [location] = useLocation();
-  console.log("Current location:", location);
-  
   return (
     <Switch>
       <Route path="/" component={GanttPage} />
