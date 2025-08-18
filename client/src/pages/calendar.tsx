@@ -91,11 +91,58 @@ export default function CalendarPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  // Load custom dividers from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedDividers = localStorage.getItem('calendar-custom-dividers');
+      if (savedDividers) {
+        const parsedDividers = JSON.parse(savedDividers);
+        const dividersMap = new Map(Object.entries(parsedDividers));
+        setCustomDividers(dividersMap);
+      }
+    } catch (error) {
+      console.error('Error loading custom dividers from localStorage:', error);
+    }
+  }, []);
+
+  // Save custom dividers to localStorage whenever they change
+  useEffect(() => {
+    try {
+      const dividersObject = Object.fromEntries(customDividers);
+      localStorage.setItem('calendar-custom-dividers', JSON.stringify(dividersObject));
+    } catch (error) {
+      console.error('Error saving custom dividers to localStorage:', error);
+    }
+  }, [customDividers]);
+
   // Fetch all task social media data
   const { data: allTaskSocialMedia = [] } = useQuery({
     queryKey: ['/api/task-social-media'],
     enabled: true
   });
+
+  // Load priority cells from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedPriorityCells = localStorage.getItem('calendar-priority-cells');
+      if (savedPriorityCells) {
+        const parsedCells = JSON.parse(savedPriorityCells);
+        setPriorityCells(new Set(parsedCells));
+      }
+    } catch (error) {
+      console.error('Error loading priority cells from localStorage:', error);
+    }
+  }, []);
+
+  // Save priority cells to localStorage whenever they change
+  useEffect(() => {
+    try {
+      const cellsArray = Array.from(priorityCells);
+      localStorage.setItem('calendar-priority-cells', JSON.stringify(cellsArray));
+    } catch (error) {
+      console.error('Error saving priority cells to localStorage:', error);
+    }
+  }, [priorityCells]);
 
   // Load social media data into state - prevent infinite loops
   useEffect(() => {
@@ -157,6 +204,30 @@ export default function CalendarPage() {
   const { data: evergreenBoxes = [] } = useQuery<any[]>({
     queryKey: ["/api/evergreen-boxes"]
   });
+
+  // Load release accent colors from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedColors = localStorage.getItem('calendar-release-accent-colors');
+      if (savedColors) {
+        const parsedColors = JSON.parse(savedColors);
+        const colorsMap = new Map(Object.entries(parsedColors));
+        setReleaseAccentColors(colorsMap);
+      }
+    } catch (error) {
+      console.error('Error loading release accent colors from localStorage:', error);
+    }
+  }, []);
+
+  // Save release accent colors to localStorage whenever they change
+  useEffect(() => {
+    try {
+      const colorsObject = Object.fromEntries(releaseAccentColors);
+      localStorage.setItem('calendar-release-accent-colors', JSON.stringify(colorsObject));
+    } catch (error) {
+      console.error('Error saving release accent colors to localStorage:', error);
+    }
+  }, [releaseAccentColors]);
 
   // Generate random accent colors for releases on mount
   useEffect(() => {
