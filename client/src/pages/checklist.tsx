@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, User, CheckCircle, Clock, Users, BarChart3, Download, ArrowUpDown, Star, AlertTriangle, ExternalLink, ArrowLeft, Pause, Calendar, Loader2, Settings } from "lucide-react";
+import { Plus, User, CheckCircle, Clock, Users, BarChart3, Download, ArrowUpDown, Star, AlertTriangle, ExternalLink, ArrowLeft, Pause, Calendar, Loader2, Settings, Trash2 } from "lucide-react";
 import { Link } from "wouter";
 import { Navigation, MobileNavigation } from "@/components/ui/navigation";
 import { ReviewModal } from "@/components/checklist/review-modal";
@@ -210,6 +210,20 @@ export default function ChecklistPage() {
       toast({
         title: "Task updated",
         description: "Task has been successfully updated.",
+      });
+    }
+  });
+
+  // Delete task mutation
+  const deleteTaskMutation = useMutation({
+    mutationFn: async (taskId: string) => {
+      return apiRequest('DELETE', `/api/checklist-tasks/${taskId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
+      toast({
+        title: "Task deleted",
+        description: "Task has been successfully deleted.",
       });
     }
   });
@@ -663,21 +677,35 @@ export default function ChecklistPage() {
                             {/* Bottom action buttons section - separated from main content */}
                             <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
                               <div className="flex items-center space-x-2 flex-wrap">
-                                {/* For General tasks: Wrench to the left of blocker icon */}
+                                {/* For General tasks: Wrench and Delete icons */}
                                 {task.releaseId === 'general' && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                    onClick={() => {
-                                      setEditingTask(task);
-                                      // For editing, show the raw taskTitle (what's stored in database)
-                                      setEditTitle(task.taskTitle);
-                                      setEditUrl(task.taskUrl || "");
-                                    }}
-                                  >
-                                    <Settings className="w-3 h-3 text-gray-500" />
-                                  </Button>
+                                  <>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                      onClick={() => {
+                                        setEditingTask(task);
+                                        // For editing, show the raw taskTitle (what's stored in database)
+                                        setEditTitle(task.taskTitle);
+                                        setEditUrl(task.taskUrl || "");
+                                      }}
+                                    >
+                                      <Settings className="w-3 h-3 text-gray-500" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-6 w-6 p-0 hover:bg-red-100 dark:hover:bg-red-900"
+                                      onClick={() => {
+                                        if (window.confirm('Are you sure you want to delete this task?')) {
+                                          deleteTaskMutation.mutate(task.id);
+                                        }
+                                      }}
+                                    >
+                                      <Trash2 className="w-3 h-3 text-red-500" />
+                                    </Button>
+                                  </>
                                 )}
                                 
                                 {/* Blocker button */}

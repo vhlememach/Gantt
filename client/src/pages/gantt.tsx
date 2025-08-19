@@ -704,7 +704,6 @@ export default function GanttPage() {
                 <SelectContent>
                   <SelectItem value="Quarters">Quarters</SelectItem>
                   <SelectItem value="Months">Months</SelectItem>
-                  <SelectItem value="Weeks">Weeks</SelectItem>
                 </SelectContent>
               </Select>
             </div>
