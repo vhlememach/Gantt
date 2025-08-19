@@ -163,16 +163,34 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
       const labels = [];
       const sublabels = [];
       
+      // Get first Monday of the range
       let currentDate = new Date(minDate);
-      currentDate.setDate(currentDate.getDate() - currentDate.getDay()); // Start of week
+      while (currentDate.getDay() !== 1) { // Monday is 1
+        currentDate.setDate(currentDate.getDate() - 1);
+      }
       
       let weekCounter = 1;
-      while (currentDate <= maxDate && weekCounter <= 52) { // Allow up to 52 weeks for full year coverage
+      const maxEndDate = new Date(maxDate);
+      maxEndDate.setDate(maxEndDate.getDate() + 7); // Allow one extra week to capture end dates
+      
+      while (currentDate <= maxEndDate && weekCounter <= 52) { // Allow up to 52 weeks for full year coverage
+        const weekEnd = new Date(currentDate);
+        weekEnd.setDate(weekEnd.getDate() + 6); // Sunday
+        
+        labels.push(`Week ${weekCounter}`);
+        sublabels.push(`${(currentDate.getMonth() + 1).toString().padStart(2, '0')}/${currentDate.getDate().toString().padStart(2, '0')}-${(weekEnd.getMonth() + 1).toString().padStart(2, '0')}/${weekEnd.getDate().toString().padStart(2, '0')}`);
+        
+        currentDate.setDate(currentDate.getDate() + 7);
+        weekCounter++;
+      }
+      
+      // Ensure minimum number of weeks for reasonable timeline
+      while (labels.length < 8 && weekCounter <= 52) {
         const weekEnd = new Date(currentDate);
         weekEnd.setDate(weekEnd.getDate() + 6);
         
         labels.push(`Week ${weekCounter}`);
-        sublabels.push(`${currentDate.getMonth() + 1}/${currentDate.getDate()}-${weekEnd.getMonth() + 1}/${weekEnd.getDate()}`);
+        sublabels.push(`${(currentDate.getMonth() + 1).toString().padStart(2, '0')}/${currentDate.getDate().toString().padStart(2, '0')}-${(weekEnd.getMonth() + 1).toString().padStart(2, '0')}/${weekEnd.getDate().toString().padStart(2, '0')}`);
         
         currentDate.setDate(currentDate.getDate() + 7);
         weekCounter++;

@@ -467,10 +467,26 @@ export default function ChecklistPage() {
                 <div className="space-y-6">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b pb-2">Project Checklists</h3>
                   {releases
+                    .filter(release => release.name !== "General Tasks")
                     .sort((releaseA, releaseB) => {
+                      // First sort by high priority
                       const priorityA = releaseA?.highPriority ? 1 : 0;
                       const priorityB = releaseB?.highPriority ? 1 : 0;
-                      return priorityB - priorityA; // High priority first
+                      if (priorityA !== priorityB) {
+                        return priorityB - priorityA; // High priority first
+                      }
+                      
+                      // Then sort by recent updates (if updatedAt exists)
+                      const updatedAtA = releaseA.updatedAt ? new Date(releaseA.updatedAt).getTime() : 0;
+                      const updatedAtB = releaseB.updatedAt ? new Date(releaseB.updatedAt).getTime() : 0;
+                      if (updatedAtA !== updatedAtB) {
+                        return updatedAtB - updatedAtA; // Most recently updated first
+                      }
+                      
+                      // Finally sort by creation date
+                      const createdAtA = releaseA.createdAt ? new Date(releaseA.createdAt).getTime() : 0;
+                      const createdAtB = releaseB.createdAt ? new Date(releaseB.createdAt).getTime() : 0;
+                      return createdAtB - createdAtA; // Most recently created first
                     })
                     .map((release) => {
                       const tasks = tasksByRelease[release.id] || [];
@@ -740,22 +756,43 @@ export default function ChecklistPage() {
                 <div className="space-y-6">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b pb-2">Other Tasks</h3>
                   
-                  {/* Evergreen Content */}
-                  {Object.entries(tasksByRelease)
-                    .filter(([releaseId]) => releaseId === 'evergreen')
-                    .map(([releaseId, tasks]) => {
-                      const memberSortOption = sortBy[`${selectedMember}-evergreen`] || "priority";
+                  {/* Evergreen Content with High Priority Support */}
+                  {evergreenBoxes
+                    .sort((boxA, boxB) => {
+                      const priorityA = boxA?.highPriority ? 1 : 0;
+                      const priorityB = boxB?.highPriority ? 1 : 0;
+                      return priorityB - priorityA; // High priority first
+                    })
+                    .map((box) => {
+                      const tasks = tasksByEvergreenBox[box.id] || [];
+                      const memberSortOption = sortBy[`${selectedMember}-evergreen-${box.id}`] || "priority";
                       const sortedTasks = getSortedTasks(tasks, memberSortOption);
+                      const isHighPriority = box?.highPriority || false;
                       
                       return (
-                        <Card key={releaseId}>
+                        <Card 
+                          key={box.id}
+                          className={isHighPriority ? 'bg-red-50 dark:bg-red-900/10 ring-2 ring-red-400 ring-opacity-60' : ''}
+                        >
                           <CardHeader>
                             <CardTitle>
-                              {/* Evergreen Title */}
+                              {/* Evergreen Box Title */}
                               <div className="mb-3">
                                 <span className="text-xl font-bold flex items-center">
-                                  <div className="w-1 h-6 rounded-full mr-3 bg-green-500" />
-                                  Evergreen Content
+                                  <div 
+                                    className="w-1 h-6 rounded-full mr-3"
+                                    style={{ 
+                                      backgroundColor: box?.groupId 
+                                        ? groups.find((g: any) => g.id === box.groupId)?.color || '#10b981'
+                                        : '#10b981' 
+                                    }}
+                                  />
+                                  {box.title}
+                                  {isHighPriority && (
+                                    <Badge variant="destructive" className="ml-2 text-xs">
+                                      HIGH PRIORITY
+                                    </Badge>
+                                  )}
                                 </span>
                               </div>
                               

@@ -215,6 +215,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
         startDate: new Date().toISOString().split('T')[0],
         endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         icon: "lucide-rocket",
+        accountablePerson: "",
         responsible: "",
         status: "upcoming",
         highPriority: false,
@@ -389,7 +390,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{releaseId ? "Edit Project" : "Add Project"}</DialogTitle>
         </DialogHeader>
@@ -419,7 +420,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
           </div>
 
           <div>
-            <Label htmlFor="url">Goal Framework Link (optional)</Label>
+            <Label htmlFor="url">Goal Framework Link</Label>
             <Input
               id="url"
               type="url"

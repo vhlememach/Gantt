@@ -135,7 +135,9 @@ export class DatabaseStorage implements IStorage {
     // Convert empty strings to null for foreign key fields
     const cleanedRelease = {
       ...release,
-      ...(release.waterfallCycleId !== undefined && { waterfallCycleId: release.waterfallCycleId === "" ? null : release.waterfallCycleId })
+      ...(release.waterfallCycleId !== undefined && { waterfallCycleId: release.waterfallCycleId === "" ? null : release.waterfallCycleId }),
+      // Update the updatedAt timestamp to ensure recently updated projects appear at top
+      updatedAt: new Date().toISOString()
     };
     const [updated] = await db.update(releases)
       .set(cleanedRelease)
@@ -147,6 +149,12 @@ export class DatabaseStorage implements IStorage {
   async deleteRelease(id: string): Promise<boolean> {
     const result = await db.delete(releases).where(eq(releases.id, id));
     return (result.rowCount || 0) > 0;
+  }
+
+  // Helper method to get or create General Tasks release
+  async getGeneralTasksRelease(): Promise<Release | undefined> {
+    const [generalRelease] = await db.select().from(releases).where(eq(releases.name, "General Tasks"));
+    return generalRelease || undefined;
   }
 
   // App Settings

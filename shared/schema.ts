@@ -27,11 +27,12 @@ export const releases = pgTable("releases", {
   highPriority: boolean("high_priority").default(false).notNull(),
   waterfallCycleId: varchar("waterfall_cycle_id").references(() => waterfallCycles.id),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const appSettings = pgTable("app_settings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  headerTitle: text("header_title").notNull().default("Release Gantt Chart"),
+  headerTitle: text("header_title").notNull().default("Palmyra Marketing"),
   headerBackgroundColor: text("header_background_color").notNull().default("#3B82F6"),
   headerTitleColor: text("header_title_color").notNull().default("#FFFFFF"),
   fontFamily: text("font_family").notNull().default("Inter"),
