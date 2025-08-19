@@ -154,7 +154,7 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
         }
       }
     } else if (viewMode === "Months") {
-      // Months view: each month gets equal space
+      // Months view: each month gets equal space with precise day-level positioning
       const startMonth = startDate.getMonth(); // 0-11
       const endMonth = endDate.getMonth(); // 0-11
       const startYear = startDate.getFullYear();
@@ -185,27 +185,62 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
       
       if (startMonthIndex >= 0) {
         const monthWidth = 100 / timelineLabels.length;
-        position = (startMonthIndex / timelineLabels.length) * 100;
+        
+        // Calculate precise position within month based on actual days
+        const monthStartDate = new Date(startYear, startMonth, 1);
+        const monthEndDate = new Date(startYear, startMonth + 1, 0); // Last day of month
+        const monthTotalDays = monthEndDate.getDate();
         const dayOfMonth = startDate.getDate() - 1; // 0-based
-        const monthOffset = (dayOfMonth / 31) * monthWidth; // Position within start month
-        position += monthOffset;
+        const offsetWithinMonth = (dayOfMonth / monthTotalDays) * monthWidth;
+        
+        position = (startMonthIndex / timelineLabels.length) * 100 + offsetWithinMonth;
         
         if (endMonthIndex >= 0) {
-          const endPosition = ((endMonthIndex + 1) / timelineLabels.length) * 100; // +1 to include end month
-          barWidth = Math.max(6, endPosition - position);
+          // Calculate end position with same precision
+          const endMonthStartDate = new Date(endYear, endMonth, 1);
+          const endMonthEndDate = new Date(endYear, endMonth + 1, 0);
+          const endMonthTotalDays = endMonthEndDate.getDate();
+          const endDayOfMonth = endDate.getDate() - 1; // 0-based
+          const endOffsetWithinMonth = (endDayOfMonth / endMonthTotalDays) * monthWidth;
+          
+          const endPosition = (endMonthIndex / timelineLabels.length) * 100 + endOffsetWithinMonth;
+          
+          barWidth = Math.max(1, endPosition - position);
         } else {
-          barWidth = Math.max(6, monthWidth);
+          barWidth = Math.max(1, monthWidth * 0.1); // Minimum visible width
         }
       }
     } else if (viewMode === "Weeks") {
-      // Weeks view: position based on week of year
+      // Weeks view: position based on precise day calculation within weeks
       const startOfYear = new Date(startDate.getFullYear(), 0, 1);
-      const startWeek = Math.floor((startDate.getTime() - startOfYear.getTime()) / (7 * 24 * 60 * 60 * 1000));
-      const endWeek = Math.floor((endDate.getTime() - startOfYear.getTime()) / (7 * 24 * 60 * 60 * 1000));
       
-      position = Math.min(95, (startWeek / 52) * 100); // Max 95% to prevent overflow
-      const endPosition = Math.min(100, (endWeek / 52) * 100);
-      barWidth = Math.max(4, endPosition - position);
+      // Get the Monday of the week for start and end dates
+      const getMonday = (date: Date) => {
+        const d = new Date(date);
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+        return new Date(d.setDate(diff));
+      };
+      
+      const startWeekMonday = getMonday(startDate);
+      const endWeekMonday = getMonday(endDate);
+      
+      // Calculate week numbers from start of year
+      const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+      const startWeekNum = Math.floor((startWeekMonday.getTime() - startOfYear.getTime()) / msPerWeek);
+      const endWeekNum = Math.floor((endWeekMonday.getTime() - startOfYear.getTime()) / msPerWeek);
+      
+      // Calculate position within week (0-6 days)
+      const startDayInWeek = Math.floor((startDate.getTime() - startWeekMonday.getTime()) / (24 * 60 * 60 * 1000));
+      const endDayInWeek = Math.floor((endDate.getTime() - endWeekMonday.getTime()) / (24 * 60 * 60 * 1000));
+      
+      const weekWidth = 100 / Math.min(52, timelineLabels.length);
+      
+      // Precise position calculation
+      position = Math.min(95, (startWeekNum / 52) * 100 + (startDayInWeek / 7) * weekWidth);
+      const endPosition = Math.min(100, (endWeekNum / 52) * 100 + (endDayInWeek / 7) * weekWidth);
+      
+      barWidth = Math.max(1, endPosition - position);
     }
     
     // Timeline calculation complete
