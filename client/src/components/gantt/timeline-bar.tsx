@@ -102,6 +102,7 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
     
     // Calculate position and width based on dates and view mode
     // Calculate timeline position and duration based on view mode
+    // Debug specific releases for troubleshooting
     
     let position = 0;
     let barWidth = 8;
@@ -149,6 +150,8 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
           const endPosition = (endQuarterIndex / timelineLabels.length) * 100 + endOffsetWithinQuarter;
           
           barWidth = Math.max(1, endPosition - position);
+          
+          // Quarters calculation complete
         } else {
           barWidth = Math.max(1, quarterWidth * 0.1); // Minimum visible width
         }
@@ -206,7 +209,10 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
           const endPosition = (endMonthIndex / timelineLabels.length) * 100 + endOffsetWithinMonth;
           
           barWidth = Math.max(1, endPosition - position);
+          
+          // Months calculation complete
         } else {
+          // Handle case where end month is not in timeline (beyond visible range)
           barWidth = Math.max(1, monthWidth * 0.1); // Minimum visible width
         }
       }
