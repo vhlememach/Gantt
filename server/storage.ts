@@ -210,12 +210,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createChecklistTask(task: InsertChecklistTask): Promise<ChecklistTask> {
-    // Convert empty strings to null for foreign key fields
+    // Convert empty strings to null for foreign key fields and handle timestamps
     const cleanedTask = {
       ...task,
-      releaseId: task.releaseId === "" ? null : task.releaseId,
-      evergreenBoxId: task.evergreenBoxId === "" ? null : task.evergreenBoxId,
-      waterfallCycleId: task.waterfallCycleId === "" ? null : task.waterfallCycleId
+      releaseId: task.releaseId === "" || task.releaseId === null ? null : task.releaseId,
+      evergreenBoxId: task.evergreenBoxId === "" || task.evergreenBoxId === null ? null : task.evergreenBoxId,
+      waterfallCycleId: task.waterfallCycleId === "" || task.waterfallCycleId === null ? null : task.waterfallCycleId,
+      // Ensure completedAt is properly handled
+      completedAt: task.completed ? new Date() : null
     };
     const [newTask] = await db.insert(checklistTasks).values(cleanedTask).returning();
     return newTask;

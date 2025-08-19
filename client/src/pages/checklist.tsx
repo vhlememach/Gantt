@@ -44,7 +44,17 @@ export default function ChecklistPage() {
   const { toast } = useToast();
 
   // Auto-generate evergreen tasks on initial load if none exist
-  const { data: evergreenBoxes = [] } = useQuery<Array<{waterfallCycleId?: string}>>({
+  const { data: evergreenBoxes = [] } = useQuery<Array<{
+    id: string;
+    title: string;
+    description?: string;
+    responsible?: string;
+    groupId: string;
+    waterfallCycleId?: string;
+    highPriority?: boolean;
+    icon?: string;
+    url?: string;
+  }>>({
     queryKey: ["/api/evergreen-boxes"],
   });
 
@@ -98,6 +108,17 @@ export default function ChecklistPage() {
       acc[groupId] = [];
     }
     acc[groupId].push(task);
+    return acc;
+  }, {} as Record<string, ChecklistTask[]>);
+
+  // Group tasks by evergreen box for proper organization
+  const tasksByEvergreenBox = memberTasks.reduce((acc, task) => {
+    if (task.evergreenBoxId) {
+      if (!acc[task.evergreenBoxId]) {
+        acc[task.evergreenBoxId] = [];
+      }
+      acc[task.evergreenBoxId].push(task);
+    }
     return acc;
   }, {} as Record<string, ChecklistTask[]>);
 
