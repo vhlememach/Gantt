@@ -100,13 +100,7 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
     const endDate = new Date(release.endDate);
     const duration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
     
-    console.log(`Timeline bar for ${release.name}:`, {
-      startDate: release.startDate,
-      endDate: release.endDate,
-      leftPosition: 0,
-      width: 0,
-      releaseId: release.id
-    });
+    // Calculate position and width based on dates and view mode
     
     let position = 0;
     let barWidth = 8;
@@ -200,14 +194,7 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
       barWidth = Math.max(4, endPosition - position);
     }
     
-    console.log(`Timeline bar calculation for ${release.name}:`, {
-      startDate: release.startDate,
-      endDate: release.endDate,
-      leftPosition: position,
-      width: barWidth,
-      viewMode,
-      timelineLabelsLength: timelineLabels.length
-    });
+    // Return calculated position and width
     
     return { leftPosition: position, width: barWidth };
   }, [release.startDate, release.endDate, viewMode, timelineLabels]);
@@ -299,7 +286,9 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
           top: '50%',
           transform: 'translateY(-50%)',
           background: group.color,
-          minWidth: '120px',
+          minWidth: viewMode === "Quarters" && width < 15 ? '80px' : 
+                     viewMode === "Months" && width < 8 ? '60px' : 
+                     viewMode === "Weeks" && width < 4 ? '40px' : 'auto',
           outline: release.highPriority ? `2px solid #dc2626` : 'none',
           outlineOffset: release.highPriority ? '2px' : '0'
         }}
