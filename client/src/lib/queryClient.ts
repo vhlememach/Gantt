@@ -47,7 +47,9 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: true, // Refetch when tab becomes active
-      staleTime: 30 * 1000, // 30 seconds - ensure fresh data
+      refetchOnMount: true, // Always refetch on component mount
+      staleTime: 0, // Consider data stale immediately
+      gcTime: 5 * 60 * 1000, // 5 minutes cache time (React Query v5 uses gcTime instead of cacheTime)
       retry: false,
     },
     mutations: {

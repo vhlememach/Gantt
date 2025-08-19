@@ -43,6 +43,9 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
 
   const { data: releases = [], refetch: refetchReleases } = useQuery<Release[]>({
     queryKey: ["/api/releases"],
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    staleTime: 0, // Always consider stale for new tabs
   });
 
   const { data: allTasks = [] } = useQuery({

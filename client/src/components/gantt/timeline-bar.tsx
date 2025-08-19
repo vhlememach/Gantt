@@ -96,9 +96,12 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
   // Calculate bar position and width based on dates and view mode
   // Use useMemo to recalculate when release dates change
   const { leftPosition, width } = useMemo(() => {
+    // Force fresh calculation by creating new date objects
     const startDate = new Date(release.startDate);
     const endDate = new Date(release.endDate);
     const duration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Timeline calculations optimized for cross-period accuracy
     
     // Calculate position and width based on dates and view mode
     // Calculate timeline position and duration based on view mode
@@ -253,12 +256,9 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
     
     // Timeline calculation complete
     
-    // Timeline calculation complete
-    
     // Return calculated position and width
-    
     return { leftPosition: position, width: barWidth };
-  }, [release.startDate, release.endDate, viewMode, timelineLabels, release.updatedAt]);
+  }, [release.startDate, release.endDate, viewMode, timelineLabels, release.updatedAt, JSON.stringify(timelineLabels), release.id]);
 
   const handleMouseDown = (e: React.MouseEvent, action: 'drag' | 'resize') => {
     e.preventDefault();
@@ -345,7 +345,7 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
           left: `${leftPosition}%`,
           width: `${width}%`,
           top: '50%',
-          transform: 'translateY(-50%)',
+          transform: 'translateY(-50%) translateZ(0)', // Force GPU acceleration for consistent rendering
           background: group.color,
           minWidth: viewMode === "Quarters" && width < 5 ? '60px' : 
                      viewMode === "Months" && width < 3 ? '40px' : 
