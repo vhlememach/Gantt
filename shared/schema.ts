@@ -21,6 +21,7 @@ export const releases = pgTable("releases", {
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),
   icon: text("icon").notNull().default("fas fa-rocket"),
+  accountablePerson: text("accountable_person").default(""),
   responsible: text("responsible").default(""),
   status: text("status").notNull().default("upcoming"), // upcoming, in-progress, completed, delayed
   highPriority: boolean("high_priority").default(false).notNull(),
@@ -68,6 +69,7 @@ export const evergreenBoxes = pgTable("evergreen_boxes", {
   waterfallCycleId: varchar("waterfall_cycle_id").references(() => waterfallCycles.id),
   icon: text("icon").notNull().default("lucide-box"),
   url: text("url"),
+  highPriority: boolean("high_priority").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

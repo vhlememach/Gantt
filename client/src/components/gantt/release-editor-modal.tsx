@@ -29,6 +29,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
     startDate: "",
     endDate: "",
     icon: "lucide-rocket",
+    accountablePerson: "",
     responsible: "",
     status: "upcoming",
     highPriority: false,
@@ -74,6 +75,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
         startDate: "",
         endDate: "",
         icon: "lucide-rocket",
+        accountablePerson: "",
         responsible: "",
         status: "upcoming",
         highPriority: false,
@@ -103,6 +105,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
         startDate: release.startDate ? new Date(release.startDate).toISOString().split('T')[0] : "",
         endDate: release.endDate ? new Date(release.endDate).toISOString().split('T')[0] : "",
         icon: release.icon || "lucide-rocket",
+        accountablePerson: (release as any).accountablePerson || "",
         responsible: release.responsible || "",
         status: release.status || "upcoming",
         highPriority: release.highPriority || false,
@@ -123,6 +126,7 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
         startDate: new Date().toISOString().split('T')[0],
         endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         icon: "lucide-rocket",
+        accountablePerson: "",
         responsible: "",
         status: "upcoming",
         highPriority: false,
@@ -415,13 +419,23 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
           </div>
 
           <div>
-            <Label htmlFor="url">Project URL (optional)</Label>
+            <Label htmlFor="url">Goal Framework Link (optional)</Label>
             <Input
               id="url"
               type="url"
               value={formData.url}
               onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
               placeholder="https://docs.example.com/project-info"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="accountablePerson">Accountable Person</Label>
+            <Input
+              id="accountablePerson"
+              value={formData.accountablePerson}
+              onChange={(e) => setFormData(prev => ({ ...prev, accountablePerson: e.target.value }))}
+              placeholder="e.g., John Doe"
             />
           </div>
 

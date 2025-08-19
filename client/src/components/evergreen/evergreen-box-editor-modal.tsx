@@ -18,6 +18,7 @@ const formSchema = insertEvergreenBoxSchema.extend({
   title: z.string().min(1, "Title is required"),
   groupId: z.string().min(1, "Group is required"),
   url: z.string().optional(),
+  highPriority: z.boolean().optional(),
 });
 
 interface EvergreenBoxEditorModalProps {
@@ -58,6 +59,7 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
       icon: "lucide-megaphone",
       waterfallCycleId: "none",
       url: "",
+      highPriority: false,
     },
   });
 
@@ -72,6 +74,7 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
         icon: box.icon,
         waterfallCycleId: box.waterfallCycleId || "none",
         url: box.url || "",
+        highPriority: (box as any).highPriority || false,
       });
     } else if (!isEditing) {
       form.reset({
@@ -82,6 +85,7 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
         icon: "lucide-megaphone",
         waterfallCycleId: "none",
         url: "",
+        highPriority: false,
       });
     }
   }, [box, isEditing, form]);
@@ -449,6 +453,29 @@ export default function EvergreenBoxEditorModal({ isOpen, onClose, boxId }: Ever
                     <Input placeholder="https://..." {...field} value={field.value || ""} />
                   </FormControl>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="highPriority"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <input
+                      type="checkbox"
+                      checked={field.value}
+                      onChange={field.onChange}
+                      className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>High Priority Mode</FormLabel>
+                    <p className="text-sm text-muted-foreground">
+                      Mark as high priority to display with red outline and appear at the top of Team Checklist
+                    </p>
+                  </div>
                 </FormItem>
               )}
             />

@@ -146,11 +146,22 @@ export default function EvergreenPage({}: EvergreenPageProps) {
 
             {/* Boxes Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {groupBoxes.map((box) => (
+              {groupBoxes
+                .sort((a, b) => {
+                  // Sort high priority boxes to the top
+                  const aHighPriority = (a as any).highPriority || false;
+                  const bHighPriority = (b as any).highPriority || false;
+                  return bHighPriority ? 1 : aHighPriority ? -1 : 0;
+                })
+                .map((box) => {
+                  const isHighPriority = (box as any).highPriority || false;
+                  return (
                 <Card 
                   key={box.id}
                   onClick={() => handleBoxClick(box.id)}
-                  className="hover:shadow-lg transition-shadow duration-200 cursor-pointer border-l-4"
+                  className={`hover:shadow-lg transition-shadow duration-200 cursor-pointer border-l-4 ${
+                    isHighPriority ? 'ring-2 ring-red-400 ring-opacity-60' : ''
+                  }`}
                   style={{ borderLeftColor: group.color }}
                 >
                   <CardHeader className="pb-3">
@@ -208,7 +219,8 @@ export default function EvergreenPage({}: EvergreenPageProps) {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                );
+              })}
 
               {/* Add New Box Card */}
               <Card 

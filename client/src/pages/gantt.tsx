@@ -132,6 +132,7 @@ export default function GanttPage() {
                     startDate: release.startDate,
                     endDate: release.endDate,
                     icon: release.icon || 'lucide-rocket',
+                    accountablePerson: release.accountablePerson || '',
                     responsible: release.responsible || '',
                     status: release.status || 'upcoming',
                     highPriority: release.highPriority === true || release.highPriority === 'true',
@@ -164,7 +165,8 @@ export default function GanttPage() {
                     groupId: newGroupId,
                     waterfallCycleId: newWaterfallCycleId,
                     icon: box.icon || 'lucide-box',
-                    url: box.url || null
+                    url: box.url || null,
+                    highPriority: box.highPriority === true || box.highPriority === 'true'
                   };
                   const response = await fetch('/api/evergreen-boxes', {
                     method: 'POST',
@@ -283,7 +285,7 @@ export default function GanttPage() {
                 console.log("Importing settings");
                 const cleanSettings = {
                   id: data.settings.id,
-                  headerTitle: data.settings.headerTitle || 'Palmyra Release Gantt Chart',
+                  headerTitle: data.settings.headerTitle || 'Palmyra Marketing',
                   headerSubtitle: data.settings.headerSubtitle || 'Internal Release Management',
                   headerBgColor: data.settings.headerBgColor || '#8B5CF6',
                   headerTextColor: data.settings.headerTextColor || '#FFFFFF',
@@ -610,7 +612,7 @@ export default function GanttPage() {
                   color: settings?.headerTitleColor || '#FFFFFF'
                 }}
               >
-                {settings?.headerTitle || "Release Gantt Chart"}
+                {settings?.headerTitle || "Palmyra Marketing"}
               </h1>
             </div>
             
