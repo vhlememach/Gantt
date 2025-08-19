@@ -102,7 +102,7 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
     
     // Calculate position and width based on dates and view mode
     // Calculate timeline position and duration based on view mode
-    // Debug specific releases for troubleshooting
+    // Timeline calculations optimized for accurate cross-period positioning
     
     let position = 0;
     let barWidth = 8;
@@ -123,33 +123,35 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
       if (startQuarterIndex >= 0) {
         const quarterWidth = 100 / timelineLabels.length;
         
-        // Calculate precise position within quarter based on day of year
-        const quarterStartMonth = startQuarterIndex * 3; // 0, 3, 6, 9
-        const quarterStartDate = new Date(startYear, quarterStartMonth, 1);
-        const quarterEndDate = new Date(startYear, quarterStartMonth + 3, 0); // Last day of quarter
-        const quarterDuration = quarterEndDate.getTime() - quarterStartDate.getTime();
+        // Calculate precise position within quarter based on day of year  
+        const quarterStartMonth = startQuarterIndex * 3; // 0, 3, 6, 9 for Q1, Q2, Q3, Q4
+        const quarterStartDate = new Date(Date.UTC(startYear, quarterStartMonth, 1));
+        const quarterEndDate = new Date(Date.UTC(startYear, quarterStartMonth + 3, 0)); // Last day of quarter
         
         // Position within quarter based on actual dates
         const daysSinceQuarterStart = (startDate.getTime() - quarterStartDate.getTime()) / (1000 * 60 * 60 * 24);
-        const quarterTotalDays = quarterDuration / (1000 * 60 * 60 * 24);
+        const quarterTotalDays = (quarterEndDate.getTime() - quarterStartDate.getTime()) / (1000 * 60 * 60 * 24);
         const offsetWithinQuarter = (daysSinceQuarterStart / quarterTotalDays) * quarterWidth;
         
         position = (startQuarterIndex / timelineLabels.length) * 100 + offsetWithinQuarter;
         
+        // Start quarter calculation complete
+        
         if (endQuarterIndex >= 0) {
           // Calculate end position with same precision
           const endQuarterStartMonth = endQuarterIndex * 3;
-          const endQuarterStartDate = new Date(endYear, endQuarterStartMonth, 1);
-          const endQuarterEndDate = new Date(endYear, endQuarterStartMonth + 3, 0);
-          const endQuarterDuration = endQuarterEndDate.getTime() - endQuarterStartDate.getTime();
+          const endQuarterStartDate = new Date(Date.UTC(endYear, endQuarterStartMonth, 1));
+          const endQuarterEndDate = new Date(Date.UTC(endYear, endQuarterStartMonth + 3, 0));
           
           const daysSinceEndQuarterStart = (endDate.getTime() - endQuarterStartDate.getTime()) / (1000 * 60 * 60 * 24);
-          const endQuarterTotalDays = endQuarterDuration / (1000 * 60 * 60 * 24);
+          const endQuarterTotalDays = (endQuarterEndDate.getTime() - endQuarterStartDate.getTime()) / (1000 * 60 * 60 * 24);
           const endOffsetWithinQuarter = (daysSinceEndQuarterStart / endQuarterTotalDays) * quarterWidth;
           
           const endPosition = (endQuarterIndex / timelineLabels.length) * 100 + endOffsetWithinQuarter;
           
           barWidth = Math.max(1, endPosition - position);
+          
+          // End quarter calculation complete
           
           // Quarters calculation complete
         } else {
@@ -190,20 +192,20 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
         const monthWidth = 100 / timelineLabels.length;
         
         // Calculate precise position within month based on actual days
-        const monthStartDate = new Date(startYear, startMonth, 1);
-        const monthEndDate = new Date(startYear, startMonth + 1, 0); // Last day of month
-        const monthTotalDays = monthEndDate.getDate();
-        const dayOfMonth = startDate.getDate() - 1; // 0-based
+        const monthStartDate = new Date(Date.UTC(startYear, startMonth, 1));
+        const monthEndDate = new Date(Date.UTC(startYear, startMonth + 1, 0)); // Last day of month
+        const monthTotalDays = monthEndDate.getUTCDate();
+        const dayOfMonth = startDate.getUTCDate() - 1; // 0-based
         const offsetWithinMonth = (dayOfMonth / monthTotalDays) * monthWidth;
         
         position = (startMonthIndex / timelineLabels.length) * 100 + offsetWithinMonth;
         
         if (endMonthIndex >= 0) {
           // Calculate end position with same precision
-          const endMonthStartDate = new Date(endYear, endMonth, 1);
-          const endMonthEndDate = new Date(endYear, endMonth + 1, 0);
-          const endMonthTotalDays = endMonthEndDate.getDate();
-          const endDayOfMonth = endDate.getDate() - 1; // 0-based
+          const endMonthStartDate = new Date(Date.UTC(endYear, endMonth, 1));
+          const endMonthEndDate = new Date(Date.UTC(endYear, endMonth + 1, 0));
+          const endMonthTotalDays = endMonthEndDate.getUTCDate();
+          const endDayOfMonth = endDate.getUTCDate() - 1; // 0-based
           const endOffsetWithinMonth = (endDayOfMonth / endMonthTotalDays) * monthWidth;
           
           const endPosition = (endMonthIndex / timelineLabels.length) * 100 + endOffsetWithinMonth;
@@ -248,6 +250,8 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
       
       barWidth = Math.max(1, endPosition - position);
     }
+    
+    // Final calculations complete
     
     // Timeline calculation complete
     
