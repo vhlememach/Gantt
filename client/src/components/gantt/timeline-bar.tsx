@@ -102,7 +102,7 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
     
     // Calculate position and width based on dates and view mode
     // Calculate timeline position and duration based on view mode
-    // Timeline calculations optimized for accurate cross-period positioning
+    // Timeline calculations optimized for cross-period accuracy
     
     let position = 0;
     let barWidth = 8;
@@ -251,14 +251,14 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
       barWidth = Math.max(1, endPosition - position);
     }
     
-    // Final calculations complete
+    // Timeline calculation complete
     
     // Timeline calculation complete
     
     // Return calculated position and width
     
     return { leftPosition: position, width: barWidth };
-  }, [release.startDate, release.endDate, viewMode, timelineLabels]);
+  }, [release.startDate, release.endDate, viewMode, timelineLabels, release.updatedAt]);
 
   const handleMouseDown = (e: React.MouseEvent, action: 'drag' | 'resize') => {
     e.preventDefault();
