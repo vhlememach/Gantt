@@ -101,6 +101,7 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
     const duration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
     
     // Calculate position and width based on dates and view mode
+    // Calculate timeline position and duration based on view mode
     
     let position = 0;
     let barWidth = 8;
@@ -120,23 +121,36 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
       
       if (startQuarterIndex >= 0) {
         const quarterWidth = 100 / timelineLabels.length;
-        position = (startQuarterIndex / timelineLabels.length) * 100;
         
-        // Add offset within the start quarter based on month
-        const monthInQuarter = startDate.getMonth() % 3; // 0-2
-        const monthOffset = (monthInQuarter / 3) * quarterWidth;
-        position += monthOffset;
+        // Calculate precise position within quarter based on day of year
+        const quarterStartMonth = startQuarterIndex * 3; // 0, 3, 6, 9
+        const quarterStartDate = new Date(startYear, quarterStartMonth, 1);
+        const quarterEndDate = new Date(startYear, quarterStartMonth + 3, 0); // Last day of quarter
+        const quarterDuration = quarterEndDate.getTime() - quarterStartDate.getTime();
+        
+        // Position within quarter based on actual dates
+        const daysSinceQuarterStart = (startDate.getTime() - quarterStartDate.getTime()) / (1000 * 60 * 60 * 24);
+        const quarterTotalDays = quarterDuration / (1000 * 60 * 60 * 24);
+        const offsetWithinQuarter = (daysSinceQuarterStart / quarterTotalDays) * quarterWidth;
+        
+        position = (startQuarterIndex / timelineLabels.length) * 100 + offsetWithinQuarter;
         
         if (endQuarterIndex >= 0) {
-          // Calculate end position
-          const endQuarterPosition = ((endQuarterIndex + 1) / timelineLabels.length) * 100; // +1 to include end quarter
-          const endMonthInQuarter = endDate.getMonth() % 3; // 0-2
-          const endMonthOffset = ((endMonthInQuarter + 1) / 3) * quarterWidth;
-          const endPosition = endQuarterPosition - quarterWidth + endMonthOffset;
+          // Calculate end position with same precision
+          const endQuarterStartMonth = endQuarterIndex * 3;
+          const endQuarterStartDate = new Date(endYear, endQuarterStartMonth, 1);
+          const endQuarterEndDate = new Date(endYear, endQuarterStartMonth + 3, 0);
+          const endQuarterDuration = endQuarterEndDate.getTime() - endQuarterStartDate.getTime();
           
-          barWidth = Math.max(8, endPosition - position);
+          const daysSinceEndQuarterStart = (endDate.getTime() - endQuarterStartDate.getTime()) / (1000 * 60 * 60 * 24);
+          const endQuarterTotalDays = endQuarterDuration / (1000 * 60 * 60 * 24);
+          const endOffsetWithinQuarter = (daysSinceEndQuarterStart / endQuarterTotalDays) * quarterWidth;
+          
+          const endPosition = (endQuarterIndex / timelineLabels.length) * 100 + endOffsetWithinQuarter;
+          
+          barWidth = Math.max(1, endPosition - position);
         } else {
-          barWidth = Math.max(8, quarterWidth);
+          barWidth = Math.max(1, quarterWidth * 0.1); // Minimum visible width
         }
       }
     } else if (viewMode === "Months") {
@@ -193,6 +207,8 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
       const endPosition = Math.min(100, (endWeek / 52) * 100);
       barWidth = Math.max(4, endPosition - position);
     }
+    
+    // Timeline calculation complete
     
     // Return calculated position and width
     
@@ -286,9 +302,9 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
           top: '50%',
           transform: 'translateY(-50%)',
           background: group.color,
-          minWidth: viewMode === "Quarters" && width < 15 ? '80px' : 
-                     viewMode === "Months" && width < 8 ? '60px' : 
-                     viewMode === "Weeks" && width < 4 ? '40px' : 'auto',
+          minWidth: viewMode === "Quarters" && width < 5 ? '60px' : 
+                     viewMode === "Months" && width < 3 ? '40px' : 
+                     viewMode === "Weeks" && width < 2 ? '30px' : 'auto',
           outline: release.highPriority ? `2px solid #dc2626` : 'none',
           outlineOffset: release.highPriority ? '2px' : '0'
         }}
