@@ -791,10 +791,7 @@ export default function ChecklistPage() {
                       const isHighPriority = box?.highPriority || false;
                       
                       return (
-                        <Card 
-                          key={box.id}
-                          className={isHighPriority ? 'bg-red-50 dark:bg-red-900/10 ring-2 ring-red-400 ring-opacity-60' : ''}
-                        >
+                        <Card key={box.id}>
                           <CardHeader>
                             <CardTitle>
                               {/* Evergreen Box Title */}
@@ -860,6 +857,8 @@ export default function ChecklistPage() {
                                       ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800' 
                                       : task.paused
                                       ? 'bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800'
+                                      : (isHighPriority && !task.completed)
+                                      ? 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'
                                       : 'bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700'
                                   }`}
                                 >
