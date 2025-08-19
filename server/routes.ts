@@ -250,31 +250,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/checklist-tasks", async (req, res) => {
     try {
       const validatedData = insertChecklistTaskSchema.parse(req.body);
-      
-      // Handle "general" release ID by creating/finding a special General Tasks release
-      if (validatedData.releaseId === 'general') {
-        let generalRelease = await storage.getGeneralTasksRelease();
-        if (!generalRelease) {
-          // Create the General Tasks release if it doesn't exist
-          const firstGroup = await storage.getReleaseGroups();
-          generalRelease = await storage.createRelease({
-            name: "General Tasks",
-            description: "General tasks not tied to specific projects",
-            url: "",
-            groupId: firstGroup[0]?.id || "",
-            startDate: new Date().toISOString(),
-            endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 year from now
-            icon: "lucide-clipboard",
-            accountablePerson: "",
-            responsible: "",
-            status: "in-progress",
-            highPriority: false,
-            waterfallCycleId: null
-          });
-        }
-        validatedData.releaseId = generalRelease.id;
-      }
-      
       const newTask = await storage.createChecklistTask(validatedData);
       res.status(201).json(newTask);
     } catch (error) {

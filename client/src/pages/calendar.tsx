@@ -87,6 +87,7 @@ export default function CalendarPage() {
   const [taskSocialMediaUrls, setTaskSocialMediaUrls] = useState<Map<string, string>>(new Map());
   const [taskSocialMediaTimes, setTaskSocialMediaTimes] = useState<Map<string, string>>(new Map());
   const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [editingDivider, setEditingDivider] = useState<{dateKey: string, index: number, divider: any} | null>(null);
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -803,8 +804,49 @@ export default function CalendarPage() {
                           ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-400' 
                           : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
                     } ${draggedTask ? 'hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-400' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, day)}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      handleDragOver(e);
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      
+                      // Handle divider drops
+                      const dividerData = e.dataTransfer.getData('divider');
+                      if (dividerData) {
+                        try {
+                          const { divider, sourceDate, index } = JSON.parse(dividerData);
+                          const targetDate = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                          
+                          // Only move if different dates
+                          if (sourceDate !== targetDate) {
+                            // Remove from source
+                            const newDividers = new Map(customDividers);
+                            const sourceDividers = newDividers.get(sourceDate) || [];
+                            sourceDividers.splice(index, 1);
+                            if (sourceDividers.length === 0) {
+                              newDividers.delete(sourceDate);
+                            } else {
+                              newDividers.set(sourceDate, sourceDividers);
+                            }
+                            
+                            // Add to target
+                            const targetDividers = newDividers.get(targetDate) || [];
+                            targetDividers.push(divider);
+                            newDividers.set(targetDate, targetDividers);
+                            
+                            setCustomDividers(newDividers);
+                            toast({ title: "Divider moved successfully" });
+                          }
+                        } catch (error) {
+                          console.error('Error moving divider:', error);
+                        }
+                        return;
+                      }
+                      
+                      // Handle task drops
+                      handleDrop(e, day);
+                    }}
                   >
                     <div className="cell-header flex items-center justify-between mb-2">
                       <span className={`text-sm font-medium ${
@@ -833,29 +875,49 @@ export default function CalendarPage() {
                     {customDividers.get(dateKey)?.map((divider, index) => (
                       <div 
                         key={index}
-                        className="text-xs font-medium px-2 py-1 rounded text-white opacity-90 mb-1 flex items-center justify-between group"
+                        draggable={true}
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData('divider', JSON.stringify({
+                            divider,
+                            sourceDate: dateKey,
+                            index
+                          }));
+                        }}
+                        className="text-xs font-medium px-2 py-1 rounded text-white opacity-90 mb-1 flex items-center justify-between group cursor-move hover:opacity-100 transition-opacity"
                         style={{ backgroundColor: divider.color }}
                       >
                         <div className="flex items-center">
                           <i className={`${divider.icon} mr-1`}></i>
                           {divider.name}
                         </div>
-                        <button
-                          className="w-4 h-4 rounded border border-white/30 hover:bg-white/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity ml-2"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const newDividers = new Map(customDividers);
-                            const existingDividers = newDividers.get(dateKey) || [];
-                            newDividers.set(dateKey, existingDividers.filter((_, i) => i !== index));
-                            if (newDividers.get(dateKey)?.length === 0) {
-                              newDividers.delete(dateKey);
-                            }
-                            setCustomDividers(newDividers);
-                          }}
-                          title="Delete divider"
-                        >
-                          <i className="fas fa-times text-xs"></i>
-                        </button>
+                        <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            className="w-4 h-4 rounded border border-white/30 hover:bg-white/20 flex items-center justify-center mr-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingDivider({ dateKey, index, divider });
+                            }}
+                            title="Edit divider"
+                          >
+                            <i className="fas fa-edit text-xs"></i>
+                          </button>
+                          <button
+                            className="w-4 h-4 rounded border border-white/30 hover:bg-white/20 flex items-center justify-center"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const newDividers = new Map(customDividers);
+                              const existingDividers = newDividers.get(dateKey) || [];
+                              newDividers.set(dateKey, existingDividers.filter((_, i) => i !== index));
+                              if (newDividers.get(dateKey)?.length === 0) {
+                                newDividers.delete(dateKey);
+                              }
+                              setCustomDividers(newDividers);
+                            }}
+                            title="Delete divider"
+                          >
+                            <i className="fas fa-times text-xs"></i>
+                          </button>
+                        </div>
                       </div>
                     ))}
 
@@ -1061,17 +1123,18 @@ export default function CalendarPage() {
       </div>
 
       {/* Custom Divider Modal */}
-      {showCustomDividerModal && (
+      {(showCustomDividerModal || editingDivider) && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-96">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Add Custom Divider
+                {editingDivider ? 'Edit Custom Divider' : 'Add Custom Divider'}
               </h3>
               <button
                 className="w-6 h-6 rounded border border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center"
                 onClick={() => {
                   setShowCustomDividerModal(null);
+                  setEditingDivider(null);
                   setDividerName('');
                   setSelectedColor('#3B82F6');
                   setSelectedIcon('fas fa-bookmark');
@@ -1087,8 +1150,11 @@ export default function CalendarPage() {
                 </label>
                 <input
                   type="text"
-                  value={dividerName}
-                  onChange={(e) => setDividerName(e.target.value)}
+                  value={editingDivider ? editingDivider.divider.name : dividerName}
+                  onChange={(e) => editingDivider ? 
+                    setEditingDivider({...editingDivider, divider: {...editingDivider.divider, name: e.target.value}}) : 
+                    setDividerName(e.target.value)
+                  }
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white bg-white dark:bg-gray-700"
                   placeholder="Enter divider name"
                 />
@@ -1105,7 +1171,10 @@ export default function CalendarPage() {
                         selectedColor === color ? 'border-gray-800 dark:border-white' : 'border-gray-300'
                       }`}
                       style={{ backgroundColor: color }}
-                      onClick={() => setSelectedColor(color)}
+                      onClick={() => editingDivider ? 
+                        setEditingDivider({...editingDivider, divider: {...editingDivider.divider, color}}) : 
+                        setSelectedColor(color)
+                      }
                     />
                   ))}
                 </div>
@@ -1123,7 +1192,10 @@ export default function CalendarPage() {
                           ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
                           : 'border-gray-300 dark:border-gray-600'
                       }`}
-                      onClick={() => setSelectedIcon(icon)}
+                      onClick={() => editingDivider ? 
+                        setEditingDivider({...editingDivider, divider: {...editingDivider.divider, icon}}) : 
+                        setSelectedIcon(icon)
+                      }
                     >
                       <i className={`${icon} text-gray-600 dark:text-gray-400`}></i>
                     </button>
@@ -1166,38 +1238,52 @@ export default function CalendarPage() {
             <div className="flex justify-end space-x-3 mt-6">
               <Button
                 variant="outline"
-                onClick={() => setShowCustomDividerModal(null)}
+                onClick={() => {
+                  setShowCustomDividerModal(null);
+                  setEditingDivider(null);
+                  setDividerName('');
+                  setSelectedColor('#3B82F6');
+                  setSelectedIcon('fas fa-star');
+                }}
               >
                 Cancel
               </Button>
               <Button
                 onClick={() => {
-                  if (showCustomDividerModal) {
+                  const name = editingDivider ? editingDivider.divider.name : dividerName;
+                  const color = editingDivider ? editingDivider.divider.color : selectedColor;
+                  const icon = editingDivider ? editingDivider.divider.icon : selectedIcon;
+                  
+                  if (!name.trim()) return;
+                  
+                  if (editingDivider) {
+                    // Edit existing divider
+                    const newDividers = new Map(customDividers);
+                    const existingDividers = newDividers.get(editingDivider.dateKey) || [];
+                    existingDividers[editingDivider.index] = { name, color, icon };
+                    newDividers.set(editingDivider.dateKey, existingDividers);
+                    setCustomDividers(newDividers);
+                    setEditingDivider(null);
+                  } else if (showCustomDividerModal) {
+                    // Add new divider
                     const { day, month, year } = showCustomDividerModal;
                     const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                     
-                    // Only add divider if name is provided
-                    if (dividerName.trim()) {
-                      const newDividers = new Map(customDividers);
-                      const existingDividers = newDividers.get(dateKey) || [];
-                      existingDividers.push({
-                        name: dividerName.trim(),
-                        color: selectedColor,
-                        icon: selectedIcon
-                      });
-                      newDividers.set(dateKey, existingDividers);
-                      setCustomDividers(newDividers);
-                    }
-                    
-                    // Reset form and close modal
-                    setDividerName('');
-                    setSelectedColor('#3B82F6');
-                    setSelectedIcon('fas fa-star');
+                    const newDividers = new Map(customDividers);
+                    const existingDividers = newDividers.get(dateKey) || [];
+                    existingDividers.push({ name, color, icon });
+                    newDividers.set(dateKey, existingDividers);
+                    setCustomDividers(newDividers);
                     setShowCustomDividerModal(null);
                   }
+                  
+                  // Reset form
+                  setDividerName('');
+                  setSelectedColor('#3B82F6');
+                  setSelectedIcon('fas fa-star');
                 }}
               >
-                Save
+                {editingDivider ? 'Update Divider' : 'Save'}
               </Button>
             </div>
           </div>

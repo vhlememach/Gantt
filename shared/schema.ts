@@ -105,7 +105,6 @@ export const checklistTasks = pgTable("checklist_tasks", {
   reviewChanges: text("review_changes"), // Changes requested for review
   reviewSubmissionUrl: text("review_submission_url"), // URL submitted by team member for review
   createdAt: timestamp("created_at").defaultNow(),
-  completedAt: timestamp("completed_at"),
 });
 
 export const insertReleaseGroupSchema = createInsertSchema(releaseGroups).omit({
@@ -116,10 +115,11 @@ export const insertReleaseGroupSchema = createInsertSchema(releaseGroups).omit({
 export const insertReleaseSchema = createInsertSchema(releases).omit({
   id: true,
   createdAt: true,
+  updatedAt: true,
 }).extend({
   startDate: z.string().or(z.date()).transform((val) => new Date(val)),
   endDate: z.string().or(z.date()).transform((val) => new Date(val)),
-  waterfallCycleId: z.string().optional().transform((val) => val === "" || val === undefined ? null : val),
+  waterfallCycleId: z.string().nullable().optional().transform((val) => val === "" || val === undefined || val === null ? null : val),
 });
 
 export const insertAppSettingsSchema = createInsertSchema(appSettings).omit({

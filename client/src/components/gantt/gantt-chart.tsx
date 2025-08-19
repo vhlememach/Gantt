@@ -674,14 +674,43 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
                                     }
                                   }
                                 } else if (viewMode === "Weeks") {
-                                  // Weeks view: position based on week of year
-                                  const startOfYear = new Date(startDate.getFullYear(), 0, 1);
-                                  const startWeek = Math.floor((startDate.getTime() - startOfYear.getTime()) / (7 * 24 * 60 * 60 * 1000));
-                                  const endWeek = Math.floor((endDate.getTime() - startOfYear.getTime()) / (7 * 24 * 60 * 60 * 1000));
+                                  // Weeks view: improved week calculation using ISO week standard
+                                  const getWeekOfYear = (date: Date) => {
+                                    const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+                                    const pastDaysOfYear = (date.getTime() - firstDayOfYear.getTime()) / 86400000;
+                                    return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+                                  };
                                   
-                                  position = Math.min(95, (startWeek / 52) * 100); // Max 95% to prevent overflow
-                                  const endPosition = Math.min(100, (endWeek / 52) * 100);
-                                  barWidth = Math.max(4, endPosition - position);
+                                  const startWeek = getWeekOfYear(startDate);
+                                  const endWeek = getWeekOfYear(endDate);
+                                  
+                                  // Find matching weeks in timeline labels
+                                  const startWeekIndex = timelineData.labels.findIndex(label => {
+                                    const weekMatch = label.match(/Week (\d+)/);
+                                    return weekMatch && parseInt(weekMatch[1]) === startWeek;
+                                  });
+                                  
+                                  const endWeekIndex = timelineData.labels.findIndex(label => {
+                                    const weekMatch = label.match(/Week (\d+)/);
+                                    return weekMatch && parseInt(weekMatch[1]) === endWeek;
+                                  });
+                                  
+                                  if (startWeekIndex >= 0) {
+                                    const weekWidth = 100 / timelineData.labels.length;
+                                    position = (startWeekIndex / timelineData.labels.length) * 100;
+                                    
+                                    if (endWeekIndex >= 0) {
+                                      const endPosition = ((endWeekIndex + 1) / timelineData.labels.length) * 100;
+                                      barWidth = Math.max(4, endPosition - position);
+                                    } else {
+                                      barWidth = Math.max(4, weekWidth);
+                                    }
+                                  } else {
+                                    // Fallback calculation
+                                    position = Math.min(95, (startWeek / 52) * 100);
+                                    const endPosition = Math.min(100, (endWeek / 52) * 100);
+                                    barWidth = Math.max(4, endPosition - position);
+                                  }
                                 }
                                 
                                 return { leftPosition: position, width: barWidth };

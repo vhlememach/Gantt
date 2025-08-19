@@ -151,7 +151,7 @@ export class DatabaseStorage implements IStorage {
     return (result.rowCount || 0) > 0;
   }
 
-  // Helper method to get or create General Tasks release
+  // Helper method to get General Tasks release
   async getGeneralTasksRelease(): Promise<Release | undefined> {
     const [generalRelease] = await db.select().from(releases).where(eq(releases.name, "General Tasks"));
     return generalRelease || undefined;
@@ -163,7 +163,7 @@ export class DatabaseStorage implements IStorage {
     if (!settings) {
       // Create default settings if none exist
       const defaultSettings = {
-        headerTitle: "Release Gantt Chart",
+        headerTitle: "Palmyra Marketing",
         headerBackgroundColor: "#3B82F6",
         headerTitleColor: "#FFFFFF",
         fontFamily: "Inter",
@@ -210,14 +210,37 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createChecklistTask(task: InsertChecklistTask): Promise<ChecklistTask> {
-    // Convert empty strings to null for foreign key fields and handle timestamps
+    // Handle General Tasks by creating the release if needed
+    let finalReleaseId = task.releaseId;
+    if (task.releaseId === "general") {
+      let generalRelease = await this.getGeneralTasksRelease();
+      if (!generalRelease) {
+        // Create General Tasks release if it doesn't exist
+        const generalReleaseData: InsertRelease = {
+          name: "General Tasks",
+          description: "General administrative and miscellaneous tasks",
+          url: "",
+          groupId: (await this.getReleaseGroups())[0]?.id || "",
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
+          icon: "lucide-list",
+          accountablePerson: "",
+          responsible: "",
+          status: "ongoing",
+          highPriority: false,
+          waterfallCycleId: null
+        };
+        generalRelease = await this.createRelease(generalReleaseData);
+      }
+      finalReleaseId = generalRelease.id;
+    }
+
+    // Convert empty strings to null for foreign key fields  
     const cleanedTask = {
       ...task,
-      releaseId: task.releaseId === "" || task.releaseId === null ? null : task.releaseId,
+      releaseId: finalReleaseId === "" || finalReleaseId === null ? null : finalReleaseId,
       evergreenBoxId: task.evergreenBoxId === "" || task.evergreenBoxId === null ? null : task.evergreenBoxId,
       waterfallCycleId: task.waterfallCycleId === "" || task.waterfallCycleId === null ? null : task.waterfallCycleId,
-      // Ensure completedAt is properly handled
-      completedAt: task.completed ? new Date() : null
     };
     const [newTask] = await db.insert(checklistTasks).values(cleanedTask).returning();
     return newTask;
