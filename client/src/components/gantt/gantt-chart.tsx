@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TimelineBar from "./timeline-bar.tsx";
+import { TimelineCacheBuster } from "./timeline-cache-buster";
 import type { ReleaseGroup, Release } from "@shared/schema";
 
 interface GanttChartProps {
@@ -39,6 +40,9 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
   
   const { data: groups = [] } = useQuery<ReleaseGroup[]>({
     queryKey: ["/api/release-groups"],
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    staleTime: 0,
   });
 
   const { data: releases = [], refetch: refetchReleases } = useQuery<Release[]>({
@@ -50,10 +54,16 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
 
   const { data: allTasks = [] } = useQuery({
     queryKey: ["/api/checklist-tasks"],
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    staleTime: 0,
   });
 
   const { data: settings } = useQuery({
     queryKey: ["/api/settings"],
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    staleTime: 0,
   });
   
   // Calculate dynamic sidebar width based on longest title
@@ -352,6 +362,7 @@ export default function GanttChart({ zoomLevel, viewMode, viewType, onReleaseEdi
 
   return (
     <div className="h-full">
+      <TimelineCacheBuster />
       {/* Header Row */}
       <div className="grid h-16" style={{ gridTemplateColumns: `${sidebarWidth}px 1fr` }}>
         {/* Sidebar Header */}

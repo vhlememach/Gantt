@@ -101,11 +101,23 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
     const endDate = new Date(release.endDate);
     const duration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
     
-    // Timeline calculations optimized for cross-period accuracy
+    // Debug logging for new tab cache issue
+    if (release.name.includes("Kaley Tea") || release.name.includes("NN Honey")) {
+      console.log(`[${release.name}] NEW TAB DEBUG:`, {
+        startDate: release.startDate,
+        endDate: release.endDate,
+        parsedStart: startDate.toISOString(),
+        parsedEnd: endDate.toISOString(),
+        viewMode,
+        timelineLabels,
+        releaseId: release.id,
+        updatedAt: release.updatedAt,
+        tabLoadTime: window.performance.now(),
+        userAgent: navigator.userAgent.substring(0, 50)
+      });
+    }
     
     // Calculate position and width based on dates and view mode
-    // Calculate timeline position and duration based on view mode
-    // Timeline calculations optimized for cross-period accuracy
     
     let position = 0;
     let barWidth = 8;
@@ -254,11 +266,22 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
       barWidth = Math.max(1, endPosition - position);
     }
     
-    // Timeline calculation complete
+    // Debug final result for new tab comparison
+    if (release.name.includes("Kaley Tea") || release.name.includes("NN Honey")) {
+      console.log(`[${release.name}] FINAL RESULT:`, {
+        position: position,
+        barWidth: barWidth,
+        expectedEnd: position + barWidth,
+        viewMode,
+        timelineLabels: timelineLabels.join(', '),
+        tabTimestamp: Date.now(),
+        releaseUpdated: release.updatedAt
+      });
+    }
     
     // Return calculated position and width
     return { leftPosition: position, width: barWidth };
-  }, [release.startDate, release.endDate, viewMode, timelineLabels, release.updatedAt, JSON.stringify(timelineLabels), release.id]);
+  }, [release.startDate, release.endDate, viewMode, timelineLabels, release.updatedAt, JSON.stringify(timelineLabels), release.id, window.location.href]);
 
   const handleMouseDown = (e: React.MouseEvent, action: 'drag' | 'resize') => {
     e.preventDefault();
@@ -334,12 +357,63 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
     }
   }, [isDragging, isResizing, startX, originalDates]);
 
-  // Return the timeline bar component
+  // Force DOM update for consistent rendering across tabs
+  useEffect(() => {
+    if (barRef.current) {
+      // Force style recalculation to prevent new tab cache issues
+      const element = barRef.current;
+      
+      // Multiple techniques to force fresh rendering
+      element.style.left = `${leftPosition}%`;
+      element.style.width = `${width}%`;
+      
+      // Force immediate style recalculation
+      element.style.transform = 'translateY(-50%) translateZ(0)';
+      element.offsetHeight; // Force reflow
+      
+      // Additional cache-busting for new tabs
+      element.style.opacity = '0.999';
+      element.offsetWidth; // Another reflow
+      element.style.opacity = '1';
+      
+      if (release.name.includes("Kaley Tea") || release.name.includes("NN Honey")) {
+        console.log(`[${release.name}] DOM FORCE UPDATE:`, {
+          elementLeft: element.style.left,
+          elementWidth: element.style.width,
+          calculatedLeft: leftPosition,
+          calculatedWidth: width,
+          timestamp: Date.now(),
+          tabSession: window.performance.navigation?.type || 'unknown'
+        });
+      }
+    }
+  }, [leftPosition, width, release.updatedAt, release.id]);
 
+  // Additional effect for new tab detection and fix
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && barRef.current) {
+        // Force complete recalculation when tab becomes visible
+        setTimeout(() => {
+          if (barRef.current) {
+            barRef.current.style.left = `${leftPosition}%`;
+            barRef.current.style.width = `${width}%`;
+            barRef.current.offsetHeight;
+          }
+        }, 100);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [leftPosition, width]);
+
+  // Return the timeline bar component
   return (
     <div className="relative w-full h-full"> {/* Full width container */}
       <div
         ref={barRef}
+        id={`timeline-bar-${release.id}`}
         className={`absolute ${viewType === "Condensed" ? "h-8" : "h-10"} rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all duration-200`}
         style={{
           left: `${leftPosition}%`,
@@ -351,7 +425,8 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
                      viewMode === "Months" && width < 3 ? '40px' : 
                      viewMode === "Weeks" && width < 2 ? '30px' : 'auto',
           outline: release.highPriority ? `2px solid #dc2626` : 'none',
-          outlineOffset: release.highPriority ? '2px' : '0'
+          outlineOffset: release.highPriority ? '2px' : '0',
+          willChange: 'transform, left, width', // Optimize for changes
         }}
         onClick={(e) => {
           console.log('Timeline bar clicked:', release.id);
