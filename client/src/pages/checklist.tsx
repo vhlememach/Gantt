@@ -101,8 +101,10 @@ export default function ChecklistPage() {
     let groupId;
     if (task.evergreenBoxId) {
       groupId = 'evergreen';
+    } else if (!task.releaseId) {
+      groupId = 'general'; // Tasks with no releaseId go to general section
     } else {
-      groupId = task.releaseId || 'unassigned';
+      groupId = task.releaseId;
     }
     if (!acc[groupId]) {
       acc[groupId] = [];
@@ -329,8 +331,7 @@ export default function ChecklistPage() {
         priority: isTaskHighPriority(task),
         completed: task.completed,
         release: releases.find(r => r.id === task.releaseId)?.name || 'Unknown',
-        createdAt: task.createdAt,
-        completedAt: task.completedAt
+        createdAt: task.createdAt
       }))
     };
     
