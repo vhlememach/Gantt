@@ -776,7 +776,7 @@ export default function ChecklistPage() {
 
                 {/* Column 2: Evergreen and General */}
                 <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b pb-2">Other Tasks</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b pb-2">Evergreen Tasks</h3>
                   
                   {/* Evergreen Content with High Priority Support */}
                   {evergreenBoxes

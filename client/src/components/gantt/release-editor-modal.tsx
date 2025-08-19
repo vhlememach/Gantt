@@ -249,45 +249,48 @@ export default function ReleaseEditorModal({ isOpen, onClose, releaseId }: Relea
       queryClient.invalidateQueries({ queryKey: ["/api/releases", releaseId] });
       queryClient.refetchQueries({ queryKey: ["/api/releases"] });
       
-      // Only clean up AUTO-GENERATED waterfall cycle tasks to prevent duplicates
-      // Keep manually created tasks intact
-      if (updatedRelease.waterfallCycleId) {
-        try {
-          console.log("Cleaning up existing waterfall tasks for release update...");
-          const tasksResponse = await fetch("/api/checklist-tasks");
-          const allTasks = await tasksResponse.json();
-          
-          // Only delete tasks that were auto-generated from waterfall cycles
-          // These tasks have specific naming patterns like "Cycle Name > Nx Format"
-          const waterfallTasks = allTasks.filter((task: any) => 
-            task.releaseId === updatedRelease.id && 
-            task.taskTitle && 
-            task.taskTitle.includes(" > ") && 
-            task.taskTitle.includes("x ")
-          );
-          
-          console.log("Waterfall tasks to delete for release update:", waterfallTasks.length);
-          
-          for (const task of waterfallTasks) {
-            try {
-              await fetch(`/api/checklist-tasks/${task.id}`, { method: "DELETE" });
-              console.log(`Deleted waterfall task ${task.id}: ${task.taskTitle}`);
-            } catch (deleteError) {
-              console.error(`Failed to delete task ${task.id}:`, deleteError);
-            }
+      // ALWAYS clean up waterfall cycle tasks when updating a release
+      // This handles both cycle assignment and cycle removal
+      try {
+        console.log("Cleaning up existing waterfall tasks for release update...");
+        const tasksResponse = await fetch("/api/checklist-tasks");
+        const allTasks = await tasksResponse.json();
+        
+        // Delete ALL tasks that were auto-generated from waterfall cycles for this release
+        // These tasks have specific characteristics: waterfallCycleId OR contentFormatType OR specific naming patterns
+        const waterfallTasks = allTasks.filter((task: any) => 
+          task.releaseId === updatedRelease.id && (
+            task.waterfallCycleId || 
+            task.contentFormatType ||
+            (task.taskTitle && 
+             task.taskTitle.includes(" > ") && 
+             task.taskTitle.includes("x "))
+          )
+        );
+        
+        console.log("Waterfall tasks to delete for release update:", waterfallTasks.length);
+        
+        for (const task of waterfallTasks) {
+          try {
+            await fetch(`/api/checklist-tasks/${task.id}`, { method: "DELETE" });
+            console.log(`Deleted waterfall task ${task.id}: ${task.taskTitle}`);
+          } catch (deleteError) {
+            console.error(`Failed to delete task ${task.id}:`, deleteError);
           }
-          
-          // Wait for deletions to process
-          await new Promise(resolve => setTimeout(resolve, 100));
-        } catch (error) {
-          console.error("Failed to cleanup waterfall tasks:", error);
         }
+        
+        // Wait for deletions to process
+        await new Promise(resolve => setTimeout(resolve, 200));
+      } catch (error) {
+        console.error("Failed to cleanup waterfall tasks:", error);
       }
       
-      // Generate tasks if waterfall cycle is assigned
-      if (updatedRelease.waterfallCycleId) {
+      // Generate tasks ONLY if waterfall cycle is assigned (not null/empty)
+      if (updatedRelease.waterfallCycleId && updatedRelease.waterfallCycleId !== "") {
         console.log("Generating waterfall tasks for release update...");
         await generateWaterfallTasks(updatedRelease.id, updatedRelease.waterfallCycleId, updatedRelease.name);
+      } else {
+        console.log("No waterfall cycle assigned - tasks cleaned up successfully");
       }
       
       queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
