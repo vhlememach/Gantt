@@ -82,7 +82,9 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
       return response.json();
     },
     onSuccess: () => {
+      // Force immediate refetch of releases data
       queryClient.invalidateQueries({ queryKey: ["/api/releases"] });
+      queryClient.refetchQueries({ queryKey: ["/api/releases"] });
       toast({ title: "Release updated successfully" });
     },
     onError: (error) => {
@@ -97,6 +99,14 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
     const startDate = new Date(release.startDate);
     const endDate = new Date(release.endDate);
     const duration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    console.log(`Timeline bar for ${release.name}:`, {
+      startDate: release.startDate,
+      endDate: release.endDate,
+      leftPosition: 0,
+      width: 0,
+      releaseId: release.id
+    });
     
     let position = 0;
     let barWidth = 8;
@@ -190,6 +200,15 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
       barWidth = Math.max(4, endPosition - position);
     }
     
+    console.log(`Timeline bar calculation for ${release.name}:`, {
+      startDate: release.startDate,
+      endDate: release.endDate,
+      leftPosition: position,
+      width: barWidth,
+      viewMode,
+      timelineLabelsLength: timelineLabels.length
+    });
+    
     return { leftPosition: position, width: barWidth };
   }, [release.startDate, release.endDate, viewMode, timelineLabels]);
 
@@ -267,14 +286,7 @@ export default function TimelineBar({ release, group, onEdit, viewMode, viewType
     }
   }, [isDragging, isResizing, startX, originalDates]);
 
-  // Debug logging for timeline bars
-  console.log(`Timeline bar for ${release.name}:`, {
-    startDate: release.startDate,
-    endDate: release.endDate,
-    leftPosition,
-    width,
-    releaseId: release.id
-  });
+  // Return the timeline bar component
 
   return (
     <div className="relative w-full h-full"> {/* Full width container */}
