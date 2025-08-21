@@ -510,7 +510,7 @@ export default function ChecklistPage() {
                             setSelectedReleaseId(""); // Clear release selection
                           }}
                         >
-                          <option value="">Or Select Evergreen Content...</option>
+                          <option value="">Select Evergreen...</option>
                           {evergreenBoxes.map(box => (
                             <option key={box.id} value={box.id}>
                               {box.title}
