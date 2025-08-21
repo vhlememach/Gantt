@@ -26,6 +26,7 @@ export default function ChecklistPage() {
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskUrl, setNewTaskUrl] = useState("");
   const [selectedReleaseId, setSelectedReleaseId] = useState("");
+  const [selectedEvergreenBoxId, setSelectedEvergreenBoxId] = useState("");
   const [sortBy, setSortBy] = useState<Record<string, SortOption>>({});
   const [blockerModalOpen, setBlockerModalOpen] = useState(false);
   const [selectedTaskForBlocker, setSelectedTaskForBlocker] = useState<string | null>(null);
@@ -186,7 +187,13 @@ export default function ChecklistPage() {
 
   // Create new task
   const createTaskMutation = useMutation({
-    mutationFn: async (taskData: { releaseId: string, assignedTo: string, taskTitle: string, taskUrl?: string }) => {
+    mutationFn: async (taskData: { 
+      releaseId?: string, 
+      evergreenBoxId?: string,
+      assignedTo: string, 
+      taskTitle: string, 
+      taskUrl?: string 
+    }) => {
       return apiRequest('POST', '/api/checklist-tasks', taskData);
     },
     onSuccess: () => {
@@ -194,6 +201,11 @@ export default function ChecklistPage() {
       setNewTaskTitle("");
       setNewTaskUrl("");
       setSelectedReleaseId("");
+      setSelectedEvergreenBoxId("");
+      toast({
+        title: "Task created",
+        description: "Task has been successfully created and stored in database.",
+      });
     }
   });
 
@@ -275,13 +287,22 @@ export default function ChecklistPage() {
   };
 
   const handleCreateTask = () => {
-    if (newTaskTitle && selectedReleaseId) {
-      createTaskMutation.mutate({
-        releaseId: selectedReleaseId === 'general' ? 'general' : selectedReleaseId,
+    if (newTaskTitle && (selectedReleaseId || selectedEvergreenBoxId)) {
+      const taskData: any = {
         assignedTo: selectedMember,
         taskTitle: newTaskTitle,
         taskUrl: newTaskUrl || undefined
-      });
+      };
+
+      if (selectedEvergreenBoxId) {
+        // Creating an Evergreen task
+        taskData.evergreenBoxId = selectedEvergreenBoxId;
+      } else {
+        // Creating a regular release task or general task
+        taskData.releaseId = selectedReleaseId === 'general' ? 'general' : selectedReleaseId;
+      }
+
+      createTaskMutation.mutate(taskData);
     }
   };
 
@@ -466,13 +487,33 @@ export default function ChecklistPage() {
                         <select 
                           className="w-full px-3 py-2 border border-gray-300 rounded-md"
                           value={selectedReleaseId}
-                          onChange={(e) => setSelectedReleaseId(e.target.value)}
+                          onChange={(e) => {
+                            setSelectedReleaseId(e.target.value);
+                            setSelectedEvergreenBoxId(""); // Clear evergreen selection
+                          }}
                         >
                           <option value="">Select Project...</option>
                           <option value="general">General Tasks</option>
                           {releases.map(release => (
                             <option key={release.id} value={release.id}>
                               {release.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="w-64">
+                        <select 
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                          value={selectedEvergreenBoxId}
+                          onChange={(e) => {
+                            setSelectedEvergreenBoxId(e.target.value);
+                            setSelectedReleaseId(""); // Clear release selection
+                          }}
+                        >
+                          <option value="">Or Select Evergreen Content...</option>
+                          {evergreenBoxes.map(box => (
+                            <option key={box.id} value={box.id}>
+                              {box.title}
                             </option>
                           ))}
                         </select>
@@ -488,9 +529,16 @@ export default function ChecklistPage() {
                       </div>
                       <Button 
                         onClick={handleCreateTask}
-                        disabled={!newTaskTitle || !selectedReleaseId || createTaskMutation.isPending}
+                        disabled={!newTaskTitle || (!selectedReleaseId && !selectedEvergreenBoxId) || createTaskMutation.isPending}
                       >
-                        Add Task
+                        {createTaskMutation.isPending ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Creating...
+                          </>
+                        ) : (
+                          'Add Task'
+                        )}
                       </Button>
                     </div>
                   </div>

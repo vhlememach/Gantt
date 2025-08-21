@@ -152,7 +152,6 @@ export const insertTaskSocialMediaSchema = createInsertSchema(taskSocialMedia).o
 export const insertChecklistTaskSchema = createInsertSchema(checklistTasks).omit({
   id: true,
   createdAt: true,
-  completedAt: true,
 }).extend({
   waterfallCycleId: z.string().nullable().optional().transform((val) => val === "" || val === undefined || val === null ? null : val),
   releaseId: z.string().nullable().optional().transform((val) => val === "" || val === undefined || val === null ? null : val),
