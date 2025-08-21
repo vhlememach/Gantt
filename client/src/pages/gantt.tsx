@@ -299,6 +299,20 @@ export default function GanttPage() {
                 console.log("Settings imported");
               }
 
+              // CRITICAL: Restore custom dividers to localStorage
+              if (data.customDividers) {
+                console.log("Restoring custom dividers:", Object.keys(data.customDividers).length, "date entries");
+                try {
+                  localStorage.setItem('calendar-custom-dividers', JSON.stringify(data.customDividers));
+                  console.log("Custom dividers successfully restored to localStorage");
+                } catch (error) {
+                  console.error('Failed to restore custom dividers:', error);
+                  alert('Warning: Custom dividers could not be restored. Please check your browser settings.');
+                }
+              } else {
+                console.warn("No custom dividers found in import data");
+              }
+
               // Invalidate all React Query caches to force refetch
               // Note: We'll rely on the page reload to refresh data
               
@@ -349,6 +363,17 @@ export default function GanttPage() {
           fetch('/api/task-social-media')
         ]);
 
+        // Include custom dividers from localStorage
+        let customDividers = {};
+        try {
+          const savedDividers = localStorage.getItem('calendar-custom-dividers');
+          if (savedDividers) {
+            customDividers = JSON.parse(savedDividers);
+          }
+        } catch (error) {
+          console.error('Error loading custom dividers for export:', error);
+        }
+
         const data = {
           settings,
           groups: await groupsRes.json(),
@@ -358,8 +383,9 @@ export default function GanttPage() {
           checklistTasks: await tasksRes.json(),
           contentFormatAssignments: await assignmentsRes.json(),
           taskSocialMedia: await socialMediaRes.json(),
+          customDividers, // Include custom dividers in export
           exportDate: new Date().toISOString(),
-          version: "1.1"  // Increment version for new export format
+          version: "1.2"  // Increment version for new export format with custom dividers
         };
         
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });

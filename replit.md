@@ -2,6 +2,9 @@
 
 Palmyra Marketing is a comprehensive project management platform that empowers team collaboration through intelligent task tracking, advanced visualization, and robust data persistence. The application provides a full Gantt chart interface with group organization, customizable styling, comprehensive checklist system with General tasks functionality, Calendar with drag-and-drop scheduling, Evergreen content management, and Waterfall Cycles workflow. Built as a full-stack solution with a React frontend and Express backend, it enables teams to track projects across different groups with drag-and-drop functionality, visual customization options, real-time updates, high-quality export capabilities, and seamless task management including manual General tasks addition.
 
+## Recent Critical Fix (January 21, 2025)
+Fixed critical data loss issue where custom dividers disappeared during JSON import/export. The system now properly preserves all custom calendar dividers with their important information during backup and restore operations.
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
