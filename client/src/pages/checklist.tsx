@@ -1132,7 +1132,7 @@ export default function ChecklistPage() {
                                       )}
                                     </div>
                                     <div className="flex items-center space-x-2">
-                                      {/* Wrench icon for General tasks - left of blocker */}
+                                      {/* Settings icon for General tasks - left of delete */}
                                       <Button
                                         variant="ghost"
                                         size="sm"
@@ -1145,6 +1145,21 @@ export default function ChecklistPage() {
                                         }}
                                       >
                                         <Settings className="w-3 h-3 text-gray-500" />
+                                      </Button>
+
+                                      {/* Delete icon for General tasks - next to settings icon */}
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 w-6 p-0 hover:bg-red-100 dark:hover:bg-red-900/20"
+                                        onClick={() => {
+                                          if (confirm(`Are you sure you want to delete "${task.taskTitle}"? This action cannot be undone.`)) {
+                                            deleteTaskMutation.mutate(task.id);
+                                          }
+                                        }}
+                                        disabled={deleteTaskMutation.isPending}
+                                      >
+                                        <Trash2 className="w-3 h-3 text-red-500" />
                                       </Button>
                                       
                                       {task.paused ? (
