@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://b72b7e10-3f2c-4acd-a574-d8713da435f7-00-aasni4aubc38.riker.replit.dev/api/$1"
+    }
+  ]
+}
