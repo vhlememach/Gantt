@@ -949,12 +949,17 @@ export default function CalendarPage() {
                                 {divider.name}
                               </div>
                               {(divider.mediaLink || divider.textLink) && (
-                                <div className="flex items-center space-x-2">
+                                <div className="flex flex-col space-y-1">
                                   {divider.mediaLink && (
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        window.open(divider.mediaLink, '_blank');
+                                        if (divider.mediaLink) {
+                                          const url = divider.mediaLink.startsWith('http://') || divider.mediaLink.startsWith('https://') 
+                                            ? divider.mediaLink 
+                                            : `https://${divider.mediaLink}`;
+                                          window.open(url, '_blank');
+                                        }
                                       }}
                                       className="text-xs underline hover:no-underline opacity-80 hover:opacity-100 flex items-center"
                                       title="Open Media Link"
@@ -967,7 +972,12 @@ export default function CalendarPage() {
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        window.open(divider.textLink, '_blank');
+                                        if (divider.textLink) {
+                                          const url = divider.textLink.startsWith('http://') || divider.textLink.startsWith('https://') 
+                                            ? divider.textLink 
+                                            : `https://${divider.textLink}`;
+                                          window.open(url, '_blank');
+                                        }
                                       }}
                                       className="text-xs underline hover:no-underline opacity-80 hover:opacity-100 flex items-center"
                                       title="Open Text Link"
@@ -1060,12 +1070,17 @@ export default function CalendarPage() {
                                         {divider.name}
                                       </div>
                                       {(divider.mediaLink || divider.textLink) && (
-                                        <div className="flex items-center space-x-2">
+                                        <div className="flex flex-col space-y-1">
                                           {divider.mediaLink && (
                                             <button
                                               onClick={(e) => {
                                                 e.stopPropagation();
-                                                window.open(divider.mediaLink, '_blank');
+                                                if (divider.mediaLink) {
+                                                  const url = divider.mediaLink.startsWith('http://') || divider.mediaLink.startsWith('https://') 
+                                                    ? divider.mediaLink 
+                                                    : `https://${divider.mediaLink}`;
+                                                  window.open(url, '_blank');
+                                                }
                                               }}
                                               className="text-xs underline hover:no-underline opacity-80 hover:opacity-100 flex items-center"
                                               title="Open Media Link"
@@ -1079,7 +1094,12 @@ export default function CalendarPage() {
                                             <button
                                               onClick={(e) => {
                                                 e.stopPropagation();
-                                                window.open(divider.textLink, '_blank');
+                                                if (divider.textLink) {
+                                                  const url = divider.textLink.startsWith('http://') || divider.textLink.startsWith('https://') 
+                                                    ? divider.textLink 
+                                                    : `https://${divider.textLink}`;
+                                                  window.open(url, '_blank');
+                                                }
                                               }}
                                               className="text-xs underline hover:no-underline opacity-80 hover:opacity-100 flex items-center"
                                               title="Open Text Link"
