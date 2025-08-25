@@ -831,20 +831,34 @@ export default function ChecklistPage() {
                                 )}
                               </div>
                               
-                              {/* Wrench icon for non-General tasks - bottom right */}
+                              {/* Edit and Delete buttons for non-General tasks - bottom right */}
                               {task.releaseId !== 'general' && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                  onClick={() => {
-                                    setEditingTask(task);
-                                    setEditTitle(task.taskTitle);
-                                    setEditUrl(task.taskUrl || "");
-                                  }}
-                                >
-                                  <Settings className="w-3 h-3 text-gray-500" />
-                                </Button>
+                                <div className="flex items-center space-x-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                    onClick={() => {
+                                      setEditingTask(task);
+                                      setEditTitle(task.taskTitle);
+                                      setEditUrl(task.taskUrl || "");
+                                    }}
+                                  >
+                                    <Settings className="w-3 h-3 text-gray-500" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0 hover:bg-red-100 dark:hover:bg-red-900"
+                                    onClick={() => {
+                                      if (window.confirm('Are you sure you want to delete this task?')) {
+                                        deleteTaskMutation.mutate(task.id);
+                                      }
+                                    }}
+                                  >
+                                    <Trash2 className="w-3 h-3 text-red-500" />
+                                  </Button>
+                                </div>
                               )}
                             </div>
                           </div>
@@ -1075,21 +1089,35 @@ export default function ChecklistPage() {
                                       )}
                                     </div>
                                     
-                                    {/* Wrench icon for Evergreen tasks - bottom right */}
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                      onClick={() => {
-                                        setEditingTask(task);
-                                        // For editing, show the raw taskTitle (what's stored in database)
-                                        setEditTitle(task.taskTitle);
-                                        setEditMediaLink(task.mediaLink || "");
-                                        setEditUrl(task.taskUrl || "");
-                                      }}
-                                    >
-                                      <Settings className="w-3 h-3 text-gray-500" />
-                                    </Button>
+                                    {/* Edit and Delete buttons for Evergreen tasks - bottom right */}
+                                    <div className="flex items-center space-x-1">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                        onClick={() => {
+                                          setEditingTask(task);
+                                          // For editing, show the raw taskTitle (what's stored in database)
+                                          setEditTitle(task.taskTitle);
+                                          setEditMediaLink(task.mediaLink || "");
+                                          setEditUrl(task.taskUrl || "");
+                                        }}
+                                      >
+                                        <Settings className="w-3 h-3 text-gray-500" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 w-6 p-0 hover:bg-red-100 dark:hover:bg-red-900"
+                                        onClick={() => {
+                                          if (window.confirm('Are you sure you want to delete this task?')) {
+                                            deleteTaskMutation.mutate(task.id);
+                                          }
+                                        }}
+                                      >
+                                        <Trash2 className="w-3 h-3 text-red-500" />
+                                      </Button>
+                                    </div>
                                   </div>
                                 </div>
                               ))}
