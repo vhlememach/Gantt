@@ -944,10 +944,40 @@ export default function CalendarPage() {
                                   <span className="text-xs text-green-400">Completed</span>
                                 </div>
                               )}
-                              <div className="flex items-center">
+                              <div className="flex items-center mb-1">
                                 <i className={`${divider.icon} mr-1`}></i>
                                 {divider.name}
                               </div>
+                              {(divider.mediaLink || divider.textLink) && (
+                                <div className="flex items-center space-x-2">
+                                  {divider.mediaLink && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        window.open(divider.mediaLink, '_blank');
+                                      }}
+                                      className="text-xs underline hover:no-underline opacity-80 hover:opacity-100 flex items-center"
+                                      title="Open Media Link"
+                                    >
+                                      <i className="fas fa-image mr-1"></i>
+                                      Media
+                                    </button>
+                                  )}
+                                  {divider.textLink && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        window.open(divider.textLink, '_blank');
+                                      }}
+                                      className="text-xs underline hover:no-underline opacity-80 hover:opacity-100 flex items-center"
+                                      title="Open Text Link"
+                                    >
+                                      <i className="fas fa-link mr-1"></i>
+                                      Text
+                                    </button>
+                                  )}
+                                </div>
+                              )}
                             </div>
                             <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
                               <button
@@ -1025,10 +1055,42 @@ export default function CalendarPage() {
                                           <span className="text-xs text-green-400">Completed</span>
                                         </div>
                                       )}
-                                      <div className="flex items-center">
+                                      <div className="flex items-center mb-1">
                                         <i className={`${divider.icon} mr-1`}></i>
                                         {divider.name}
                                       </div>
+                                      {(divider.mediaLink || divider.textLink) && (
+                                        <div className="flex items-center space-x-2">
+                                          {divider.mediaLink && (
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                window.open(divider.mediaLink, '_blank');
+                                              }}
+                                              className="text-xs underline hover:no-underline opacity-80 hover:opacity-100 flex items-center"
+                                              title="Open Media Link"
+                                              style={{ color: group?.color || '#6b7280' }}
+                                            >
+                                              <i className="fas fa-image mr-1"></i>
+                                              Media
+                                            </button>
+                                          )}
+                                          {divider.textLink && (
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                window.open(divider.textLink, '_blank');
+                                              }}
+                                              className="text-xs underline hover:no-underline opacity-80 hover:opacity-100 flex items-center"
+                                              title="Open Text Link"
+                                              style={{ color: group?.color || '#6b7280' }}
+                                            >
+                                              <i className="fas fa-link mr-1"></i>
+                                              Text
+                                            </button>
+                                          )}
+                                        </div>
+                                      )}
                                     </div>
                                     <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
                                       <button
@@ -1245,7 +1307,7 @@ export default function CalendarPage() {
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-96">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {editingDivider ? 'Edit Custom Divider' : 'Add Custom Divider'}
+                {editingDivider ? 'Edit Calendar Task' : 'Add Calendar Task'}
               </h3>
               <button
                 className="w-6 h-6 rounded border border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center"
@@ -1277,8 +1339,45 @@ export default function CalendarPage() {
                     setDividerName(e.target.value)
                   }
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white bg-white dark:bg-gray-700"
-                  placeholder="Enter divider name"
+                  placeholder="Enter task name"
                 />
+              </div>
+              {/* Assign to Project (moved to position 2) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Assign to Project (Optional)
+                </label>
+                <select
+                  value={editingDivider ? editingDivider.divider.releaseId || '' : selectedProjectId}
+                  onChange={(e) => editingDivider ? 
+                    setEditingDivider({...editingDivider, divider: {...editingDivider.divider, releaseId: e.target.value || null}}) : 
+                    setSelectedProjectId(e.target.value)
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+                >
+                  <option value="">No Project</option>
+                  {(() => {
+                    // Get active projects for the selected date
+                    if (showCustomDividerModal) {
+                      const { day, month, year } = showCustomDividerModal;
+                      const currentDate = new Date(year, month, day);
+                      const activeReleases = releases.filter(release => {
+                        const startDate = new Date(release.startDate);
+                        const endDate = new Date(release.endDate);
+                        return currentDate >= startDate && currentDate <= endDate;
+                      });
+                      return activeReleases.map(release => (
+                        <option key={release.id} value={release.id}>{release.name}</option>
+                      ));
+                    } else if (editingDivider) {
+                      // For editing, show all releases to avoid issues if date changed
+                      return releases.map(release => (
+                        <option key={release.id} value={release.id}>{release.name}</option>
+                      ));
+                    }
+                    return [];
+                  })()} 
+                </select>
               </div>
               {/* Only show color picker when no project is assigned */}
               {((editingDivider && !editingDivider.divider.releaseId) || (!editingDivider && !selectedProjectId)) && (
@@ -1355,42 +1454,6 @@ export default function CalendarPage() {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white bg-white dark:bg-gray-700"
                   placeholder="Enter text link URL (e.g., document, article)"
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Assign to Project (Optional)
-                </label>
-                <select
-                  value={editingDivider ? editingDivider.divider.releaseId || '' : selectedProjectId}
-                  onChange={(e) => editingDivider ? 
-                    setEditingDivider({...editingDivider, divider: {...editingDivider.divider, releaseId: e.target.value || null}}) : 
-                    setSelectedProjectId(e.target.value)
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white bg-white dark:bg-gray-700"
-                >
-                  <option value="">No Project</option>
-                  {(() => {
-                    // Get active projects for the selected date
-                    if (showCustomDividerModal) {
-                      const { day, month, year } = showCustomDividerModal;
-                      const currentDate = new Date(year, month, day);
-                      const activeReleases = releases.filter(release => {
-                        const startDate = new Date(release.startDate);
-                        const endDate = new Date(release.endDate);
-                        return currentDate >= startDate && currentDate <= endDate;
-                      });
-                      return activeReleases.map(release => (
-                        <option key={release.id} value={release.id}>{release.name}</option>
-                      ));
-                    } else if (editingDivider) {
-                      // For editing, show all releases to avoid issues if date changed
-                      return releases.map(release => (
-                        <option key={release.id} value={release.id}>{release.name}</option>
-                      ));
-                    }
-                    return [];
-                  })()}
-                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
