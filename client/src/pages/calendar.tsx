@@ -385,6 +385,23 @@ export default function CalendarPage() {
     calendarDays.push(day);
   }
 
+  // Create a mapping of custom dividers to their task statuses
+  const dividerTaskStatuses = useMemo(() => {
+    const statusMap = new Map<string, { paused: boolean; underReview: boolean }>();
+    
+    allTasks.forEach(task => {
+      if (task.customDividerId) {
+        const existing = statusMap.get(task.customDividerId) || { paused: false, underReview: false };
+        statusMap.set(task.customDividerId, {
+          paused: existing.paused || task.paused || false,
+          underReview: existing.underReview || task.reviewStatus === 'requested'
+        });
+      }
+    });
+    
+    return statusMap;
+  }, [allTasks]);
+
   // Use useMemo to prevent re-computation and ensure stable task grouping
   const { tasks, scheduledTasks, unscheduledTasks, tasksByRelease } = useMemo(() => {
     console.log('Processing tasks - Raw count:', allTasks.length);
@@ -944,6 +961,18 @@ export default function CalendarPage() {
                                   <span className="text-xs text-green-400">Completed</span>
                                 </div>
                               )}
+                              {dividerTaskStatuses.get(divider.id)?.paused && (
+                                <div className="flex items-center justify-center mb-1 bg-black bg-opacity-70 rounded px-2 py-1">
+                                  <i className="fas fa-pause-circle text-orange-400 text-sm mr-1"></i>
+                                  <span className="text-xs text-orange-400">Paused</span>
+                                </div>
+                              )}
+                              {dividerTaskStatuses.get(divider.id)?.underReview && (
+                                <div className="flex items-center justify-center mb-1 bg-black bg-opacity-70 rounded px-2 py-1">
+                                  <i className="fas fa-eye text-blue-400 text-sm mr-1"></i>
+                                  <span className="text-xs text-blue-400">Under Review</span>
+                                </div>
+                              )}
                               <div className="flex items-center mb-1">
                                 <i className={`${divider.icon} mr-1`}></i>
                                 {divider.name}
@@ -1063,6 +1092,18 @@ export default function CalendarPage() {
                                         <div className="flex items-center justify-center mb-1 bg-black bg-opacity-70 rounded px-2 py-1">
                                           <i className="fas fa-check-circle text-green-400 text-sm mr-1"></i>
                                           <span className="text-xs text-green-400">Completed</span>
+                                        </div>
+                                      )}
+                                      {dividerTaskStatuses.get(divider.id)?.paused && (
+                                        <div className="flex items-center justify-center mb-1 bg-black bg-opacity-70 rounded px-2 py-1">
+                                          <i className="fas fa-pause-circle text-orange-400 text-sm mr-1"></i>
+                                          <span className="text-xs text-orange-400">Paused</span>
+                                        </div>
+                                      )}
+                                      {dividerTaskStatuses.get(divider.id)?.underReview && (
+                                        <div className="flex items-center justify-center mb-1 bg-black bg-opacity-70 rounded px-2 py-1">
+                                          <i className="fas fa-eye text-blue-400 text-sm mr-1"></i>
+                                          <span className="text-xs text-blue-400">Under Review</span>
                                         </div>
                                       )}
                                       <div className="flex items-center mb-1">
