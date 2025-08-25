@@ -141,7 +141,7 @@ export const insertEvergreenBoxSchema = createInsertSchema(evergreenBoxes).omit(
   id: true,
   createdAt: true,
 }).extend({
-  waterfallCycleId: z.string().optional().transform((val) => val === "" || val === undefined ? null : val),
+  waterfallCycleId: z.string().nullable().optional().transform((val) => val === "" || val === undefined || val === null ? null : val),
 });
 
 export const insertTaskSocialMediaSchema = createInsertSchema(taskSocialMedia).omit({
