@@ -78,10 +78,13 @@ export default function CalendarPage() {
   const [editingReleaseAccent, setEditingReleaseAccent] = useState<string | null>(null);
   const [releaseAccentColors, setReleaseAccentColors] = useState<Map<string, string>>(new Map());
   const [showCustomDividerModal, setShowCustomDividerModal] = useState<{ day: number; month: number; year: number } | null>(null);
-  const [customDividers, setCustomDividers] = useState<Map<string, Array<{ name: string; color: string; icon: string }>>>(new Map());
+  const [customDividers, setCustomDividers] = useState<Map<string, Array<{ name: string; color: string; icon: string; mediaLink?: string; textLink?: string }>>>(new Map());
   const [selectedColor, setSelectedColor] = useState('#3B82F6');
   const [selectedIcon, setSelectedIcon] = useState('fas fa-star');
   const [dividerName, setDividerName] = useState('');
+  const [dividerMediaLink, setDividerMediaLink] = useState('');
+  const [dividerTextLink, setDividerTextLink] = useState('');
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState<{dateKey: string; index: number; divider: any} | null>(null);
   const [showSocialMediaModal, setShowSocialMediaModal] = useState<string | null>(null);
   const [taskSocialMedia, setTaskSocialMedia] = useState<Map<string, string[]>>(new Map());
   const [taskSocialMediaUrls, setTaskSocialMediaUrls] = useState<Map<string, string>>(new Map());
@@ -905,13 +908,7 @@ export default function CalendarPage() {
                             className="w-4 h-4 rounded border border-white/30 hover:bg-white/20 flex items-center justify-center"
                             onClick={(e) => {
                               e.stopPropagation();
-                              const newDividers = new Map(customDividers);
-                              const existingDividers = newDividers.get(dateKey) || [];
-                              newDividers.set(dateKey, existingDividers.filter((_, i) => i !== index));
-                              if (newDividers.get(dateKey)?.length === 0) {
-                                newDividers.delete(dateKey);
-                              }
-                              setCustomDividers(newDividers);
+                              setDeleteConfirmModal({ dateKey, index, divider });
                             }}
                             title="Delete divider"
                           >
@@ -1136,6 +1133,8 @@ export default function CalendarPage() {
                   setShowCustomDividerModal(null);
                   setEditingDivider(null);
                   setDividerName('');
+                  setDividerMediaLink('');
+                  setDividerTextLink('');
                   setSelectedColor('#3B82F6');
                   setSelectedIcon('fas fa-bookmark');
                 }}
@@ -1202,6 +1201,36 @@ export default function CalendarPage() {
                   ))}
                 </div>
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Media Link (Optional)
+                </label>
+                <input
+                  type="url"
+                  value={editingDivider ? editingDivider.divider.mediaLink || '' : dividerMediaLink}
+                  onChange={(e) => editingDivider ? 
+                    setEditingDivider({...editingDivider, divider: {...editingDivider.divider, mediaLink: e.target.value}}) : 
+                    setDividerMediaLink(e.target.value)
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+                  placeholder="Enter media link URL (e.g., image, video)"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Text Link (Optional)
+                </label>
+                <input
+                  type="url"
+                  value={editingDivider ? editingDivider.divider.textLink || '' : dividerTextLink}
+                  onChange={(e) => editingDivider ? 
+                    setEditingDivider({...editingDivider, divider: {...editingDivider.divider, textLink: e.target.value}}) : 
+                    setDividerTextLink(e.target.value)
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+                  placeholder="Enter text link URL (e.g., document, article)"
+                />
+              </div>
               <div className="border-t pt-4">
                 <div className="flex items-center justify-between">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -1242,6 +1271,8 @@ export default function CalendarPage() {
                   setShowCustomDividerModal(null);
                   setEditingDivider(null);
                   setDividerName('');
+                  setDividerMediaLink('');
+                  setDividerTextLink('');
                   setSelectedColor('#3B82F6');
                   setSelectedIcon('fas fa-star');
                 }}
@@ -1253,6 +1284,8 @@ export default function CalendarPage() {
                   const name = editingDivider ? editingDivider.divider.name : dividerName;
                   const color = editingDivider ? editingDivider.divider.color : selectedColor;
                   const icon = editingDivider ? editingDivider.divider.icon : selectedIcon;
+                  const mediaLink = editingDivider ? editingDivider.divider.mediaLink : dividerMediaLink;
+                  const textLink = editingDivider ? editingDivider.divider.textLink : dividerTextLink;
                   
                   if (!name.trim()) return;
                   
@@ -1260,7 +1293,13 @@ export default function CalendarPage() {
                     // Edit existing divider
                     const newDividers = new Map(customDividers);
                     const existingDividers = newDividers.get(editingDivider.dateKey) || [];
-                    existingDividers[editingDivider.index] = { name, color, icon };
+                    existingDividers[editingDivider.index] = { 
+                      name, 
+                      color, 
+                      icon, 
+                      mediaLink: mediaLink || undefined,
+                      textLink: textLink || undefined
+                    };
                     newDividers.set(editingDivider.dateKey, existingDividers);
                     setCustomDividers(newDividers);
                     setEditingDivider(null);
@@ -1271,7 +1310,13 @@ export default function CalendarPage() {
                     
                     const newDividers = new Map(customDividers);
                     const existingDividers = newDividers.get(dateKey) || [];
-                    existingDividers.push({ name, color, icon });
+                    existingDividers.push({ 
+                      name, 
+                      color, 
+                      icon, 
+                      mediaLink: mediaLink || undefined,
+                      textLink: textLink || undefined
+                    });
                     newDividers.set(dateKey, existingDividers);
                     setCustomDividers(newDividers);
                     setShowCustomDividerModal(null);
@@ -1279,11 +1324,68 @@ export default function CalendarPage() {
                   
                   // Reset form
                   setDividerName('');
+                  setDividerMediaLink('');
+                  setDividerTextLink('');
                   setSelectedColor('#3B82F6');
                   setSelectedIcon('fas fa-star');
                 }}
               >
                 {editingDivider ? 'Update Divider' : 'Save'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-96">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Confirm Delete
+              </h3>
+              <button
+                className="w-6 h-6 rounded border border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center"
+                onClick={() => setDeleteConfirmModal(null)}
+              >
+                <i className="fas fa-times text-xs text-gray-600"></i>
+              </button>
+            </div>
+            <div className="mb-6">
+              <p className="text-gray-700 dark:text-gray-300">
+                Are you sure you want to delete the divider <strong>"{deleteConfirmModal.divider.name}"</strong>?
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex justify-end space-x-3">
+              <Button
+                variant="outline"
+                onClick={() => setDeleteConfirmModal(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  const { dateKey, index } = deleteConfirmModal;
+                  const newDividers = new Map(customDividers);
+                  const existingDividers = newDividers.get(dateKey) || [];
+                  newDividers.set(dateKey, existingDividers.filter((_, i) => i !== index));
+                  if (newDividers.get(dateKey)?.length === 0) {
+                    newDividers.delete(dateKey);
+                  }
+                  setCustomDividers(newDividers);
+                  setDeleteConfirmModal(null);
+                  toast({
+                    title: "Divider deleted",
+                    description: "The custom divider has been successfully removed.",
+                  });
+                }}
+              >
+                Delete
               </Button>
             </div>
           </div>
