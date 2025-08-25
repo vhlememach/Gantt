@@ -642,11 +642,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/evergreen-boxes", async (req, res) => {
     try {
+      console.log("Creating evergreen box with data:", req.body);
       const validatedData = insertEvergreenBoxSchema.parse(req.body);
+      console.log("Validated evergreen box data:", validatedData);
       const box = await storage.createEvergreenBox(validatedData);
       res.json(box);
     } catch (error) {
-      res.status(400).json({ message: "Invalid evergreen box data" });
+      console.error("Evergreen box validation failed:", error);
+      if (error instanceof Error) {
+        console.error("Detailed validation error:", error.message);
+      }
+      res.status(400).json({ 
+        message: "Invalid evergreen box data",
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 
