@@ -52,6 +52,7 @@ export default function GanttPage() {
               const deleteOperations = [
                 { url: '/api/checklist-tasks', name: 'checklist tasks' },
                 { url: '/api/content-format-assignments', name: 'content format assignments' },
+                { url: '/api/custom-dividers', name: 'custom dividers' },
                 { url: '/api/evergreen-boxes', name: 'evergreen boxes' },
                 { url: '/api/releases', name: 'releases' },
                 { url: '/api/release-groups', name: 'release groups' },
@@ -334,24 +335,51 @@ export default function GanttPage() {
                 console.log("Settings imported");
               }
 
-              // CRITICAL: Restore custom dividers to localStorage
-              if (data.customDividers) {
-                console.log("Restoring custom dividers:", Object.keys(data.customDividers).length, "date entries");
-                try {
-                  localStorage.setItem('calendar-custom-dividers', JSON.stringify(data.customDividers));
-                  console.log("Custom dividers successfully restored to localStorage");
-                } catch (error) {
-                  console.error('Failed to restore custom dividers:', error);
-                  alert('Warning: Custom dividers could not be restored. Please check your browser settings.');
+              // 8. Import custom dividers to database
+              if (data.customDividers && Array.isArray(data.customDividers)) {
+                console.log("Importing custom dividers:", data.customDividers.length);
+                for (const divider of data.customDividers) {
+                  // Map release IDs for custom dividers
+                  const newReleaseId = divider.releaseId 
+                    ? idMappings.releases[divider.releaseId] || null
+                    : null;
+                  
+                  const cleanDivider = {
+                    name: divider.name,
+                    color: divider.color,
+                    icon: divider.icon,
+                    mediaLink: divider.mediaLink || null,
+                    textLink: divider.textLink || null,
+                    dateKey: divider.dateKey,
+                    releaseId: newReleaseId,
+                    assignedMembers: Array.isArray(divider.assignedMembers) ? divider.assignedMembers : [],
+                    completed: divider.completed || false
+                  };
+                  
+                  console.log("Importing custom divider:", cleanDivider);
+                  
+                  const response = await fetch('/api/custom-dividers', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(cleanDivider)
+                  });
+                  
+                  if (!response.ok) {
+                    const error = await response.text();
+                    console.error("Custom divider import failed:", response.status, error, cleanDivider);
+                  } else {
+                    const newDivider = await response.json();
+                    console.log(`Custom divider "${divider.name}" imported successfully: ${divider.id} -> ${newDivider.id}`);
+                  }
                 }
               } else {
-                console.warn("No custom dividers found in import data");
+                console.warn("No custom dividers found in import data or invalid format");
               }
 
               // Invalidate all React Query caches to force refetch
               // Note: We'll rely on the page reload to refresh data
               
-              console.log("Import completed successfully");
+              console.log("All data imported successfully including custom dividers");
               alert('Data imported successfully! Page will reload to show the imported data.');
               window.location.reload();
             }
@@ -388,26 +416,19 @@ export default function GanttPage() {
     if (format === 'json') {
       try {
         // Fetch all data for complete backup
-        const [groupsRes, releasesRes, evergreenRes, waterfallRes, tasksRes, assignmentsRes, socialMediaRes] = await Promise.all([
+        const [groupsRes, releasesRes, evergreenRes, waterfallRes, tasksRes, assignmentsRes, socialMediaRes, customDividersRes] = await Promise.all([
           fetch('/api/release-groups'),
           fetch('/api/releases'),
           fetch('/api/evergreen-boxes'),
           fetch('/api/waterfall-cycles'),
           fetch('/api/checklist-tasks'),
           fetch('/api/content-format-assignments'),
-          fetch('/api/task-social-media')
+          fetch('/api/task-social-media'),
+          fetch('/api/custom-dividers')
         ]);
 
-        // Include custom dividers from localStorage
-        let customDividers = {};
-        try {
-          const savedDividers = localStorage.getItem('calendar-custom-dividers');
-          if (savedDividers) {
-            customDividers = JSON.parse(savedDividers);
-          }
-        } catch (error) {
-          console.error('Error loading custom dividers for export:', error);
-        }
+        // Get custom dividers from database API
+        const customDividers = await customDividersRes.json();
 
         const data = {
           settings,
