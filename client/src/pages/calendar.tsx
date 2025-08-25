@@ -931,7 +931,7 @@ export default function CalendarPage() {
                       >
                         <div className="flex flex-col">
                           {divider.completed && (
-                            <div className="flex items-center justify-center mb-1">
+                            <div className="flex items-center justify-center mb-1 bg-black bg-opacity-70 rounded px-2 py-1">
                               <i className="fas fa-check-circle text-green-400 text-sm mr-1"></i>
                               <span className="text-xs text-green-400">Completed</span>
                             </div>
