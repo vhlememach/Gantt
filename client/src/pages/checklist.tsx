@@ -39,6 +39,7 @@ export default function ChecklistPage() {
   const [reviewMode, setReviewMode] = useState<"request" | "submit" | "approve">("request");
   const [editingTask, setEditingTask] = useState<ChecklistTask | null>(null);
   const [editTitle, setEditTitle] = useState("");
+  const [editMediaLink, setEditMediaLink] = useState("");
   const [editUrl, setEditUrl] = useState("");
   
   const queryClient = useQueryClient();
@@ -212,13 +213,16 @@ export default function ChecklistPage() {
 
   // Edit task mutation
   const editTaskMutation = useMutation({
-    mutationFn: async ({ id, taskTitle, taskUrl }: { id: string, taskTitle: string, taskUrl?: string }) => {
-      return apiRequest('PUT', `/api/checklist-tasks/${id}`, { taskTitle, taskUrl });
+    mutationFn: async ({ id, taskTitle, mediaLink, taskUrl }: { id: string, taskTitle: string, mediaLink?: string, taskUrl?: string }) => {
+      return apiRequest('PUT', `/api/checklist-tasks/${id}`, { taskTitle, mediaLink, taskUrl });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/releases"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/custom-dividers"] });
       setEditingTask(null);
       setEditTitle("");
+      setEditMediaLink("");
       setEditUrl("");
       toast({
         title: "Task updated",
@@ -312,6 +316,7 @@ export default function ChecklistPage() {
       editTaskMutation.mutate({
         id: editingTask.id,
         taskTitle: editTitle,
+        mediaLink: editMediaLink || undefined,
         taskUrl: editUrl || undefined
       });
     }
@@ -737,6 +742,7 @@ export default function ChecklistPage() {
                                         setEditingTask(task);
                                         // For editing, show the raw taskTitle (what's stored in database)
                                         setEditTitle(task.taskTitle);
+                                        setEditMediaLink(task.mediaLink || "");
                                         setEditUrl(task.taskUrl || "");
                                       }}
                                     >
@@ -1078,6 +1084,7 @@ export default function ChecklistPage() {
                                         setEditingTask(task);
                                         // For editing, show the raw taskTitle (what's stored in database)
                                         setEditTitle(task.taskTitle);
+                                        setEditMediaLink(task.mediaLink || "");
                                         setEditUrl(task.taskUrl || "");
                                       }}
                                     >
@@ -1412,22 +1419,32 @@ export default function ChecklistPage() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="edit-title">Task Title</Label>
+              <Label htmlFor="edit-title">Name</Label>
               <Input
                 id="edit-title"
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
-                placeholder="Enter task title..."
+                placeholder="Enter name..."
                 className="mt-1"
               />
             </div>
             <div>
-              <Label htmlFor="edit-url">Link/URL (optional)</Label>
+              <Label htmlFor="edit-media-link">Media Link (optional)</Label>
+              <Input
+                id="edit-media-link"
+                value={editMediaLink}
+                onChange={(e) => setEditMediaLink(e.target.value)}
+                placeholder="Enter media link URL (e.g., image, video)..."
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-url">Text Link (optional)</Label>
               <Input
                 id="edit-url"
                 value={editUrl}
                 onChange={(e) => setEditUrl(e.target.value)}
-                placeholder="Enter task URL..."
+                placeholder="Enter text link URL (e.g., document, article)..."
                 className="mt-1"
               />
             </div>

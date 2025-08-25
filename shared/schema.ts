@@ -107,7 +107,8 @@ export const checklistTasks = pgTable("checklist_tasks", {
   assignedTo: text("assigned_to").notNull(), // Brian, Alex, Lucas, Victor
   taskTitle: text("task_title").notNull(),
   taskDescription: text("task_description"),
-  taskUrl: text("task_url"), // URL/Links field
+  mediaLink: text("media_link"), // Media Link field
+  taskUrl: text("task_url"), // Text Link field
   priority: boolean("priority").default(false), // High priority tasks
   waterfallCycleId: varchar("waterfall_cycle_id").references(() => waterfallCycles.id),
   contentFormatType: text("content_format_type"), // article, thread, video, animation, visual
