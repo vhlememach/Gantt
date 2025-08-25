@@ -471,36 +471,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const assignments = await storage.getContentFormatAssignments();
       const cycles = await storage.getWaterfallCycles();
       const existingTasks = await storage.getChecklistTasks();
-      const releases = await storage.getReleases();
       
-      console.log("Found boxes:", evergreenBoxes.length, "assignments:", assignments.length, "cycles:", cycles.length, "releases:", releases.length);
-      
-      // Get waterfall cycles that are actually being used by releases
-      const activeWaterfallCycles = new Set(
-        releases
-          .filter(release => release.waterfallCycleId)
-          .map(release => release.waterfallCycleId)
-      );
-      
-      console.log("Active waterfall cycles:", Array.from(activeWaterfallCycles));
-      
-      // Clean up existing evergreen tasks from inactive waterfall cycles
-      const evergreenTasks = existingTasks.filter(task => task.evergreenBoxId);
-      let tasksDeleted = 0;
-      
-      for (const task of evergreenTasks) {
-        const box = evergreenBoxes.find(b => b.id === task.evergreenBoxId);
-        if (box && box.waterfallCycleId && !activeWaterfallCycles.has(box.waterfallCycleId)) {
-          console.log(`Deleting task for inactive waterfall cycle: ${task.taskTitle}`);
-          await storage.deleteChecklistTask(task.id);
-          tasksDeleted++;
-        }
-      }
+      console.log("Found boxes:", evergreenBoxes.length, "assignments:", assignments.length, "cycles:", cycles.length);
       
       let tasksCreated = 0;
       
       for (const box of evergreenBoxes) {
-        if (box.waterfallCycleId && activeWaterfallCycles.has(box.waterfallCycleId)) {
+        if (box.waterfallCycleId) {
           const cycle = cycles.find(c => c.id === box.waterfallCycleId);
           
           if (cycle) {
@@ -546,11 +523,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      console.log(`Generated ${tasksCreated} evergreen tasks, deleted ${tasksDeleted} tasks from inactive cycles`);
+      console.log(`Generated ${tasksCreated} evergreen tasks`);
       res.json({ 
         message: "Evergreen tasks generated successfully", 
-        tasksCreated,
-        tasksDeleted
+        tasksCreated 
       });
     } catch (error) {
       console.error("Error generating evergreen tasks:", error);
