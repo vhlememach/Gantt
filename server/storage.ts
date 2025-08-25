@@ -261,8 +261,29 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteWaterfallCycle(id: string): Promise<boolean> {
-    const result = await db.delete(waterfallCycles).where(eq(waterfallCycles.id, id));
-    return (result.rowCount || 0) > 0;
+    try {
+      // First, update all releases that reference this waterfall cycle to remove the reference
+      await db.update(releases)
+        .set({ waterfallCycleId: null })
+        .where(eq(releases.waterfallCycleId, id));
+
+      // Update all checklist tasks that reference this waterfall cycle to remove the reference  
+      await db.update(checklistTasks)
+        .set({ waterfallCycleId: null })
+        .where(eq(checklistTasks.waterfallCycleId, id));
+
+      // Update all evergreen boxes that reference this waterfall cycle to remove the reference
+      await db.update(evergreenBoxes)
+        .set({ waterfallCycleId: null })
+        .where(eq(evergreenBoxes.waterfallCycleId, id));
+
+      // Now delete the waterfall cycle
+      const result = await db.delete(waterfallCycles).where(eq(waterfallCycles.id, id));
+      return (result.rowCount || 0) > 0;
+    } catch (error) {
+      console.error('Error deleting waterfall cycle:', error);
+      throw error;
+    }
   }
 
   // Content Format Assignments
