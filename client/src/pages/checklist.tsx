@@ -70,16 +70,28 @@ export default function ChecklistPage() {
     const evergreenTasks = allTasks.filter(task => task.evergreenBoxId);
     const boxesWithCycles = evergreenBoxes.filter(box => box.waterfallCycleId);
     
-    // If we have evergreen boxes with cycles but no evergreen tasks, generate them
-    if (boxesWithCycles.length > 0 && evergreenTasks.length === 0) {
-      console.log("No evergreen tasks found, generating them...");
+    // Get waterfall cycles that are actually being used by releases
+    const activeWaterfallCycles = new Set(
+      releases
+        .filter(release => release.waterfallCycleId)
+        .map(release => release.waterfallCycleId)
+    );
+    
+    // Only consider evergreen boxes whose waterfall cycles are actively used by releases
+    const activeBoxesWithCycles = boxesWithCycles.filter(box => 
+      activeWaterfallCycles.has(box.waterfallCycleId)
+    );
+    
+    // If we have evergreen boxes with active cycles but no evergreen tasks, generate them
+    if (activeBoxesWithCycles.length > 0 && evergreenTasks.length === 0) {
+      console.log("No evergreen tasks found for active waterfall cycles, generating them...");
       fetch("/api/evergreen-tasks/generate", { method: "POST" })
         .then(() => {
           queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
         })
         .catch(console.error);
     }
-  }, [allTasks, evergreenBoxes, queryClient]);
+  }, [allTasks, evergreenBoxes, releases, queryClient]);
 
   // Fetch all releases for the dropdown
   const { data: releases = [] } = useQuery<Release[]>({
