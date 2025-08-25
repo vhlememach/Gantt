@@ -873,7 +873,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             taskDescription: `Custom divider task: ${validatedData.name}`,
             taskUrl: validatedData.mediaLink || validatedData.textLink || null,
             taskType: "custom_divider",
-            completed: false
+            completed: validatedData.completed || false
           });
         }
       }
@@ -914,7 +914,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               taskDescription: `Custom divider task: ${divider.name}`,
               taskUrl: divider.mediaLink || divider.textLink || null,
               taskType: "custom_divider",
-              completed: false
+              completed: divider.completed || false
             });
           }
         }
