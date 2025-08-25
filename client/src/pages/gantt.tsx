@@ -47,18 +47,37 @@ export default function GanttPage() {
             if (confirm('This will replace ALL current data. Are you sure you want to import?')) {
               console.log("Starting import process...", data);
               
-              // Clear all existing data first
+              // Clear all existing data first with proper error handling
               console.log("Clearing existing data...");
-              await Promise.all([
-                fetch('/api/checklist-tasks', { method: 'DELETE' }),
-                fetch('/api/content-format-assignments', { method: 'DELETE' }),
-                fetch('/api/evergreen-boxes', { method: 'DELETE' }),
-                fetch('/api/releases', { method: 'DELETE' }),
-                fetch('/api/release-groups', { method: 'DELETE' }),
-                fetch('/api/waterfall-cycles', { method: 'DELETE' }),
-                fetch('/api/task-social-media', { method: 'DELETE' })
-              ]);
+              const deleteOperations = [
+                { url: '/api/checklist-tasks', name: 'checklist tasks' },
+                { url: '/api/content-format-assignments', name: 'content format assignments' },
+                { url: '/api/evergreen-boxes', name: 'evergreen boxes' },
+                { url: '/api/releases', name: 'releases' },
+                { url: '/api/release-groups', name: 'release groups' },
+                { url: '/api/waterfall-cycles', name: 'waterfall cycles' },
+                { url: '/api/task-social-media', name: 'task social media' }
+              ];
 
+              // Execute deletions sequentially with error handling
+              for (const operation of deleteOperations) {
+                try {
+                  console.log(`Deleting ${operation.name}...`);
+                  const response = await fetch(operation.url, { method: 'DELETE' });
+                  if (!response.ok) {
+                    console.error(`Failed to delete ${operation.name}:`, response.status, await response.text());
+                  } else {
+                    console.log(`Successfully deleted ${operation.name}`);
+                  }
+                } catch (error) {
+                  console.error(`Error deleting ${operation.name}:`, error);
+                }
+              }
+
+              // Add a small delay to ensure database operations are fully completed
+              console.log("Waiting for database operations to complete...");
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              
               console.log("Data cleared, starting sequential import...");
 
               // Import data sequentially to maintain relationships
