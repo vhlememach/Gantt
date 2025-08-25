@@ -169,13 +169,24 @@ export default function GanttPage() {
               }
 
               // 4. Import evergreen boxes with proper ID mapping
-              if (data.evergreenBoxes) {
+              if (data.evergreenBoxes && Array.isArray(data.evergreenBoxes)) {
                 console.log("Importing evergreen boxes:", data.evergreenBoxes.length);
+                if (data.evergreenBoxes.length === 0) {
+                  console.log("No evergreen boxes found in import data");
+                }
                 for (const box of data.evergreenBoxes) {
+                  console.log("Processing evergreen box:", box);
                   const newGroupId = idMappings.groups[box.groupId] || Object.values(idMappings.groups)[0] || null;
                   const newWaterfallCycleId = box.waterfallCycleId 
                     ? idMappings.waterfallCycles[box.waterfallCycleId] || null
                     : null;
+                  
+                  console.log("Mapped IDs for evergreen box:", {
+                    originalGroupId: box.groupId,
+                    newGroupId,
+                    originalWaterfallCycleId: box.waterfallCycleId,
+                    newWaterfallCycleId
+                  });
                   
                   const cleanBox = {
                     title: box.title,
@@ -187,6 +198,9 @@ export default function GanttPage() {
                     url: box.url || null,
                     highPriority: box.highPriority === true || box.highPriority === 'true'
                   };
+                  
+                  console.log("Clean evergreen box data:", cleanBox);
+                  
                   const response = await fetch('/api/evergreen-boxes', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -198,9 +212,11 @@ export default function GanttPage() {
                   } else {
                     const newBox = await response.json();
                     idMappings.evergreenBoxes[box.id] = newBox.id;
-                    console.log(`Evergreen box "${box.title}" imported: ${box.id} -> ${newBox.id}`);
+                    console.log(`Evergreen box "${box.title}" imported successfully: ${box.id} -> ${newBox.id}`);
                   }
                 }
+              } else {
+                console.log("No evergreenBoxes array found in import data, keys available:", Object.keys(data));
               }
 
               console.log("Releases and evergreen boxes imported");
