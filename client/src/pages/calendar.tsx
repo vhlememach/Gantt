@@ -914,57 +914,66 @@ export default function CalendarPage() {
                       </Button>
                     </div>
 
-                    {/* Custom dividers for this day */}
-                    {customDividers.get(dateKey)?.map((divider, index) => (
-                      <div 
-                        key={index}
-                        draggable={true}
-                        onDragStart={(e) => {
-                          e.dataTransfer.setData('divider', JSON.stringify({
-                            divider,
-                            sourceDate: dateKey,
-                            index
-                          }));
-                        }}
-                        className="text-xs font-medium px-2 py-1 rounded text-white opacity-90 mb-1 flex items-center justify-between group cursor-move hover:opacity-100 transition-opacity"
-                        style={{ backgroundColor: divider.color }}
-                      >
-                        <div className="flex flex-col">
-                          {divider.completed && (
-                            <div className="flex items-center justify-center mb-1 bg-black bg-opacity-70 rounded px-2 py-1">
-                              <i className="fas fa-check-circle text-green-400 text-sm mr-1"></i>
-                              <span className="text-xs text-green-400">Completed</span>
+                    {/* Custom dividers with no project assignment */}
+                    {customDividers.get(dateKey)
+                      ?.filter(divider => !divider.releaseId)
+                      ?.map((divider, index) => {
+                        const originalIndex = customDividers.get(dateKey)?.findIndex(d => d === divider) || 0;
+                        return (
+                          <div 
+                            key={originalIndex}
+                            draggable={true}
+                            onDragStart={(e) => {
+                              e.dataTransfer.setData('divider', JSON.stringify({
+                                divider,
+                                sourceDate: dateKey,
+                                index: originalIndex
+                              }));
+                            }}
+                            className="text-xs font-medium px-2 py-1 rounded opacity-90 mb-1 flex items-center justify-between group cursor-move hover:opacity-100 transition-opacity border-2"
+                            style={{ 
+                              backgroundColor: divider.color,
+                              color: 'white',
+                              borderColor: divider.color
+                            }}
+                          >
+                            <div className="flex flex-col">
+                              {divider.completed && (
+                                <div className="flex items-center justify-center mb-1 bg-black bg-opacity-70 rounded px-2 py-1">
+                                  <i className="fas fa-check-circle text-green-400 text-sm mr-1"></i>
+                                  <span className="text-xs text-green-400">Completed</span>
+                                </div>
+                              )}
+                              <div className="flex items-center">
+                                <i className={`${divider.icon} mr-1`}></i>
+                                {divider.name}
+                              </div>
                             </div>
-                          )}
-                          <div className="flex items-center">
-                            <i className={`${divider.icon} mr-1`}></i>
-                            {divider.name}
+                            <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                className="w-4 h-4 rounded border border-white/30 hover:bg-white/20 flex items-center justify-center mr-1"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingDivider({ dateKey, index: originalIndex, divider });
+                                }}
+                                title="Edit divider"
+                              >
+                                <i className="fas fa-edit text-xs"></i>
+                              </button>
+                              <button
+                                className="w-4 h-4 rounded border border-white/30 hover:bg-white/20 flex items-center justify-center"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeleteConfirmModal({ dateKey, index: originalIndex, divider });
+                                }}
+                                title="Delete divider"
+                              >
+                                <i className="fas fa-times text-xs"></i>
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            className="w-4 h-4 rounded border border-white/30 hover:bg-white/20 flex items-center justify-center mr-1"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingDivider({ dateKey, index, divider });
-                            }}
-                            title="Edit divider"
-                          >
-                            <i className="fas fa-edit text-xs"></i>
-                          </button>
-                          <button
-                            className="w-4 h-4 rounded border border-white/30 hover:bg-white/20 flex items-center justify-center"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDeleteConfirmModal({ dateKey, index, divider });
-                            }}
-                            title="Delete divider"
-                          >
-                            <i className="fas fa-times text-xs"></i>
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                        );
+                      })}
 
                     {/* Release dividers for active releases */}
                     <div className="space-y-2">
@@ -985,6 +994,69 @@ export default function CalendarPage() {
                               <i className={`${release.icon} mr-1`}></i>
                               {release.name}
                             </div>
+                            
+                            {/* Custom dividers assigned to this project */}
+                            {customDividers.get(dateKey)
+                              ?.filter(divider => divider.releaseId === release.id)
+                              ?.map((divider, index) => {
+                                const originalIndex = customDividers.get(dateKey)?.findIndex(d => d === divider) || 0;
+                                return (
+                                  <div 
+                                    key={`divider-${originalIndex}`}
+                                    draggable={true}
+                                    onDragStart={(e) => {
+                                      e.dataTransfer.setData('divider', JSON.stringify({
+                                        divider,
+                                        sourceDate: dateKey,
+                                        index: originalIndex
+                                      }));
+                                    }}
+                                    className="text-xs font-medium px-2 py-1 rounded opacity-90 mb-1 flex items-center justify-between group cursor-move hover:opacity-100 transition-colors ml-2 border-2"
+                                    style={{ 
+                                      backgroundColor: 'white',
+                                      color: group?.color || '#6b7280',
+                                      borderColor: group?.color || '#6b7280'
+                                    }}
+                                  >
+                                    <div className="flex flex-col">
+                                      {divider.completed && (
+                                        <div className="flex items-center justify-center mb-1 bg-black bg-opacity-70 rounded px-2 py-1">
+                                          <i className="fas fa-check-circle text-green-400 text-sm mr-1"></i>
+                                          <span className="text-xs text-green-400">Completed</span>
+                                        </div>
+                                      )}
+                                      <div className="flex items-center">
+                                        <i className={`${divider.icon} mr-1`}></i>
+                                        {divider.name}
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <button
+                                        className="w-4 h-4 rounded border hover:bg-gray-100 flex items-center justify-center mr-1"
+                                        style={{ borderColor: group?.color || '#6b7280' }}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setEditingDivider({ dateKey, index: originalIndex, divider });
+                                        }}
+                                        title="Edit divider"
+                                      >
+                                        <i className="fas fa-edit text-xs" style={{ color: group?.color || '#6b7280' }}></i>
+                                      </button>
+                                      <button
+                                        className="w-4 h-4 rounded border hover:bg-gray-100 flex items-center justify-center"
+                                        style={{ borderColor: group?.color || '#6b7280' }}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setDeleteConfirmModal({ dateKey, index: originalIndex, divider });
+                                        }}
+                                        title="Delete divider"
+                                      >
+                                        <i className="fas fa-times text-xs" style={{ color: group?.color || '#6b7280' }}></i>
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             
                             {/* Tasks under this release */}
                             {releaseTasks.map(task => (
@@ -1208,26 +1280,29 @@ export default function CalendarPage() {
                   placeholder="Enter divider name"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Color
-                </label>
-                <div className="flex space-x-2">
-                  {['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#F97316', '#6B7280', '#EC4899'].map(color => (
-                    <button
-                      key={color}
-                      className={`w-8 h-8 rounded border-2 hover:scale-110 transition-transform ${
-                        selectedColor === color ? 'border-gray-800 dark:border-white' : 'border-gray-300'
-                      }`}
-                      style={{ backgroundColor: color }}
-                      onClick={() => editingDivider ? 
-                        setEditingDivider({...editingDivider, divider: {...editingDivider.divider, color}}) : 
-                        setSelectedColor(color)
-                      }
-                    />
-                  ))}
+              {/* Only show color picker when no project is assigned */}
+              {((editingDivider && !editingDivider.divider.releaseId) || (!editingDivider && !selectedProjectId)) && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Color
+                  </label>
+                  <div className="flex space-x-2">
+                    {['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#F97316', '#6B7280', '#EC4899'].map(color => (
+                      <button
+                        key={color}
+                        className={`w-8 h-8 rounded border-2 hover:scale-110 transition-transform ${
+                          selectedColor === color ? 'border-gray-800 dark:border-white' : 'border-gray-300'
+                        }`}
+                        style={{ backgroundColor: color }}
+                        onClick={() => editingDivider ? 
+                          setEditingDivider({...editingDivider, divider: {...editingDivider.divider, color}}) : 
+                          setSelectedColor(color)
+                        }
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Icon
@@ -1294,9 +1369,27 @@ export default function CalendarPage() {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white bg-white dark:bg-gray-700"
                 >
                   <option value="">No Project</option>
-                  {releases.map(release => (
-                    <option key={release.id} value={release.id}>{release.name}</option>
-                  ))}
+                  {(() => {
+                    // Get active projects for the selected date
+                    if (showCustomDividerModal) {
+                      const { day, month, year } = showCustomDividerModal;
+                      const currentDate = new Date(year, month, day);
+                      const activeReleases = releases.filter(release => {
+                        const startDate = new Date(release.startDate);
+                        const endDate = new Date(release.endDate);
+                        return currentDate >= startDate && currentDate <= endDate;
+                      });
+                      return activeReleases.map(release => (
+                        <option key={release.id} value={release.id}>{release.name}</option>
+                      ));
+                    } else if (editingDivider) {
+                      // For editing, show all releases to avoid issues if date changed
+                      return releases.map(release => (
+                        <option key={release.id} value={release.id}>{release.name}</option>
+                      ));
+                    }
+                    return [];
+                  })()}
                 </select>
               </div>
               <div>
