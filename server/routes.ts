@@ -266,14 +266,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Task not found" });
       }
       
-      // If this is a custom divider task and we're updating completion status
-      if (updatedTask.customDividerId && validatedData.completed !== undefined) {
-        // Check if all tasks for this custom divider are completed
-        const allTasks = await storage.getChecklistTasksByCustomDividerId(updatedTask.customDividerId);
-        const allCompleted = allTasks.every(t => t.completed);
+      // If this is a custom divider task, handle bidirectional synchronization
+      if (updatedTask.customDividerId) {
+        // Update completion status synchronization (existing logic)
+        if (validatedData.completed !== undefined) {
+          // Check if all tasks for this custom divider are completed
+          const allTasks = await storage.getChecklistTasksByCustomDividerId(updatedTask.customDividerId);
+          const allCompleted = allTasks.every(t => t.completed);
+          
+          // Update the custom divider completion status
+          await storage.updateCustomDivider(updatedTask.customDividerId, { completed: allCompleted });
+        }
         
-        // Update the custom divider completion status
-        await storage.updateCustomDivider(updatedTask.customDividerId, { completed: allCompleted });
+        // Bidirectional synchronization for content fields (taskTitle, mediaLink, taskUrl)
+        const hasContentChanges = validatedData.taskTitle !== undefined || 
+                                  validatedData.mediaLink !== undefined || 
+                                  validatedData.taskUrl !== undefined;
+        
+        if (hasContentChanges) {
+          // Get all tasks for this custom divider
+          const allTasks = await storage.getChecklistTasksByCustomDividerId(updatedTask.customDividerId);
+          
+          // Update all other tasks with the same content
+          for (const task of allTasks) {
+            if (task.id !== updatedTask.id) {
+              const updateData: any = {};
+              if (validatedData.taskTitle !== undefined) updateData.taskTitle = validatedData.taskTitle;
+              if (validatedData.mediaLink !== undefined) updateData.mediaLink = validatedData.mediaLink;
+              if (validatedData.taskUrl !== undefined) updateData.taskUrl = validatedData.taskUrl;
+              
+              await storage.updateChecklistTask(task.id, updateData);
+            }
+          }
+          
+          // Update the custom divider with the new content
+          const dividerUpdateData: any = {};
+          if (validatedData.taskTitle !== undefined) dividerUpdateData.name = validatedData.taskTitle;
+          if (validatedData.mediaLink !== undefined) dividerUpdateData.mediaLink = validatedData.mediaLink;
+          if (validatedData.taskUrl !== undefined) dividerUpdateData.textLink = validatedData.taskUrl;
+          
+          await storage.updateCustomDivider(updatedTask.customDividerId, dividerUpdateData);
+        }
       }
       
       res.json(updatedTask);
@@ -860,7 +893,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Custom divider not found" });
       }
       
-      // Update associated checklist tasks
+      // Handle assignment changes (existing logic)
       if (validatedData.assignedMembers || validatedData.releaseId) {
         // Remove old tasks
         const existingTasks = await storage.getChecklistTasksByCustomDividerId(id);
@@ -883,6 +916,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
               taskType: "custom_divider",
               completed: false
             });
+          }
+        }
+      } else {
+        // Handle content field changes (bidirectional sync)
+        const hasContentChanges = validatedData.name !== undefined || 
+                                  validatedData.mediaLink !== undefined || 
+                                  validatedData.textLink !== undefined;
+        
+        if (hasContentChanges) {
+          // Get all tasks for this custom divider
+          const allTasks = await storage.getChecklistTasksByCustomDividerId(id);
+          
+          // Update all tasks with the new content
+          for (const task of allTasks) {
+            const updateData: any = {};
+            if (validatedData.name !== undefined) updateData.taskTitle = validatedData.name;
+            if (validatedData.mediaLink !== undefined) updateData.mediaLink = validatedData.mediaLink;
+            if (validatedData.textLink !== undefined) updateData.taskUrl = validatedData.textLink;
+            
+            await storage.updateChecklistTask(task.id, updateData);
           }
         }
       }
