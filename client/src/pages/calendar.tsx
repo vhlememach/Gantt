@@ -929,15 +929,17 @@ export default function CalendarPage() {
                         className="text-xs font-medium px-2 py-1 rounded text-white opacity-90 mb-1 flex items-center justify-between group cursor-move hover:opacity-100 transition-opacity"
                         style={{ backgroundColor: divider.color }}
                       >
-                        <div className="flex items-center">
+                        <div className="flex flex-col">
                           {divider.completed && (
-                            <div className="flex flex-col items-center mr-2">
-                              <i className="fas fa-check-circle text-green-400 text-sm"></i>
+                            <div className="flex items-center justify-center mb-1">
+                              <i className="fas fa-check-circle text-green-400 text-sm mr-1"></i>
                               <span className="text-xs text-green-400">Completed</span>
                             </div>
                           )}
-                          <i className={`${divider.icon} mr-1`}></i>
-                          {divider.name}
+                          <div className="flex items-center">
+                            <i className={`${divider.icon} mr-1`}></i>
+                            {divider.name}
+                          </div>
                         </div>
                         <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
