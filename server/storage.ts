@@ -7,8 +7,9 @@ import {
   type ContentFormatAssignment, type InsertContentFormatAssignment,
   type EvergreenBox, type InsertEvergreenBox,
   type TaskSocialMedia, type InsertTaskSocialMedia,
+  type CustomDivider, type InsertCustomDivider,
   releaseGroups, releases, appSettings, checklistTasks, evergreenBoxes, 
-  waterfallCycles, contentFormatAssignments, taskSocialMedia
+  waterfallCycles, contentFormatAssignments, taskSocialMedia, customDividers
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -72,6 +73,15 @@ export interface IStorage {
   createTaskSocialMedia(socialMedia: InsertTaskSocialMedia): Promise<TaskSocialMedia>;
   updateTaskSocialMedia(id: string, socialMedia: Partial<InsertTaskSocialMedia>): Promise<TaskSocialMedia | undefined>;
   deleteTaskSocialMedia(id: string): Promise<boolean>;
+
+  // Custom Dividers
+  getCustomDividers(): Promise<CustomDivider[]>;
+  getCustomDivider(id: string): Promise<CustomDivider | undefined>;
+  getCustomDividersByDateKey(dateKey: string): Promise<CustomDivider[]>;
+  createCustomDivider(divider: InsertCustomDivider): Promise<CustomDivider>;
+  updateCustomDivider(id: string, divider: Partial<InsertCustomDivider>): Promise<CustomDivider | undefined>;
+  deleteCustomDivider(id: string): Promise<boolean>;
+  getChecklistTasksByCustomDividerId(customDividerId: string): Promise<ChecklistTask[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -381,6 +391,50 @@ export class DatabaseStorage implements IStorage {
   async deleteTaskSocialMedia(id: string): Promise<boolean> {
     const result = await db.delete(taskSocialMedia).where(eq(taskSocialMedia.id, id));
     return (result.rowCount || 0) > 0;
+  }
+
+  // Custom Dividers
+  async getCustomDividers(): Promise<CustomDivider[]> {
+    return await db.select().from(customDividers);
+  }
+
+  async getCustomDivider(id: string): Promise<CustomDivider | undefined> {
+    const [divider] = await db.select().from(customDividers).where(eq(customDividers.id, id));
+    return divider || undefined;
+  }
+
+  async getCustomDividersByDateKey(dateKey: string): Promise<CustomDivider[]> {
+    return await db.select().from(customDividers).where(eq(customDividers.dateKey, dateKey));
+  }
+
+  async createCustomDivider(divider: InsertCustomDivider): Promise<CustomDivider> {
+    const cleanedDivider = {
+      ...divider,
+      releaseId: divider.releaseId === "" ? null : divider.releaseId
+    };
+    const [newDivider] = await db.insert(customDividers).values(cleanedDivider).returning();
+    return newDivider;
+  }
+
+  async updateCustomDivider(id: string, divider: Partial<InsertCustomDivider>): Promise<CustomDivider | undefined> {
+    const cleanedDivider = {
+      ...divider,
+      ...(divider.releaseId !== undefined && { releaseId: divider.releaseId === "" ? null : divider.releaseId })
+    };
+    const [updated] = await db.update(customDividers)
+      .set(cleanedDivider)
+      .where(eq(customDividers.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteCustomDivider(id: string): Promise<boolean> {
+    const result = await db.delete(customDividers).where(eq(customDividers.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async getChecklistTasksByCustomDividerId(customDividerId: string): Promise<ChecklistTask[]> {
+    return await db.select().from(checklistTasks).where(eq(checklistTasks.customDividerId, customDividerId));
   }
 }
 

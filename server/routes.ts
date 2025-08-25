@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { 
   insertReleaseGroupSchema, insertReleaseSchema, insertAppSettingsSchema, insertChecklistTaskSchema,
   insertWaterfallCycleSchema, insertContentFormatAssignmentSchema, insertEvergreenBoxSchema,
-  insertTaskSocialMediaSchema
+  insertTaskSocialMediaSchema, insertCustomDividerSchema
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -265,6 +265,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!updatedTask) {
         return res.status(404).json({ error: "Task not found" });
       }
+      
+      // If this is a custom divider task and we're updating completion status
+      if (updatedTask.customDividerId && validatedData.completed !== undefined) {
+        // Check if all tasks for this custom divider are completed
+        const allTasks = await storage.getChecklistTasksByCustomDividerId(updatedTask.customDividerId);
+        const allCompleted = allTasks.every(t => t.completed);
+        
+        // Update the custom divider completion status
+        await storage.updateCustomDivider(updatedTask.customDividerId, { completed: allCompleted });
+      }
+      
       res.json(updatedTask);
     } catch (error) {
       console.error("Error updating checklist task:", error);
@@ -461,6 +472,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     assignedTo: assignedMember,
                     releaseId: null, // Evergreen tasks are not tied to releases
                     evergreenBoxId: box.id,
+                    customDividerId: null, // Not a custom divider task
                     waterfallCycleId: box.waterfallCycleId,
                     contentFormatType: formatType,
                     completed: false
@@ -797,6 +809,123 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ message: "Failed to delete task social media" });
+    }
+  });
+
+  // Custom Dividers
+  app.get("/api/custom-dividers", async (req, res) => {
+    try {
+      const dividers = await storage.getCustomDividers();
+      res.json(dividers);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get custom dividers" });
+    }
+  });
+
+  app.post("/api/custom-dividers", async (req, res) => {
+    try {
+      const validatedData = insertCustomDividerSchema.parse(req.body);
+      const divider = await storage.createCustomDivider(validatedData);
+      
+      // If assigned to project and team members, create corresponding checklist tasks
+      if (validatedData.releaseId && validatedData.assignedMembers?.length) {
+        for (const member of validatedData.assignedMembers) {
+          await storage.createChecklistTask({
+            customDividerId: divider.id,
+            releaseId: validatedData.releaseId,
+            evergreenBoxId: null,
+            waterfallCycleId: null,
+            assignedTo: member,
+            taskTitle: validatedData.name,
+            taskDescription: `Custom divider task: ${validatedData.name}`,
+            taskUrl: validatedData.mediaLink || validatedData.textLink || null,
+            taskType: "custom_divider",
+            completed: false
+          });
+        }
+      }
+      
+      res.json(divider);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid custom divider data" });
+    }
+  });
+
+  app.put("/api/custom-dividers/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validatedData = insertCustomDividerSchema.partial().parse(req.body);
+      const divider = await storage.updateCustomDivider(id, validatedData);
+      if (!divider) {
+        return res.status(404).json({ message: "Custom divider not found" });
+      }
+      
+      // Update associated checklist tasks
+      if (validatedData.assignedMembers || validatedData.releaseId) {
+        // Remove old tasks
+        const existingTasks = await storage.getChecklistTasksByCustomDividerId(id);
+        for (const task of existingTasks) {
+          await storage.deleteChecklistTask(task.id);
+        }
+        
+        // Create new tasks if assigned
+        if (divider.releaseId && divider.assignedMembers?.length) {
+          for (const member of divider.assignedMembers) {
+            await storage.createChecklistTask({
+              customDividerId: divider.id,
+              releaseId: divider.releaseId,
+              evergreenBoxId: null,
+              waterfallCycleId: null,
+              assignedTo: member,
+              taskTitle: divider.name,
+              taskDescription: `Custom divider task: ${divider.name}`,
+              taskUrl: divider.mediaLink || divider.textLink || null,
+              taskType: "custom_divider",
+              completed: false
+            });
+          }
+        }
+      }
+      
+      res.json(divider);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid custom divider data" });
+    }
+  });
+
+  app.delete("/api/custom-dividers/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteCustomDivider(id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Custom divider not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete custom divider" });
+    }
+  });
+
+  // Mark custom divider as completed
+  app.patch("/api/custom-dividers/:id/complete", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { completed } = req.body;
+      
+      const divider = await storage.updateCustomDivider(id, { completed });
+      if (!divider) {
+        return res.status(404).json({ message: "Custom divider not found" });
+      }
+      
+      // Update associated checklist tasks completion status
+      const tasks = await storage.getChecklistTasksByCustomDividerId(id);
+      for (const task of tasks) {
+        await storage.updateChecklistTask(task.id, { completed });
+      }
+      
+      res.json(divider);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update custom divider" });
     }
   });
 

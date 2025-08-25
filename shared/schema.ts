@@ -83,11 +83,27 @@ export const taskSocialMedia = pgTable("task_social_media", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Custom calendar dividers
+export const customDividers = pgTable("custom_dividers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  color: text("color").notNull(),
+  icon: text("icon").notNull(),
+  mediaLink: text("media_link"),
+  textLink: text("text_link"),
+  dateKey: text("date_key").notNull(), // YYYY-MM-DD format
+  releaseId: varchar("release_id").references(() => releases.id, { onDelete: "cascade" }),
+  assignedMembers: text("assigned_members").array().default([]), // ["Brian", "Alex"] etc.
+  completed: boolean("completed").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Checklist tasks for marketing team members
 export const checklistTasks = pgTable("checklist_tasks", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   releaseId: varchar("release_id").references(() => releases.id, { onDelete: "cascade" }),
   evergreenBoxId: varchar("evergreen_box_id").references(() => evergreenBoxes.id, { onDelete: "cascade" }),
+  customDividerId: varchar("custom_divider_id").references(() => customDividers.id, { onDelete: "cascade" }),
   assignedTo: text("assigned_to").notNull(), // Brian, Alex, Lucas, Victor
   taskTitle: text("task_title").notNull(),
   taskDescription: text("task_description"),
@@ -104,6 +120,7 @@ export const checklistTasks = pgTable("checklist_tasks", {
   currentVersion: integer("current_version").default(1), // v1, v2, v3, v4, etc.
   reviewChanges: text("review_changes"), // Changes requested for review
   reviewSubmissionUrl: text("review_submission_url"), // URL submitted by team member for review
+  taskType: text("task_type").default("regular"), // regular, custom_divider
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -149,6 +166,13 @@ export const insertTaskSocialMediaSchema = createInsertSchema(taskSocialMedia).o
   createdAt: true,
 });
 
+export const insertCustomDividerSchema = createInsertSchema(customDividers).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  releaseId: z.string().nullable().optional().transform((val) => val === "" || val === undefined || val === null ? null : val),
+});
+
 export const insertChecklistTaskSchema = createInsertSchema(checklistTasks).omit({
   id: true,
   createdAt: true,
@@ -156,6 +180,7 @@ export const insertChecklistTaskSchema = createInsertSchema(checklistTasks).omit
   waterfallCycleId: z.string().nullable().optional().transform((val) => val === "" || val === undefined || val === null ? null : val),
   releaseId: z.string().nullable().optional().transform((val) => val === "" || val === undefined || val === null ? null : val),
   evergreenBoxId: z.string().nullable().optional().transform((val) => val === "" || val === undefined || val === null ? null : val),
+  customDividerId: z.string().nullable().optional().transform((val) => val === "" || val === undefined || val === null ? null : val),
 });
 
 export type InsertReleaseGroup = z.infer<typeof insertReleaseGroupSchema>;
@@ -178,6 +203,9 @@ export type EvergreenBox = typeof evergreenBoxes.$inferSelect;
 
 export type InsertTaskSocialMedia = z.infer<typeof insertTaskSocialMediaSchema>;
 export type TaskSocialMedia = typeof taskSocialMedia.$inferSelect;
+
+export type InsertCustomDivider = z.infer<typeof insertCustomDividerSchema>;
+export type CustomDivider = typeof customDividers.$inferSelect;
 
 export type InsertChecklistTask = z.infer<typeof insertChecklistTaskSchema>;
 export type ChecklistTask = typeof checklistTasks.$inferSelect;

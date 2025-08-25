@@ -146,6 +146,7 @@ export default function ChecklistPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["/api/releases"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/custom-dividers"] });
     }
   });
 

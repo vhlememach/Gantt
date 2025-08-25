@@ -78,12 +78,14 @@ export default function CalendarPage() {
   const [editingReleaseAccent, setEditingReleaseAccent] = useState<string | null>(null);
   const [releaseAccentColors, setReleaseAccentColors] = useState<Map<string, string>>(new Map());
   const [showCustomDividerModal, setShowCustomDividerModal] = useState<{ day: number; month: number; year: number } | null>(null);
-  const [customDividers, setCustomDividers] = useState<Map<string, Array<{ name: string; color: string; icon: string; mediaLink?: string; textLink?: string }>>>(new Map());
+  const [customDividers, setCustomDividers] = useState<Map<string, Array<{ id?: string; name: string; color: string; icon: string; mediaLink?: string; textLink?: string; releaseId?: string | null; assignedMembers?: string[]; completed?: boolean }>>>(new Map());
   const [selectedColor, setSelectedColor] = useState('#3B82F6');
   const [selectedIcon, setSelectedIcon] = useState('fas fa-star');
   const [dividerName, setDividerName] = useState('');
   const [dividerMediaLink, setDividerMediaLink] = useState('');
   const [dividerTextLink, setDividerTextLink] = useState('');
+  const [selectedProjectId, setSelectedProjectId] = useState('');
+  const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([]);
   const [deleteConfirmModal, setDeleteConfirmModal] = useState<{dateKey: string; index: number; divider: any} | null>(null);
   const [showSocialMediaModal, setShowSocialMediaModal] = useState<string | null>(null);
   const [taskSocialMedia, setTaskSocialMedia] = useState<Map<string, string[]>>(new Map());
@@ -95,29 +97,67 @@ export default function CalendarPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Load custom dividers from localStorage on mount
-  useEffect(() => {
-    try {
-      const savedDividers = localStorage.getItem('calendar-custom-dividers');
-      if (savedDividers) {
-        const parsedDividers = JSON.parse(savedDividers);
-        const dividersMap = new Map(Object.entries(parsedDividers));
-        setCustomDividers(dividersMap);
-      }
-    } catch (error) {
-      console.error('Error loading custom dividers from localStorage:', error);
-    }
-  }, []);
+  const teamMembers = ["Brian", "Alex", "Lucas", "Victor"];
 
-  // Save custom dividers to localStorage whenever they change
+  // Fetch custom dividers from database
+  const { data: customDividersData = [] } = useQuery<any[]>({
+    queryKey: ["/api/custom-dividers"]
+  });
+
+  // Load custom dividers into state when data changes
   useEffect(() => {
-    try {
-      const dividersObject = Object.fromEntries(customDividers);
-      localStorage.setItem('calendar-custom-dividers', JSON.stringify(dividersObject));
-    } catch (error) {
-      console.error('Error saving custom dividers to localStorage:', error);
+    const dividersMap = new Map<string, any[]>();
+    customDividersData.forEach((divider) => {
+      const existing = dividersMap.get(divider.dateKey) || [];
+      existing.push({
+        id: divider.id,
+        name: divider.name,
+        color: divider.color,
+        icon: divider.icon,
+        mediaLink: divider.mediaLink,
+        textLink: divider.textLink,
+        releaseId: divider.releaseId,
+        assignedMembers: divider.assignedMembers || [],
+        completed: divider.completed || false
+      });
+      dividersMap.set(divider.dateKey, existing);
+    });
+    setCustomDividers(dividersMap);
+  }, [customDividersData]);
+
+  // Mutation for creating/updating custom dividers
+  const saveCustomDividerMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest('POST', '/api/custom-dividers', data);
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/custom-dividers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
     }
-  }, [customDividers]);
+  });
+
+  const updateCustomDividerMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const response = await apiRequest('PUT', `/api/custom-dividers/${id}`, data);
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/custom-dividers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
+    }
+  });
+
+  const deleteCustomDividerMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiRequest('DELETE', `/api/custom-dividers/${id}`);
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/custom-dividers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/checklist-tasks"] });
+    }
+  });
 
   // Fetch all task social media data
   const { data: allTaskSocialMedia = [] } = useQuery({
@@ -215,7 +255,7 @@ export default function CalendarPage() {
       const savedColors = localStorage.getItem('calendar-release-accent-colors');
       if (savedColors) {
         const parsedColors = JSON.parse(savedColors);
-        const colorsMap = new Map(Object.entries(parsedColors));
+        const colorsMap = new Map(Object.entries(parsedColors) as [string, string][]);
         setReleaseAccentColors(colorsMap);
       }
     } catch (error) {
@@ -890,6 +930,12 @@ export default function CalendarPage() {
                         style={{ backgroundColor: divider.color }}
                       >
                         <div className="flex items-center">
+                          {divider.completed && (
+                            <div className="flex flex-col items-center mr-2">
+                              <i className="fas fa-check-circle text-green-400 text-sm"></i>
+                              <span className="text-xs text-green-400">Completed</span>
+                            </div>
+                          )}
                           <i className={`${divider.icon} mr-1`}></i>
                           {divider.name}
                         </div>
@@ -1135,6 +1181,8 @@ export default function CalendarPage() {
                   setDividerName('');
                   setDividerMediaLink('');
                   setDividerTextLink('');
+                  setSelectedProjectId('');
+                  setSelectedTeamMembers([]);
                   setSelectedColor('#3B82F6');
                   setSelectedIcon('fas fa-bookmark');
                 }}
@@ -1231,6 +1279,61 @@ export default function CalendarPage() {
                   placeholder="Enter text link URL (e.g., document, article)"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Assign to Project (Optional)
+                </label>
+                <select
+                  value={editingDivider ? editingDivider.divider.releaseId || '' : selectedProjectId}
+                  onChange={(e) => editingDivider ? 
+                    setEditingDivider({...editingDivider, divider: {...editingDivider.divider, releaseId: e.target.value || null}}) : 
+                    setSelectedProjectId(e.target.value)
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+                >
+                  <option value="">No Project</option>
+                  {releases.map(release => (
+                    <option key={release.id} value={release.id}>{release.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Assign to Team Members (Optional)
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {teamMembers.map(member => {
+                    const isSelected = editingDivider 
+                      ? editingDivider.divider.assignedMembers?.includes(member) || false
+                      : selectedTeamMembers.includes(member);
+                    
+                    return (
+                      <label key={member} className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={(e) => {
+                            if (editingDivider) {
+                              const currentMembers = editingDivider.divider.assignedMembers || [];
+                              const newMembers = e.target.checked 
+                                ? [...currentMembers, member]
+                                : currentMembers.filter((m: string) => m !== member);
+                              setEditingDivider({...editingDivider, divider: {...editingDivider.divider, assignedMembers: newMembers}});
+                            } else {
+                              const newMembers = e.target.checked 
+                                ? [...selectedTeamMembers, member]
+                                : selectedTeamMembers.filter((m: string) => m !== member);
+                              setSelectedTeamMembers(newMembers);
+                            }
+                          }}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">{member}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
               <div className="border-t pt-4">
                 <div className="flex items-center justify-between">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -1273,6 +1376,8 @@ export default function CalendarPage() {
                   setDividerName('');
                   setDividerMediaLink('');
                   setDividerTextLink('');
+                  setSelectedProjectId('');
+                  setSelectedTeamMembers([]);
                   setSelectedColor('#3B82F6');
                   setSelectedIcon('fas fa-star');
                 }}
@@ -1286,39 +1391,42 @@ export default function CalendarPage() {
                   const icon = editingDivider ? editingDivider.divider.icon : selectedIcon;
                   const mediaLink = editingDivider ? editingDivider.divider.mediaLink : dividerMediaLink;
                   const textLink = editingDivider ? editingDivider.divider.textLink : dividerTextLink;
+                  const projectId = editingDivider ? editingDivider.divider.releaseId : selectedProjectId;
+                  const teamMembers = editingDivider ? editingDivider.divider.assignedMembers : selectedTeamMembers;
                   
                   if (!name.trim()) return;
                   
                   if (editingDivider) {
                     // Edit existing divider
-                    const newDividers = new Map(customDividers);
-                    const existingDividers = newDividers.get(editingDivider.dateKey) || [];
-                    existingDividers[editingDivider.index] = { 
-                      name, 
-                      color, 
-                      icon, 
-                      mediaLink: mediaLink || undefined,
-                      textLink: textLink || undefined
+                    const updateData = {
+                      name,
+                      color,
+                      icon,
+                      mediaLink: mediaLink || null,
+                      textLink: textLink || null,
+                      releaseId: projectId || null,
+                      assignedMembers: teamMembers || [],
+                      dateKey: editingDivider.dateKey
                     };
-                    newDividers.set(editingDivider.dateKey, existingDividers);
-                    setCustomDividers(newDividers);
+                    updateCustomDividerMutation.mutate({ id: editingDivider.divider.id, data: updateData });
                     setEditingDivider(null);
                   } else if (showCustomDividerModal) {
                     // Add new divider
                     const { day, month, year } = showCustomDividerModal;
                     const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                     
-                    const newDividers = new Map(customDividers);
-                    const existingDividers = newDividers.get(dateKey) || [];
-                    existingDividers.push({ 
-                      name, 
-                      color, 
-                      icon, 
-                      mediaLink: mediaLink || undefined,
-                      textLink: textLink || undefined
-                    });
-                    newDividers.set(dateKey, existingDividers);
-                    setCustomDividers(newDividers);
+                    const newDividerData = {
+                      name,
+                      color,
+                      icon,
+                      mediaLink: mediaLink || null,
+                      textLink: textLink || null,
+                      dateKey,
+                      releaseId: projectId || null,
+                      assignedMembers: teamMembers || [],
+                      completed: false
+                    };
+                    saveCustomDividerMutation.mutate(newDividerData);
                     setShowCustomDividerModal(null);
                   }
                   
@@ -1326,6 +1434,8 @@ export default function CalendarPage() {
                   setDividerName('');
                   setDividerMediaLink('');
                   setDividerTextLink('');
+                  setSelectedProjectId('');
+                  setSelectedTeamMembers([]);
                   setSelectedColor('#3B82F6');
                   setSelectedIcon('fas fa-star');
                 }}
@@ -1370,14 +1480,10 @@ export default function CalendarPage() {
               <Button
                 variant="destructive"
                 onClick={() => {
-                  const { dateKey, index } = deleteConfirmModal;
-                  const newDividers = new Map(customDividers);
-                  const existingDividers = newDividers.get(dateKey) || [];
-                  newDividers.set(dateKey, existingDividers.filter((_, i) => i !== index));
-                  if (newDividers.get(dateKey)?.length === 0) {
-                    newDividers.delete(dateKey);
+                  const { divider } = deleteConfirmModal;
+                  if (divider.id) {
+                    deleteCustomDividerMutation.mutate(divider.id);
                   }
-                  setCustomDividers(newDividers);
                   setDeleteConfirmModal(null);
                   toast({
                     title: "Divider deleted",
