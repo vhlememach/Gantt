@@ -256,7 +256,7 @@ export default function GanttPage() {
                   
                   // Only create custom dividers that have a valid project assignment
                   // This prevents "No Project" calendar tasks from being duplicated
-                  if (newReleaseId || !divider.releaseId) {
+                  if (newReleaseId) {
                     const cleanDivider = {
                       name: divider.name,
                       color: divider.color,
