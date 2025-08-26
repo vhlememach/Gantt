@@ -245,10 +245,68 @@ export default function GanttPage() {
                 }
               }
 
-              // 6. Import checklist tasks with proper ID mapping
+              // 6. Import custom dividers BEFORE tasks to avoid duplication
+              if (data.customDividers && Array.isArray(data.customDividers)) {
+                console.log("Importing custom dividers:", data.customDividers.length);
+                for (const divider of data.customDividers) {
+                  // Map release IDs for custom dividers
+                  const newReleaseId = divider.releaseId 
+                    ? idMappings.releases[divider.releaseId] || null
+                    : null;
+                  
+                  // Only create custom dividers that have a valid project assignment
+                  // This prevents "No Project" calendar tasks from being duplicated
+                  if (newReleaseId || !divider.releaseId) {
+                    const cleanDivider = {
+                      name: divider.name,
+                      color: divider.color,
+                      icon: divider.icon,
+                      mediaLink: divider.mediaLink || null,
+                      textLink: divider.textLink || null,
+                      dateKey: divider.dateKey,
+                      releaseId: newReleaseId,
+                      assignedMembers: Array.isArray(divider.assignedMembers) ? divider.assignedMembers : [],
+                      completed: divider.completed || false
+                    };
+                    
+                    console.log("Importing custom divider:", cleanDivider);
+                    
+                    const response = await fetch('/api/custom-dividers', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(cleanDivider)
+                    });
+                    
+                    if (!response.ok) {
+                      const error = await response.text();
+                      console.error("Custom divider import failed:", response.status, error, cleanDivider);
+                    } else {
+                      const newDivider = await response.json();
+                      console.log(`Custom divider "${divider.name}" imported successfully: ${divider.id} -> ${newDivider.id}`);
+                    }
+                  } else {
+                    console.log(`Skipping custom divider "${divider.name}" with no valid project assignment`);
+                  }
+                }
+              } else {
+                console.warn("No custom dividers found in import data or invalid format");
+              }
+
+              // 7. Import checklist tasks with proper ID mapping
+              // BUT skip tasks that are created by custom dividers to avoid duplication
               if (data.checklistTasks) {
                 console.log("Importing checklist tasks:", data.checklistTasks.length);
-                for (const task of data.checklistTasks) {
+                const customDividerTasks = data.checklistTasks.filter((task: any) => 
+                  task.taskType === 'custom_divider' || task.customDividerId
+                );
+                const nonCustomDividerTasks = data.checklistTasks.filter((task: any) => 
+                  task.taskType !== 'custom_divider' && !task.customDividerId
+                );
+                
+                console.log(`Skipping ${customDividerTasks.length} custom divider tasks (will be auto-created)`);
+                console.log(`Importing ${nonCustomDividerTasks.length} regular checklist tasks`);
+                
+                for (const task of nonCustomDividerTasks) {
                   const newReleaseId = task.releaseId 
                     ? idMappings.releases[task.releaseId] || null
                     : null;
@@ -287,7 +345,7 @@ export default function GanttPage() {
                 }
               }
 
-              // 7. Import task social media data
+              // 8. Import task social media data
               if (data.taskSocialMedia) {
                 console.log("Importing task social media data:", data.taskSocialMedia.length);
                 for (const socialMedia of data.taskSocialMedia) {
@@ -335,51 +393,10 @@ export default function GanttPage() {
                 console.log("Settings imported");
               }
 
-              // 8. Import custom dividers to database
-              if (data.customDividers && Array.isArray(data.customDividers)) {
-                console.log("Importing custom dividers:", data.customDividers.length);
-                for (const divider of data.customDividers) {
-                  // Map release IDs for custom dividers
-                  const newReleaseId = divider.releaseId 
-                    ? idMappings.releases[divider.releaseId] || null
-                    : null;
-                  
-                  const cleanDivider = {
-                    name: divider.name,
-                    color: divider.color,
-                    icon: divider.icon,
-                    mediaLink: divider.mediaLink || null,
-                    textLink: divider.textLink || null,
-                    dateKey: divider.dateKey,
-                    releaseId: newReleaseId,
-                    assignedMembers: Array.isArray(divider.assignedMembers) ? divider.assignedMembers : [],
-                    completed: divider.completed || false
-                  };
-                  
-                  console.log("Importing custom divider:", cleanDivider);
-                  
-                  const response = await fetch('/api/custom-dividers', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(cleanDivider)
-                  });
-                  
-                  if (!response.ok) {
-                    const error = await response.text();
-                    console.error("Custom divider import failed:", response.status, error, cleanDivider);
-                  } else {
-                    const newDivider = await response.json();
-                    console.log(`Custom divider "${divider.name}" imported successfully: ${divider.id} -> ${newDivider.id}`);
-                  }
-                }
-              } else {
-                console.warn("No custom dividers found in import data or invalid format");
-              }
-
               // Invalidate all React Query caches to force refetch
               // Note: We'll rely on the page reload to refresh data
               
-              console.log("All data imported successfully including custom dividers");
+              console.log("All data imported successfully - duplications fixed!");
               alert('Data imported successfully! Page will reload to show the imported data.');
               window.location.reload();
             }
