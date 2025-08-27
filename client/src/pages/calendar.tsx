@@ -1051,7 +1051,7 @@ export default function CalendarPage() {
                     <div className="space-y-2">
                       {releasesForDay.map(release => {
                         const group = releaseGroups.find(g => g.id === release.groupId);
-                        const releaseTasks = tasksForDay[release.id]?.tasks || [];
+                        const releaseTasks = (tasksForDay[release.id]?.tasks || []).filter(task => !task.evergreenBoxId);
                         
                         return (
                           <div key={release.id} className="space-y-1">
@@ -1393,14 +1393,15 @@ export default function CalendarPage() {
                         
                         return (
                           <div key={`tasks-${box.id}`} className="space-y-1">
-                            <div className="text-xs font-medium px-2 py-2 rounded text-white bg-gray-500 opacity-90">
+                            <div className="text-xs font-medium px-2 py-2 rounded text-white opacity-90" style={{ backgroundColor: '#3b82f6' }}>
                               <i className={`${box.icon || 'fas fa-calendar'} mr-1`}></i>
                               {box.title}
                             </div>
                             {boxTasks.map(task => (
                               <div
                                 key={task.id}
-                                className="text-xs p-2 bg-gray-100 dark:bg-gray-600 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors ml-2 min-h-[2.5rem] flex flex-col space-y-1"
+                                className="text-xs p-2 rounded cursor-pointer hover:opacity-80 transition-colors ml-2 min-h-[2.5rem] flex flex-col space-y-1"
+                                style={{ backgroundColor: '#dbeafe', color: '#1d4ed8' }}
                                 title={`${task.taskTitle} - Double-click to remove`}
                                 draggable
                                 onDragStart={(e) => {
