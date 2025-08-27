@@ -1388,6 +1388,14 @@ export default function CalendarPage() {
                         const boxTasks = Object.entries(tasksForDay)
                           .flatMap(([, { tasks }]) => tasks.filter(task => task.evergreenBoxId === box.id));
                         
+                        // Debug logging
+                        console.log(`Checking evergreen box "${box.title}" (${box.id})`);
+                        console.log(`All tasks for day:`, Object.entries(tasksForDay).map(([releaseId, data]) => ({ releaseId, taskCount: data.tasks.length, tasks: data.tasks.map(t => ({ title: t.taskTitle, evergreenBoxId: t.evergreenBoxId })) })));
+                        
+                        if (boxTasks.length > 0) {
+                          console.log(`Found ${boxTasks.length} tasks for evergreen box "${box.title}":`, boxTasks.map(t => t.taskTitle));
+                        }
+                        
                         if (boxTasks.length === 0) return null;
                         
                         return (
