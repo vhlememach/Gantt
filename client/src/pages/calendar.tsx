@@ -1386,7 +1386,6 @@ export default function CalendarPage() {
                       {/* Evergreen tasks grouped by box */}
                       {evergreenBoxes.map(box => {
                         const boxTasks = Object.entries(tasksForDay)
-                          .filter(([releaseId]) => releaseId === 'evergreen' || !releases.find(r => r.id === releaseId))
                           .flatMap(([, { tasks }]) => tasks.filter(task => task.evergreenBoxId === box.id));
                         
                         if (boxTasks.length === 0) return null;
