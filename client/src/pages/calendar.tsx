@@ -416,8 +416,15 @@ export default function CalendarPage() {
     });
     const deduplicatedTasks = Array.from(uniqueTasksMap.values());
     console.log('After deduplication:', deduplicatedTasks.length);
+    console.log('All tasks with their assignments:', deduplicatedTasks.map(t => ({ 
+      id: t.id, 
+      title: t.taskTitle, 
+      scheduled: t.scheduledDate, 
+      releaseId: t.releaseId, 
+      evergreenBoxId: t.evergreenBoxId 
+    })));
     
-    // Transform tasks - include completion status
+    // Transform tasks - include completion status and evergreen box ID
     const processedTasks: CalendarTask[] = deduplicatedTasks.map(task => ({
       id: task.id,
       taskTitle: task.evergreenBoxId ? `${task.assignedTo} > ${task.taskTitle}` : task.taskTitle,
@@ -435,7 +442,8 @@ export default function CalendarPage() {
       releaseIcon: releases.find(r => r.id === task.releaseId)?.icon,
       priority: task.priority,
       scheduledDate: task.scheduledDate,
-      completed: task.completed || false // Add completion status, handle null
+      completed: task.completed || false, // Add completion status, handle null
+      evergreenBoxId: task.evergreenBoxId // Preserve evergreen box ID
     }));
     
     // Only show scheduled tasks that are actually completed in Team Checklist
@@ -540,11 +548,11 @@ export default function CalendarPage() {
     }
   };
 
-  // Get tasks for a specific day - only show tasks that are both scheduled AND currently completed
+  // Get tasks for a specific day - show ALL scheduled tasks regardless of completion status
   const getTasksForDay = (day: number) => {
     const dateString = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     
-    // Get all tasks that have a scheduled date for this day
+    // Get all tasks that have a scheduled date for this day (regardless of completion)
     const dayTasks = tasks.filter(task => {
       if (!task.scheduledDate) return false;
       const taskDate = new Date(task.scheduledDate);
@@ -552,11 +560,8 @@ export default function CalendarPage() {
       const isSameDay = taskDate.toDateString() === checkDate.toDateString();
       
       if (isSameDay) {
-        // Double-check completion status from original task data
-        const originalTask = allTasks.find(t => t.id === task.id);
-        const isCurrentlyCompleted = originalTask?.completed === true;
-        console.log(`Task "${task.taskTitle}" for day ${day}: completed=${isCurrentlyCompleted}, originalCompleted=${originalTask?.completed}`);
-        return isCurrentlyCompleted;
+        console.log(`Found scheduled task "${task.taskTitle}" for day ${day}, evergreenBoxId: ${task.evergreenBoxId}`);
+        return true; // Show all scheduled tasks
       }
       
       return false;
