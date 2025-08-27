@@ -93,6 +93,7 @@ export const customDividers = pgTable("custom_dividers", {
   textLink: text("text_link"),
   dateKey: text("date_key").notNull(), // YYYY-MM-DD format
   releaseId: varchar("release_id").references(() => releases.id, { onDelete: "cascade" }),
+  evergreenBoxId: varchar("evergreen_box_id").references(() => evergreenBoxes.id, { onDelete: "cascade" }),
   assignedMembers: text("assigned_members").array().default([]), // ["Brian", "Alex"] etc.
   completed: boolean("completed").default(false),
   createdAt: timestamp("created_at").defaultNow(),
@@ -172,6 +173,7 @@ export const insertCustomDividerSchema = createInsertSchema(customDividers).omit
   createdAt: true,
 }).extend({
   releaseId: z.string().nullable().optional().transform((val) => val === "" || val === undefined || val === null ? null : val),
+  evergreenBoxId: z.string().nullable().optional().transform((val) => val === "" || val === undefined || val === null ? null : val),
 });
 
 export const insertChecklistTaskSchema = createInsertSchema(checklistTasks).omit({

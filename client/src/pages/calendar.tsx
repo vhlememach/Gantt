@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ChecklistTask, Release, ReleaseGroup } from "@shared/schema";
+import { ChecklistTask, Release, ReleaseGroup, EvergreenBox } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -78,13 +78,14 @@ export default function CalendarPage() {
   const [editingReleaseAccent, setEditingReleaseAccent] = useState<string | null>(null);
   const [releaseAccentColors, setReleaseAccentColors] = useState<Map<string, string>>(new Map());
   const [showCustomDividerModal, setShowCustomDividerModal] = useState<{ day: number; month: number; year: number } | null>(null);
-  const [customDividers, setCustomDividers] = useState<Map<string, Array<{ id?: string; name: string; color: string; icon: string; mediaLink?: string; textLink?: string; releaseId?: string | null; assignedMembers?: string[]; completed?: boolean }>>>(new Map());
+  const [customDividers, setCustomDividers] = useState<Map<string, Array<{ id?: string; name: string; color: string; icon: string; mediaLink?: string; textLink?: string; releaseId?: string | null; evergreenBoxId?: string | null; assignedMembers?: string[]; completed?: boolean }>>>(new Map());
   const [selectedColor, setSelectedColor] = useState('#3B82F6');
   const [selectedIcon, setSelectedIcon] = useState('fas fa-star');
   const [dividerName, setDividerName] = useState('');
   const [dividerMediaLink, setDividerMediaLink] = useState('');
   const [dividerTextLink, setDividerTextLink] = useState('');
   const [selectedProjectId, setSelectedProjectId] = useState('');
+  const [selectedEvergreenBoxId, setSelectedEvergreenBoxId] = useState('');
   const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([]);
   const [deleteConfirmModal, setDeleteConfirmModal] = useState<{dateKey: string; index: number; divider: any} | null>(null);
   const [showSocialMediaModal, setShowSocialMediaModal] = useState<string | null>(null);
@@ -117,6 +118,7 @@ export default function CalendarPage() {
         mediaLink: divider.mediaLink,
         textLink: divider.textLink,
         releaseId: divider.releaseId,
+        evergreenBoxId: divider.evergreenBoxId,
         assignedMembers: divider.assignedMembers || [],
         completed: divider.completed || false
       });
@@ -245,7 +247,7 @@ export default function CalendarPage() {
   });
 
   // Fetch evergreen boxes to check for task generation
-  const { data: evergreenBoxes = [] } = useQuery<any[]>({
+  const { data: evergreenBoxes = [] } = useQuery<EvergreenBox[]>({
     queryKey: ["/api/evergreen-boxes"]
   });
 
@@ -1379,6 +1381,7 @@ export default function CalendarPage() {
                   setDividerMediaLink('');
                   setDividerTextLink('');
                   setSelectedProjectId('');
+                  setSelectedEvergreenBoxId('');
                   setSelectedTeamMembers([]);
                   setSelectedColor('#3B82F6');
                   setSelectedIcon('fas fa-bookmark');
@@ -1440,8 +1443,27 @@ export default function CalendarPage() {
                   })()} 
                 </select>
               </div>
-              {/* Only show color picker when no project is assigned */}
-              {((editingDivider && !editingDivider.divider.releaseId) || (!editingDivider && !selectedProjectId)) && (
+              {/* Assign to Evergreen Box (moved to position 3) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Assign to Evergreen Box (Optional)
+                </label>
+                <select
+                  value={editingDivider ? editingDivider.divider.evergreenBoxId || '' : selectedEvergreenBoxId}
+                  onChange={(e) => editingDivider ? 
+                    setEditingDivider({...editingDivider, divider: {...editingDivider.divider, evergreenBoxId: e.target.value || null}}) : 
+                    setSelectedEvergreenBoxId(e.target.value)
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+                >
+                  <option value="">No Evergreen Box</option>
+                  {evergreenBoxes.map(box => (
+                    <option key={box.id} value={box.id}>{box.title}</option>
+                  ))}
+                </select>
+              </div>
+              {/* Only show color picker when no project or evergreen box is assigned */}
+              {((editingDivider && !editingDivider.divider.releaseId && !editingDivider.divider.evergreenBoxId) || (!editingDivider && !selectedProjectId && !selectedEvergreenBoxId)) && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Color
@@ -1611,6 +1633,7 @@ export default function CalendarPage() {
                   const mediaLink = editingDivider ? editingDivider.divider.mediaLink : dividerMediaLink;
                   const textLink = editingDivider ? editingDivider.divider.textLink : dividerTextLink;
                   const projectId = editingDivider ? editingDivider.divider.releaseId : selectedProjectId;
+                  const evergreenBoxId = editingDivider ? editingDivider.divider.evergreenBoxId : selectedEvergreenBoxId;
                   const teamMembers = editingDivider ? editingDivider.divider.assignedMembers : selectedTeamMembers;
                   
                   if (!name.trim()) return;
@@ -1624,6 +1647,7 @@ export default function CalendarPage() {
                       mediaLink: mediaLink || null,
                       textLink: textLink || null,
                       releaseId: projectId || null,
+                      evergreenBoxId: evergreenBoxId || null,
                       assignedMembers: teamMembers || [],
                       dateKey: editingDivider.dateKey
                     };
@@ -1642,6 +1666,7 @@ export default function CalendarPage() {
                       textLink: textLink || null,
                       dateKey,
                       releaseId: projectId || null,
+                      evergreenBoxId: evergreenBoxId || null,
                       assignedMembers: teamMembers || [],
                       completed: false
                     };
@@ -1654,6 +1679,7 @@ export default function CalendarPage() {
                   setDividerMediaLink('');
                   setDividerTextLink('');
                   setSelectedProjectId('');
+                  setSelectedEvergreenBoxId('');
                   setSelectedTeamMembers([]);
                   setSelectedColor('#3B82F6');
                   setSelectedIcon('fas fa-star');

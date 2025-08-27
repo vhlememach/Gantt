@@ -249,14 +249,17 @@ export default function GanttPage() {
               if (data.customDividers && Array.isArray(data.customDividers)) {
                 console.log("Importing custom dividers:", data.customDividers.length);
                 for (const divider of data.customDividers) {
-                  // Map release IDs for custom dividers
+                  // Map release IDs and evergreen box IDs for custom dividers
                   const newReleaseId = divider.releaseId 
                     ? idMappings.releases[divider.releaseId] || null
                     : null;
+                  const newEvergreenBoxId = divider.evergreenBoxId 
+                    ? idMappings.evergreenBoxes[divider.evergreenBoxId] || null
+                    : null;
                   
-                  // Only create custom dividers that have a valid project assignment
-                  // This prevents "No Project" calendar tasks from being duplicated
-                  if (newReleaseId) {
+                  // Only create custom dividers that have a valid project OR evergreen box assignment
+                  // This prevents "No Project/No Evergreen Box" calendar tasks from being duplicated
+                  if (newReleaseId || newEvergreenBoxId) {
                     const cleanDivider = {
                       name: divider.name,
                       color: divider.color,
@@ -265,6 +268,7 @@ export default function GanttPage() {
                       textLink: divider.textLink || null,
                       dateKey: divider.dateKey,
                       releaseId: newReleaseId,
+                      evergreenBoxId: newEvergreenBoxId,
                       assignedMembers: Array.isArray(divider.assignedMembers) ? divider.assignedMembers : [],
                       completed: divider.completed || false
                     };
@@ -285,7 +289,7 @@ export default function GanttPage() {
                       console.log(`Custom divider "${divider.name}" imported successfully: ${divider.id} -> ${newDivider.id}`);
                     }
                   } else {
-                    console.log(`Skipping custom divider "${divider.name}" with no valid project assignment`);
+                    console.log(`Skipping custom divider "${divider.name}" with no valid project or evergreen box assignment`);
                   }
                 }
               } else {

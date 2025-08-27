@@ -860,13 +860,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertCustomDividerSchema.parse(req.body);
       const divider = await storage.createCustomDivider(validatedData);
       
-      // If assigned to project and team members, create corresponding checklist tasks
-      if (validatedData.releaseId && validatedData.assignedMembers?.length) {
+      // If assigned to project or evergreen box and team members, create corresponding checklist tasks
+      if ((validatedData.releaseId || validatedData.evergreenBoxId) && validatedData.assignedMembers?.length) {
         for (const member of validatedData.assignedMembers) {
           await storage.createChecklistTask({
             customDividerId: divider.id,
-            releaseId: validatedData.releaseId,
-            evergreenBoxId: null,
+            releaseId: validatedData.releaseId || null,
+            evergreenBoxId: validatedData.evergreenBoxId || null,
             waterfallCycleId: null,
             assignedTo: member,
             taskTitle: validatedData.name,
@@ -894,20 +894,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Handle assignment changes (existing logic)
-      if (validatedData.assignedMembers || validatedData.releaseId) {
+      if (validatedData.assignedMembers || validatedData.releaseId || validatedData.evergreenBoxId) {
         // Remove old tasks
         const existingTasks = await storage.getChecklistTasksByCustomDividerId(id);
         for (const task of existingTasks) {
           await storage.deleteChecklistTask(task.id);
         }
         
-        // Create new tasks if assigned
-        if (divider.releaseId && divider.assignedMembers?.length) {
+        // Create new tasks if assigned to project or evergreen box
+        if ((divider.releaseId || divider.evergreenBoxId) && divider.assignedMembers?.length) {
           for (const member of divider.assignedMembers) {
             await storage.createChecklistTask({
               customDividerId: divider.id,
-              releaseId: divider.releaseId,
-              evergreenBoxId: null,
+              releaseId: divider.releaseId || null,
+              evergreenBoxId: divider.evergreenBoxId || null,
               waterfallCycleId: null,
               assignedTo: member,
               taskTitle: divider.name,
