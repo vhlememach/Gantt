@@ -416,13 +416,7 @@ export default function CalendarPage() {
     });
     const deduplicatedTasks = Array.from(uniqueTasksMap.values());
     console.log('After deduplication:', deduplicatedTasks.length);
-    console.log('All tasks with their assignments:', deduplicatedTasks.map(t => ({ 
-      id: t.id, 
-      title: t.taskTitle, 
-      scheduled: t.scheduledDate, 
-      releaseId: t.releaseId, 
-      evergreenBoxId: t.evergreenBoxId 
-    })));
+
     
     // Transform tasks - include completion status and evergreen box ID
     const processedTasks: CalendarTask[] = deduplicatedTasks.map(task => ({
@@ -460,14 +454,16 @@ export default function CalendarPage() {
     const unscheduled = processedTasks.filter(task => !task.scheduledDate);
     console.log('Scheduled:', scheduled.length, 'Unscheduled:', unscheduled.length);
 
-    // Group COMPLETED unscheduled tasks by release with strict deduplication
-    // The sidebar should ONLY show tasks that are completed in Team Checklist AND unscheduled
-    const completedUnscheduledTasks = unscheduled.filter(task => {
+    // Group unscheduled tasks by release - include completed tasks OR evergreen box tasks
+    // The sidebar should show: completed tasks AND evergreen box tasks (regardless of completion)
+    const availableUnscheduledTasks = unscheduled.filter(task => {
       const originalTask = deduplicatedTasks.find(t => t.id === task.id);
-      return originalTask?.completed === true;
+      const isCompleted = originalTask?.completed === true;
+      const isEvergreenTask = !!task.evergreenBoxId;
+      return isCompleted || isEvergreenTask;
     });
     
-    const groupedTasks = completedUnscheduledTasks.reduce((acc, task) => {
+    const groupedTasks = availableUnscheduledTasks.reduce((acc, task) => {
       const releaseId = task.releaseId || 'evergreen';
       if (!acc[releaseId]) {
         acc[releaseId] = { tasks: [], seenIds: new Set<string>() };
@@ -1393,13 +1389,7 @@ export default function CalendarPage() {
                         const boxTasks = Object.entries(tasksForDay)
                           .flatMap(([, { tasks }]) => tasks.filter(task => task.evergreenBoxId === box.id));
                         
-                        // Debug logging
-                        console.log(`Checking evergreen box "${box.title}" (${box.id})`);
-                        console.log(`All tasks for day:`, Object.entries(tasksForDay).map(([releaseId, data]) => ({ releaseId, taskCount: data.tasks.length, tasks: data.tasks.map(t => ({ title: t.taskTitle, evergreenBoxId: t.evergreenBoxId })) })));
-                        
-                        if (boxTasks.length > 0) {
-                          console.log(`Found ${boxTasks.length} tasks for evergreen box "${box.title}":`, boxTasks.map(t => t.taskTitle));
-                        }
+
                         
                         if (boxTasks.length === 0) return null;
                         
