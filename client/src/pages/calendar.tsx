@@ -1383,7 +1383,7 @@ export default function CalendarPage() {
                         );
                       })}
                       
-                      {/* Evergreen tasks grouped by box */}
+                      {/* Evergreen boxes displayed as main dividers with tasks underneath */}
                       {evergreenBoxes.map(box => {
                         const boxTasks = Object.entries(tasksForDay)
                           .flatMap(([, { tasks }]) => tasks.filter(task => task.evergreenBoxId === box.id));
@@ -1391,18 +1391,26 @@ export default function CalendarPage() {
                         if (boxTasks.length === 0) return null;
                         
                         return (
-                          <div key={`tasks-${box.id}`} className="space-y-1">
-                            <div className="text-xs font-medium px-2 py-2 rounded text-white opacity-90" style={{ backgroundColor: '#3b82f6' }}>
+                          <div key={box.id} className="space-y-1">
+                            {/* Evergreen box main divider */}
+                            <div 
+                              className="text-xs font-medium px-2 py-2 rounded text-white opacity-90 border-l-4"
+                              style={{ 
+                                backgroundColor: '#3b82f6',
+                                borderLeftColor: '#1d4ed8'
+                              }}
+                            >
                               <i className={`${box.icon || 'fas fa-calendar'} mr-1`}></i>
                               {box.title}
                             </div>
+                            
+                            {/* Tasks under this evergreen box */}
                             {boxTasks.map(task => (
                               <div
                                 key={task.id}
-                                className="text-xs p-2 rounded cursor-pointer hover:opacity-80 transition-colors ml-2 min-h-[2.5rem] flex flex-col space-y-1"
-                                style={{ backgroundColor: '#dbeafe', color: '#1d4ed8' }}
-                                title={`${task.taskTitle} - Double-click to remove`}
                                 draggable
+                                className="text-xs p-2 bg-gray-100 dark:bg-gray-600 rounded cursor-move hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors ml-2 min-h-[2.5rem] flex flex-col space-y-1"
+                                title={`${task.taskTitle} - Drag to move or double-click to remove`}
                                 onDragStart={(e) => {
                                   setDraggedTask(task);
                                   e.dataTransfer.effectAllowed = 'move';
