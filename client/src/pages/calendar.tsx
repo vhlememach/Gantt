@@ -1260,13 +1260,26 @@ export default function CalendarPage() {
                         );
                       })}
                       
-                      {/* Custom dividers with evergreen box assignment */}
+                      {/* Custom dividers with evergreen box assignment - display as main dividers */}
                       {evergreenBoxes.map(box => {
                         const boxDividers = customDividers.get(dateKey)?.filter(divider => divider.evergreenBoxId === box.id) || [];
                         if (boxDividers.length === 0) return null;
                         
                         return (
                           <div key={`evergreen-${box.id}`} className="space-y-1">
+                            {/* Evergreen box main divider header */}
+                            <div 
+                              className="text-xs font-medium px-2 py-2 rounded text-white opacity-90 border-l-4"
+                              style={{ 
+                                backgroundColor: '#3b82f6',
+                                borderLeftColor: '#1d4ed8'
+                              }}
+                            >
+                              <i className={`${box.icon || 'fas fa-calendar'} mr-1`}></i>
+                              {box.title}
+                            </div>
+                            
+                            {/* Tasks under this evergreen box */}
                             {boxDividers.map((divider, index) => {
                               const originalIndex = customDividers.get(dateKey)?.findIndex(d => d === divider) || 0;
                               return (
@@ -1280,80 +1293,77 @@ export default function CalendarPage() {
                                       index: originalIndex
                                     }));
                                   }}
-                                  className="text-xs font-medium px-2 py-1 rounded opacity-90 mb-1 flex items-center justify-between group cursor-move hover:opacity-100 transition-colors ml-2 border-2"
-                                  style={{ 
-                                    backgroundColor: 'white',
-                                    color: '#6b7280',
-                                    borderColor: '#6b7280'
-                                  }}
+                                  className="text-xs p-2 bg-gray-100 dark:bg-gray-600 rounded cursor-move hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors ml-2 min-h-[2.5rem] flex flex-col space-y-1"
+                                  title={`${divider.name} - Drag to move or double-click to edit`}
                                 >
-                                  <div className="flex flex-col">
-                                    {divider.completed && (
-                                      <div className="flex items-center justify-center mb-1 bg-black bg-opacity-70 rounded px-2 py-1">
-                                        <i className="fas fa-check-circle text-green-400 text-sm mr-1"></i>
-                                        <span className="text-xs text-green-400">Completed</span>
-                                      </div>
-                                    )}
-                                    {divider.id && dividerTaskStatuses.get(divider.id)?.paused && (
-                                      <div className="flex items-center justify-center mb-1 bg-black bg-opacity-70 rounded px-2 py-1">
-                                        <i className="fas fa-pause-circle text-orange-400 text-sm mr-1"></i>
-                                        <span className="text-xs text-orange-400">Paused</span>
-                                      </div>
-                                    )}
-                                    {divider.id && dividerTaskStatuses.get(divider.id)?.underReview && (
-                                      <div className="flex items-center justify-center mb-1 bg-black bg-opacity-70 rounded px-2 py-1">
-                                        <i className="fas fa-eye text-blue-400 text-sm mr-1"></i>
-                                        <span className="text-xs text-blue-400">Under Review</span>
-                                      </div>
-                                    )}
-                                    <div className="flex items-center mb-1">
-                                      <i className={`${box.icon || 'fas fa-calendar'} mr-1`}></i>
-                                      <span className="mr-2 text-gray-500">{box.title}:</span>
-                                      <span>{divider.name}</span>
+                                  {/* Status indicators */}
+                                  {divider.completed && (
+                                    <div className="flex items-center justify-center mb-1 bg-black bg-opacity-70 rounded px-2 py-1">
+                                      <i className="fas fa-check-circle text-green-400 text-sm mr-1"></i>
+                                      <span className="text-xs text-green-400">Completed</span>
                                     </div>
-                                    {(divider.mediaLink || divider.textLink) && (
-                                      <div className="flex flex-col space-y-1">
-                                        {divider.mediaLink && (
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              if (divider.mediaLink) {
-                                                const url = divider.mediaLink.startsWith('http://') || divider.mediaLink.startsWith('https://') 
-                                                  ? divider.mediaLink 
-                                                  : `https://${divider.mediaLink}`;
-                                                window.open(url, '_blank');
-                                              }
-                                            }}
-                                            className="text-xs underline hover:no-underline opacity-80 hover:opacity-100 flex items-center"
-                                            title="Open Media Link"
-                                            style={{ color: '#6b7280' }}
-                                          >
-                                            <i className="fas fa-image mr-1"></i>
-                                            Media
-                                          </button>
-                                        )}
-                                        {divider.textLink && (
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              if (divider.textLink) {
-                                                const url = divider.textLink.startsWith('http://') || divider.textLink.startsWith('https://') 
-                                                  ? divider.textLink 
-                                                  : `https://${divider.textLink}`;
-                                                window.open(url, '_blank');
-                                              }
-                                            }}
-                                            className="text-xs underline hover:no-underline opacity-80 hover:opacity-100 flex items-center"
-                                            title="Open Text Link"
-                                            style={{ color: '#6b7280' }}
-                                          >
-                                            <i className="fas fa-link mr-1"></i>
-                                            Link
-                                          </button>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
+                                  )}
+                                  {divider.id && dividerTaskStatuses.get(divider.id)?.paused && (
+                                    <div className="flex items-center justify-center mb-1 bg-black bg-opacity-70 rounded px-2 py-1">
+                                      <i className="fas fa-pause-circle text-orange-400 text-sm mr-1"></i>
+                                      <span className="text-xs text-orange-400">Paused</span>
+                                    </div>
+                                  )}
+                                  {divider.id && dividerTaskStatuses.get(divider.id)?.underReview && (
+                                    <div className="flex items-center justify-center mb-1 bg-black bg-opacity-70 rounded px-2 py-1">
+                                      <i className="fas fa-eye text-blue-400 text-sm mr-1"></i>
+                                      <span className="text-xs text-blue-400">Under Review</span>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Task name only - evergreen box name is in header above */}
+                                  <div className="break-words flex-1">{divider.name}</div>
+                                  
+                                  {/* Links section */}
+                                  {(divider.mediaLink || divider.textLink) && (
+                                    <div className="flex flex-col space-y-1">
+                                      {divider.mediaLink && (
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (divider.mediaLink) {
+                                              const url = divider.mediaLink.startsWith('http://') || divider.mediaLink.startsWith('https://') 
+                                                ? divider.mediaLink 
+                                                : `https://${divider.mediaLink}`;
+                                              window.open(url, '_blank');
+                                            }
+                                          }}
+                                          className="text-xs underline hover:no-underline opacity-80 hover:opacity-100 flex items-center"
+                                          title="Open Media Link"
+                                          style={{ color: '#6b7280' }}
+                                        >
+                                          <i className="fas fa-image mr-1"></i>
+                                          Media
+                                        </button>
+                                      )}
+                                      {divider.textLink && (
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (divider.textLink) {
+                                              const url = divider.textLink.startsWith('http://') || divider.textLink.startsWith('https://') 
+                                                ? divider.textLink 
+                                                : `https://${divider.textLink}`;
+                                              window.open(url, '_blank');
+                                            }
+                                          }}
+                                          className="text-xs underline hover:no-underline opacity-80 hover:opacity-100 flex items-center"
+                                          title="Open Text Link"
+                                          style={{ color: '#6b7280' }}
+                                        >
+                                          <i className="fas fa-link mr-1"></i>
+                                          Link
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
+                                  
+                                  {/* Action buttons */}
                                   <div className="flex items-center gap-1">
                                     <button
                                       className="w-6 h-6 rounded border border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center"
