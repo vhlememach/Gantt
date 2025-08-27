@@ -1357,116 +1357,81 @@ export default function CalendarPage() {
                               </div>
                             ))}
                             
-                            {/* Custom dividers under this evergreen box */}
+                            {/* Custom dividers under this evergreen box - using exact project task format */}
                             {boxCustomDividers.map((divider, index) => {
                               const originalIndex = customDividers.get(dateKey)?.findIndex(d => d === divider) || 0;
                               return (
-                                <div 
+                                <div
                                   key={`custom-${originalIndex}`}
-                                  draggable={true}
+                                  draggable
+                                  className="text-xs p-2 bg-gray-100 dark:bg-gray-600 rounded cursor-move hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors ml-2 min-h-[2.5rem] flex flex-col space-y-1"
+                                  title={`${divider.name} - Drag to move or double-click to edit`}
                                   onDragStart={(e) => {
+                                    e.stopPropagation();
                                     e.dataTransfer.setData('divider', JSON.stringify({
                                       divider,
                                       sourceDate: dateKey,
                                       index: originalIndex
                                     }));
                                   }}
-                                  className="text-xs font-medium px-2 py-1 rounded opacity-90 mb-1 flex items-center justify-between group cursor-move hover:opacity-100 transition-opacity border-2 ml-2"
-                                  style={{ 
-                                    backgroundColor: divider.color,
-                                    color: 'white',
-                                    borderColor: divider.color
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    // Single click does nothing - prevents accidental removal
+                                  }}
+                                  onDoubleClick={(e) => {
+                                    e.stopPropagation();
+                                    // Double-click to edit
+                                    setEditingDivider({ dateKey, index: originalIndex, divider });
                                   }}
                                 >
-                                  <div className="flex flex-col flex-1">
-                                    {divider.completed && (
-                                      <div className="flex items-center justify-center mb-1 bg-black bg-opacity-70 rounded px-2 py-1">
-                                        <i className="fas fa-check-circle text-green-400 text-sm mr-1"></i>
-                                        <span className="text-xs text-green-400">Completed</span>
-                                      </div>
-                                    )}
-                                    {divider.id && dividerTaskStatuses.get(divider.id)?.paused && (
-                                      <div className="flex items-center justify-center mb-1 bg-black bg-opacity-70 rounded px-2 py-1">
-                                        <i className="fas fa-pause-circle text-orange-400 text-sm mr-1"></i>
-                                        <span className="text-xs text-orange-400">Paused</span>
-                                      </div>
-                                    )}
-                                    {divider.id && dividerTaskStatuses.get(divider.id)?.underReview && (
-                                      <div className="flex items-center justify-center mb-1 bg-black bg-opacity-70 rounded px-2 py-1">
-                                        <i className="fas fa-eye text-blue-400 text-sm mr-1"></i>
-                                        <span className="text-xs text-blue-400">Under Review</span>
-                                      </div>
-                                    )}
-                                    <div className="flex items-center justify-between">
-                                      <div className="break-words flex-1">{divider.name}</div>
-                                    </div>
-                                    {(divider.mediaLink || divider.textLink) && (
-                                      <div className="flex flex-col space-y-1">
-                                        {divider.mediaLink && (
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              if (divider.mediaLink) {
-                                                const url = divider.mediaLink.startsWith('http://') || divider.mediaLink.startsWith('https://') 
-                                                  ? divider.mediaLink 
-                                                  : `https://${divider.mediaLink}`;
-                                                window.open(url, '_blank');
-                                              }
-                                            }}
-                                            className="text-xs underline hover:no-underline opacity-80 hover:opacity-100 flex items-center"
-                                            title="Open Media Link"
-                                            style={{ color: '#3b82f6' }}
-                                          >
-                                            <i className="fas fa-image mr-1"></i>
-                                            Media
-                                          </button>
-                                        )}
-                                        {divider.textLink && (
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              if (divider.textLink) {
-                                                const url = divider.textLink.startsWith('http://') || divider.textLink.startsWith('https://') 
-                                                  ? divider.textLink 
-                                                  : `https://${divider.textLink}`;
-                                                window.open(url, '_blank');
-                                              }
-                                            }}
-                                            className="text-xs underline hover:no-underline opacity-80 hover:opacity-100 flex items-center"
-                                            title="Open Text Link"
-                                            style={{ color: '#3b82f6' }}
-                                          >
-                                            <i className="fas fa-link mr-1"></i>
-                                            Text
-                                          </button>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button
-                                      className="w-4 h-4 rounded border hover:bg-gray-100 flex items-center justify-center mr-1"
-                                      style={{ borderColor: '#3b82f6' }}
+                                  <div className="flex items-center justify-between">
+                                    <div className="break-words flex-1">{divider.name}</div>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="w-4 h-4 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 ml-1"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         setEditingDivider({ dateKey, index: originalIndex, divider });
                                       }}
-                                      title="Edit divider"
                                     >
-                                      <i className="fas fa-edit text-xs" style={{ color: '#3b82f6' }}></i>
-                                    </button>
-                                    <button
-                                      className="w-4 h-4 rounded border hover:bg-gray-100 flex items-center justify-center"
-                                      style={{ borderColor: '#3b82f6' }}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setDeleteConfirmModal({ dateKey, index: originalIndex, divider });
-                                      }}
-                                      title="Delete divider"
-                                    >
-                                      <i className="fas fa-times text-xs" style={{ color: '#3b82f6' }}></i>
-                                    </button>
+                                      <i className="fas fa-edit text-xs"></i>
+                                    </Button>
                                   </div>
+                                  {/* Links - positioned below task title */}
+                                  {(divider.mediaLink || divider.textLink) && (
+                                    <div className="flex items-center gap-1 mt-1">
+                                      {divider.mediaLink && (
+                                        <a 
+                                          href={
+                                            divider.mediaLink?.startsWith("http") ? divider.mediaLink : `https://${divider.mediaLink}`
+                                          } 
+                                          target="_blank" 
+                                          rel="noopener noreferrer"
+                                          className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-500 hover:bg-blue-600 text-white text-xs transition-colors"
+                                          title="Visit Media Link"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          <i className="fas fa-image text-[8px]"></i>
+                                        </a>
+                                      )}
+                                      {divider.textLink && (
+                                        <a 
+                                          href={
+                                            divider.textLink?.startsWith("http") ? divider.textLink : `https://${divider.textLink}`
+                                          } 
+                                          target="_blank" 
+                                          rel="noopener noreferrer"
+                                          className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-500 hover:bg-blue-600 text-white text-xs transition-colors"
+                                          title="Visit Text Link"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          <i className="fas fa-link text-[8px]"></i>
+                                        </a>
+                                      )}
+                                      <span className="text-xs text-gray-600 dark:text-gray-400">Link</span>
+                                    </div>
+                                  )}
                                 </div>
                               );
                             })}
