@@ -937,7 +937,7 @@ export default function CalendarPage() {
 
                     {/* Custom dividers with no project assignment */}
                     {customDividers.get(dateKey)
-                      ?.filter(divider => !divider.releaseId)
+                      ?.filter(divider => !divider.releaseId && !divider.evergreenBoxId)
                       ?.map((divider, index) => {
                         const originalIndex = customDividers.get(dateKey)?.findIndex(d => d === divider) || 0;
                         return (
