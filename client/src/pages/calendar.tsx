@@ -1309,13 +1309,13 @@ export default function CalendarPage() {
                                     {/* Status labels for evergreen custom dividers */}
                                     {divider.completed && (
                                       <div className="flex items-center justify-center mb-1 bg-black bg-opacity-70 rounded px-2 py-1">
-                                        <i className="fas fa-check text-green-400 text-sm mr-1"></i>
+                                        <i className="fas fa-check-circle text-green-400 text-sm mr-1"></i>
                                         <span className="text-xs text-green-400">Completed</span>
                                       </div>
                                     )}
                                     {divider.id && dividerTaskStatuses.get(divider.id)?.paused && (
                                       <div className="flex items-center justify-center mb-1 bg-black bg-opacity-70 rounded px-2 py-1">
-                                        <i className="fas fa-pause text-orange-400 text-sm mr-1"></i>
+                                        <i className="fas fa-pause-circle text-orange-400 text-sm mr-1"></i>
                                         <span className="text-xs text-orange-400">Paused</span>
                                       </div>
                                     )}
