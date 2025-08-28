@@ -877,7 +877,7 @@ export default function ChecklistPage() {
                   
                   {/* Evergreen Content with High Priority Support */}
                   {evergreenBoxes
-                    .filter((box) => box.waterfallCycleId) // Only show boxes with waterfall cycles
+                    // Show all evergreen boxes, not just those with waterfall cycles
                     .sort((boxA, boxB) => {
                       const priorityA = boxA?.highPriority ? 1 : 0;
                       const priorityB = boxB?.highPriority ? 1 : 0;
