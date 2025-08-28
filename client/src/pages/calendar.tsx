@@ -1357,7 +1357,7 @@ export default function CalendarPage() {
                               </div>
                             ))}
                             
-                            {/* Custom dividers under this evergreen box - EXACT project task format */}
+                            {/* Custom dividers under this evergreen box - IDENTICAL to evergreen task format */}
                             {boxCustomDividers.map((divider, index) => {
                               const originalIndex = customDividers.get(dateKey)?.findIndex(d => d === divider) || 0;
                               return (
@@ -1398,7 +1398,7 @@ export default function CalendarPage() {
                                       <i className="fas fa-plus text-xs"></i>
                                     </Button>
                                   </div>
-                                  {/* Links - EXACT same format as project tasks */}
+                                  {/* Links - positioned below task title - EXACT same format as evergreen tasks */}
                                   {(divider.mediaLink || divider.textLink) && (
                                     <div className="flex items-center gap-1 mt-1">
                                       <a 
