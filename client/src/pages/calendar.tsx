@@ -1272,19 +1272,32 @@ export default function CalendarPage() {
                         
                         return (
                           <div key={box.id} className="space-y-1">
-                            {/* Evergreen box main divider - EXACT PROJECT TASK STYLE */}
-                            <div 
-                              className="text-xs p-2 bg-gray-100 dark:bg-gray-600 rounded cursor-move hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors min-h-[2.5rem] flex flex-col space-y-1"
+                            {/* Evergreen box header as PROJECT TASK */}
+                            <div
+                              key={box.id}
+                              draggable
+                              className="text-xs p-2 bg-gray-100 dark:bg-gray-600 rounded cursor-move hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors ml-2 min-h-[2.5rem] flex flex-col space-y-1"
+                              title={`${box.title} - Evergreen Box`}
                             >
                               <div className="flex items-center justify-between">
                                 <div className="break-words flex-1">
                                   <i className={`${box.icon || 'fas fa-calendar'} mr-1`}></i>
                                   {box.title}
                                 </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="w-4 h-4 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 ml-1"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                  }}
+                                >
+                                  <i className="fas fa-plus text-xs"></i>
+                                </Button>
                               </div>
                             </div>
                             
-                            {/* Tasks under this evergreen box */}
+                            {/* Evergreen tasks - EXACT PROJECT TASK FORMAT */}
                             {boxTasks.map(task => (
                               <div
                                 key={task.id}
@@ -1292,10 +1305,9 @@ export default function CalendarPage() {
                                 className="text-xs p-2 bg-gray-100 dark:bg-gray-600 rounded cursor-move hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors ml-2 min-h-[2.5rem] flex flex-col space-y-1"
                                 title={`${task.taskTitle} - Drag to move or double-click to remove`}
                                 onDragStart={(e) => {
+                                  e.stopPropagation();
                                   setDraggedTask(task);
-                                  e.dataTransfer.effectAllowed = 'move';
                                 }}
-                                onDragEnd={() => setDraggedTask(null)}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   // Single click does nothing - prevents accidental removal
