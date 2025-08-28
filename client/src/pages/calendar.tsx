@@ -1272,16 +1272,16 @@ export default function CalendarPage() {
                         
                         return (
                           <div key={box.id} className="space-y-1">
-                            {/* Evergreen box main divider */}
+                            {/* Evergreen box main divider - EXACT PROJECT TASK STYLE */}
                             <div 
-                              className="text-xs font-medium px-2 py-2 rounded text-white opacity-90 border-l-4"
-                              style={{ 
-                                backgroundColor: '#3b82f6',
-                                borderLeftColor: '#1d4ed8'
-                              }}
+                              className="text-xs p-2 bg-gray-100 dark:bg-gray-600 rounded cursor-move hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors min-h-[2.5rem] flex flex-col space-y-1"
                             >
-                              <i className={`${box.icon || 'fas fa-calendar'} mr-1`}></i>
-                              {box.title}
+                              <div className="flex items-center justify-between">
+                                <div className="break-words flex-1">
+                                  <i className={`${box.icon || 'fas fa-calendar'} mr-1`}></i>
+                                  {box.title}
+                                </div>
+                              </div>
                             </div>
                             
                             {/* Tasks under this evergreen box */}
