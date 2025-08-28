@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ChecklistTask, Release, ReleaseGroup, EvergreenBox } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
@@ -67,8 +67,8 @@ export default function CalendarPage() {
     });
   };
 
-  // Load custom dividers into state when data changes
-  useEffect(() => {
+  // Load custom dividers into state when data changes - use useMemo to prevent infinite renders
+  const processedCustomDividers = useMemo(() => {
     const dividersMap = new Map<string, any[]>();
     customDividersData.forEach((divider) => {
       const existing = dividersMap.get(divider.dateKey) || [];
@@ -86,7 +86,7 @@ export default function CalendarPage() {
       });
       dividersMap.set(divider.dateKey, existing);
     });
-    setCustomDividers(dividersMap);
+    return dividersMap;
   }, [customDividersData]);
 
   // Save custom divider mutation
@@ -237,7 +237,7 @@ export default function CalendarPage() {
                 selectedYear === currentDate.getFullYear();
               
               const dateKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-              const dayDividers = customDividers.get(dateKey) || [];
+              const dayDividers = processedCustomDividers.get(dateKey) || [];
               const releasesForDay = getReleasesForDay(day);
               const isHighPriority = priorityCells.has(dateKey);
 

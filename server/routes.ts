@@ -883,7 +883,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(divider);
     } catch (error) {
       console.error("Error creating custom divider:", error);
-      res.status(400).json({ message: "Invalid custom divider data", error: error.message });
+      res.status(400).json({ 
+        message: "Invalid custom divider data", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
     }
   });
 
