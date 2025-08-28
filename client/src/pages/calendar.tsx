@@ -406,7 +406,7 @@ export default function CalendarPage() {
   }, [allTasks]);
 
   // Use useMemo to prevent re-computation and ensure stable task grouping
-  const { tasks, scheduledTasks, unscheduledTasks, tasksByRelease, tasksByEvergreenBox } = useMemo(() => {
+  const processedTaskData = useMemo(() => {
     console.log('Processing tasks - Raw count:', allTasks.length);
     
     // Deduplicate tasks by ID first
@@ -520,6 +520,15 @@ export default function CalendarPage() {
     };
   }, [allTasks, releases, releaseGroups]);
 
+  // Extract the processed data from the useMemo result
+  const { 
+    tasks: allProcessedTasks, 
+    scheduledTasks: calendarScheduledTasks, 
+    unscheduledTasks: calendarUnscheduledTasks, 
+    tasksByRelease: calendarTasksByRelease, 
+    tasksByEvergreenBox: calendarTasksByEvergreenBox 
+  } = processedTaskData;
+
   const handleDragStart = (task: CalendarTask) => {
     console.log('Drag started for task:', task.taskTitle);
     setDraggedTask(task);
@@ -576,7 +585,8 @@ export default function CalendarPage() {
     const dateString = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     
     // Get all tasks that have a scheduled date for this day (regardless of completion)
-    const dayTasks = tasks.filter(task => {
+    // Use scheduled tasks from the processed data instead of tasks variable
+    const dayTasks = calendarScheduledTasks.filter(task => {
       if (!task.scheduledDate) return false;
       const taskDate = new Date(task.scheduledDate);
       const checkDate = new Date(selectedYear, selectedMonth, day);
@@ -646,19 +656,19 @@ export default function CalendarPage() {
               </div>
               <div className="mb-6">
                 <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
-                  {Object.values(tasksByRelease).reduce((total, release) => total + release.tasks.length, 0) + 
-                   Object.values(tasksByEvergreenBox).reduce((total, box) => total + box.tasks.length, 0)} tasks ready to schedule
+                  {Object.values(calendarTasksByRelease).reduce((total, release) => total + release.tasks.length, 0) + 
+                   Object.values(calendarTasksByEvergreenBox).reduce((total, box) => total + box.tasks.length, 0)} tasks ready to schedule
                 </Badge>
                 <p className="text-xs text-gray-500 mt-2">Drag tasks here to hold while navigating to different months</p>
               </div>
 
               <div className="space-y-6">
                 {/* Projects Section */}
-                {Object.keys(tasksByRelease).length > 0 && (
+                {Object.keys(calendarTasksByRelease).length > 0 && (
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b pb-2 mb-4">Projects</h3>
                     <div className="space-y-3">
-                      {Object.entries(tasksByRelease).map(([releaseId, releaseData]) => {
+                      {Object.entries(calendarTasksByRelease).map(([releaseId, releaseData]) => {
                         if (!releaseData?.tasks?.length) {
                           return null;
                         }
@@ -713,11 +723,11 @@ export default function CalendarPage() {
                 )}
 
                 {/* Evergreen Tasks Section */}
-                {Object.keys(tasksByEvergreenBox).length > 0 && (
+                {Object.keys(calendarTasksByEvergreenBox).length > 0 && (
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b pb-2 mb-4">Evergreen Tasks</h3>
                     <div className="space-y-3">
-                      {Object.entries(tasksByEvergreenBox).map(([boxId, boxData]) => {
+                      {Object.entries(calendarTasksByEvergreenBox).map(([boxId, boxData]) => {
                         if (!boxData?.tasks?.length) {
                           return null;
                         }
@@ -771,7 +781,7 @@ export default function CalendarPage() {
                   </div>
                 )}
 
-                {(Object.keys(tasksByRelease).length === 0 && Object.keys(tasksByEvergreenBox).length === 0) && (
+                {(Object.keys(calendarTasksByRelease).length === 0 && Object.keys(calendarTasksByEvergreenBox).length === 0) && (
                   <div className="text-center py-8">
                     <CalendarIcon className="w-12 h-12 mx-auto text-gray-400 mb-4" />
                     <p className="text-gray-500">No tasks in holding area.</p>
