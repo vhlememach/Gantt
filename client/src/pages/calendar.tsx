@@ -1357,7 +1357,7 @@ export default function CalendarPage() {
                               </div>
                             ))}
                             
-                            {/* Custom dividers under this evergreen box - IDENTICAL to evergreen task format */}
+                            {/* Custom dividers under this evergreen box - EXACT PROJECT TASK FORMAT */}
                             {boxCustomDividers.map((divider, index) => {
                               const originalIndex = customDividers.get(dateKey)?.findIndex(d => d === divider) || 0;
                               return (
@@ -1365,7 +1365,7 @@ export default function CalendarPage() {
                                   key={`custom-${originalIndex}`}
                                   draggable
                                   className="text-xs p-2 bg-gray-100 dark:bg-gray-600 rounded cursor-move hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors ml-2 min-h-[2.5rem] flex flex-col space-y-1"
-                                  title={`${divider.name} - Drag to move or double-click to edit`}
+                                  title={`${divider.name} - Drag to move or double-click to remove`}
                                   onDragStart={(e) => {
                                     e.stopPropagation();
                                     e.dataTransfer.setData('divider', JSON.stringify({
@@ -1380,7 +1380,7 @@ export default function CalendarPage() {
                                   }}
                                   onDoubleClick={(e) => {
                                     e.stopPropagation();
-                                    // Double-click to edit
+                                    // Double-click to remove from calendar
                                     setEditingDivider({ dateKey, index: originalIndex, divider });
                                   }}
                                 >
@@ -1398,7 +1398,7 @@ export default function CalendarPage() {
                                       <i className="fas fa-plus text-xs"></i>
                                     </Button>
                                   </div>
-                                  {/* Links - positioned below task title - EXACT same format as evergreen tasks */}
+                                  {/* Links - positioned below social media - EXACT PROJECT TASK FORMAT */}
                                   {(divider.mediaLink || divider.textLink) && (
                                     <div className="flex items-center gap-1 mt-1">
                                       <a 
