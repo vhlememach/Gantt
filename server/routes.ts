@@ -857,7 +857,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/custom-dividers", async (req, res) => {
     try {
+      console.log("Received custom divider data:", req.body);
       const validatedData = insertCustomDividerSchema.parse(req.body);
+      console.log("Validated data:", validatedData);
       const divider = await storage.createCustomDivider(validatedData);
       
       // If assigned to project or evergreen box and team members, create corresponding checklist tasks
@@ -880,7 +882,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(divider);
     } catch (error) {
-      res.status(400).json({ message: "Invalid custom divider data" });
+      console.error("Error creating custom divider:", error);
+      res.status(400).json({ message: "Invalid custom divider data", error: error.message });
     }
   });
 
