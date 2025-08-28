@@ -1357,7 +1357,7 @@ export default function CalendarPage() {
                               </div>
                             ))}
                             
-                            {/* Custom dividers under this evergreen box - using exact project task format */}
+                            {/* Custom dividers under this evergreen box - EXACT project task format */}
                             {boxCustomDividers.map((divider, index) => {
                               const originalIndex = customDividers.get(dateKey)?.findIndex(d => d === divider) || 0;
                               return (
@@ -1395,40 +1395,24 @@ export default function CalendarPage() {
                                         setEditingDivider({ dateKey, index: originalIndex, divider });
                                       }}
                                     >
-                                      <i className="fas fa-edit text-xs"></i>
+                                      <i className="fas fa-plus text-xs"></i>
                                     </Button>
                                   </div>
-                                  {/* Links - positioned below task title */}
+                                  {/* Links - EXACT same format as project tasks */}
                                   {(divider.mediaLink || divider.textLink) && (
                                     <div className="flex items-center gap-1 mt-1">
-                                      {divider.mediaLink && (
-                                        <a 
-                                          href={
-                                            divider.mediaLink?.startsWith("http") ? divider.mediaLink : `https://${divider.mediaLink}`
-                                          } 
-                                          target="_blank" 
-                                          rel="noopener noreferrer"
-                                          className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-500 hover:bg-blue-600 text-white text-xs transition-colors"
-                                          title="Visit Media Link"
-                                          onClick={(e) => e.stopPropagation()}
-                                        >
-                                          <i className="fas fa-image text-[8px]"></i>
-                                        </a>
-                                      )}
-                                      {divider.textLink && (
-                                        <a 
-                                          href={
-                                            divider.textLink?.startsWith("http") ? divider.textLink : `https://${divider.textLink}`
-                                          } 
-                                          target="_blank" 
-                                          rel="noopener noreferrer"
-                                          className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-500 hover:bg-blue-600 text-white text-xs transition-colors"
-                                          title="Visit Text Link"
-                                          onClick={(e) => e.stopPropagation()}
-                                        >
-                                          <i className="fas fa-link text-[8px]"></i>
-                                        </a>
-                                      )}
+                                      <a 
+                                        href={
+                                          divider.mediaLink?.startsWith("http") ? divider.mediaLink : `https://${divider.mediaLink || divider.textLink}`
+                                        } 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-500 hover:bg-blue-600 text-white text-xs transition-colors"
+                                        title="Visit Link"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <i className="fas fa-link text-[8px]"></i>
+                                      </a>
                                       <span className="text-xs text-gray-600 dark:text-gray-400">Link</span>
                                     </div>
                                   )}
