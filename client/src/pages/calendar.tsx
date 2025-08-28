@@ -1262,7 +1262,7 @@ export default function CalendarPage() {
                       
 
                       
-                      {/* Evergreen boxes displayed as main dividers with tasks underneath */}
+                      {/* Evergreen boxes displayed EXACTLY like project releases */}
                       {evergreenBoxes.map(box => {
                         const boxTasks = Object.entries(tasksForDay)
                           .flatMap(([, { tasks }]) => tasks.filter(task => task.evergreenBoxId === box.id));
@@ -1272,32 +1272,116 @@ export default function CalendarPage() {
                         
                         return (
                           <div key={box.id} className="space-y-1">
-                            {/* Evergreen box header as PROJECT TASK */}
-                            <div
-                              key={box.id}
-                              draggable
-                              className="text-xs p-2 bg-gray-100 dark:bg-gray-600 rounded cursor-move hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors ml-2 min-h-[2.5rem] flex flex-col space-y-1"
-                              title={`${box.title} - Evergreen Box`}
+                            {/* Evergreen box main divider - EXACT SAME AS RELEASE DIVIDER */}
+                            <div 
+                              className="text-xs font-medium px-2 py-2 rounded text-white opacity-90 border-l-4"
+                              style={{ 
+                                backgroundColor: '#3b82f6',
+                                borderLeftColor: '#1d4ed8'
+                              }}
                             >
-                              <div className="flex items-center justify-between">
-                                <div className="break-words flex-1">
-                                  <i className={`${box.icon || 'fas fa-calendar'} mr-1`}></i>
-                                  {box.title}
-                                </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="w-4 h-4 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 ml-1"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                  }}
-                                >
-                                  <i className="fas fa-plus text-xs"></i>
-                                </Button>
-                              </div>
+                              <i className={`${box.icon || 'fas fa-calendar'} mr-1`}></i>
+                              {box.title}
                             </div>
                             
-                            {/* Evergreen tasks - EXACT PROJECT TASK FORMAT */}
+                            {/* Custom dividers assigned to this evergreen box - EXACT SAME AS PROJECT CUSTOM DIVIDERS */}
+                            {boxCustomDividers.map((divider, index) => {
+                              const originalIndex = customDividers.get(dateKey)?.findIndex(d => d === divider) || 0;
+                              return (
+                                <div 
+                                  key={`divider-${originalIndex}`}
+                                  draggable={true}
+                                  onDragStart={(e) => {
+                                    e.dataTransfer.setData('divider', JSON.stringify({
+                                      divider,
+                                      sourceDate: dateKey,
+                                      index: originalIndex
+                                    }));
+                                  }}
+                                  className="text-xs font-medium px-2 py-1 rounded opacity-90 mb-1 flex items-center justify-between group cursor-move hover:opacity-100 transition-colors ml-2 border-2"
+                                  style={{ 
+                                    backgroundColor: 'white',
+                                    color: '#3b82f6',
+                                    borderColor: '#3b82f6'
+                                  }}
+                                >
+                                  <div className="flex flex-col">
+                                    <div className="flex items-center mb-1">
+                                      <i className={`${divider.icon} mr-1`}></i>
+                                      {divider.name}
+                                    </div>
+                                    {(divider.mediaLink || divider.textLink) && (
+                                      <div className="flex flex-col space-y-1">
+                                        {divider.mediaLink && (
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              if (divider.mediaLink) {
+                                                const url = divider.mediaLink.startsWith('http://') || divider.mediaLink.startsWith('https://') 
+                                                  ? divider.mediaLink 
+                                                  : `https://${divider.mediaLink}`;
+                                                window.open(url, '_blank');
+                                              }
+                                            }}
+                                            className="text-xs underline hover:no-underline opacity-80 hover:opacity-100 flex items-center"
+                                            title="Open Media Link"
+                                            style={{ color: '#3b82f6' }}
+                                          >
+                                            <i className="fas fa-image mr-1"></i>
+                                            Media
+                                          </button>
+                                        )}
+                                        {divider.textLink && (
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              if (divider.textLink) {
+                                                const url = divider.textLink.startsWith('http://') || divider.textLink.startsWith('https://') 
+                                                  ? divider.textLink 
+                                                  : `https://${divider.textLink}`;
+                                                window.open(url, '_blank');
+                                              }
+                                            }}
+                                            className="text-xs underline hover:no-underline opacity-80 hover:opacity-100 flex items-center"
+                                            title="Open Text Link"
+                                            style={{ color: '#3b82f6' }}
+                                          >
+                                            <i className="fas fa-link mr-1"></i>
+                                            Text
+                                          </button>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                      className="w-4 h-4 rounded border hover:bg-gray-100 flex items-center justify-center mr-1"
+                                      style={{ borderColor: '#3b82f6' }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setEditingDivider({ dateKey, index: originalIndex, divider });
+                                      }}
+                                      title="Edit divider"
+                                    >
+                                      <i className="fas fa-edit text-xs" style={{ color: '#3b82f6' }}></i>
+                                    </button>
+                                    <button
+                                      className="w-4 h-4 rounded border hover:bg-gray-100 flex items-center justify-center"
+                                      style={{ borderColor: '#3b82f6' }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setDeleteConfirmModal({ dateKey, index: originalIndex, divider });
+                                      }}
+                                      title="Delete divider"
+                                    >
+                                      <i className="fas fa-times text-xs" style={{ color: '#3b82f6' }}></i>
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                            
+                            {/* Tasks under this evergreen box - EXACT SAME AS PROJECT TASKS */}
                             {boxTasks.map(task => (
                               <div
                                 key={task.id}
@@ -1368,69 +1452,6 @@ export default function CalendarPage() {
                                 )}
                               </div>
                             ))}
-                            
-                            {/* Custom dividers under this evergreen box - EXACT PROJECT TASK FORMAT */}
-                            {boxCustomDividers.map((divider, index) => {
-                              const originalIndex = customDividers.get(dateKey)?.findIndex(d => d === divider) || 0;
-                              return (
-                                <div
-                                  key={`custom-${originalIndex}`}
-                                  draggable
-                                  className="text-xs p-2 bg-gray-100 dark:bg-gray-600 rounded cursor-move hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors ml-2 min-h-[2.5rem] flex flex-col space-y-1"
-                                  title={`${divider.name} - Drag to move or double-click to remove`}
-                                  onDragStart={(e) => {
-                                    e.stopPropagation();
-                                    e.dataTransfer.setData('divider', JSON.stringify({
-                                      divider,
-                                      sourceDate: dateKey,
-                                      index: originalIndex
-                                    }));
-                                  }}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    // Single click does nothing - prevents accidental removal
-                                  }}
-                                  onDoubleClick={(e) => {
-                                    e.stopPropagation();
-                                    // Double-click to remove from calendar
-                                    setEditingDivider({ dateKey, index: originalIndex, divider });
-                                  }}
-                                >
-                                  <div className="flex items-center justify-between">
-                                    <div className="break-words flex-1">{divider.name}</div>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="w-4 h-4 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 ml-1"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setEditingDivider({ dateKey, index: originalIndex, divider });
-                                      }}
-                                    >
-                                      <i className="fas fa-plus text-xs"></i>
-                                    </Button>
-                                  </div>
-                                  {/* Links - positioned below social media - EXACT PROJECT TASK FORMAT */}
-                                  {(divider.mediaLink || divider.textLink) && (
-                                    <div className="flex items-center gap-1 mt-1">
-                                      <a 
-                                        href={
-                                          divider.mediaLink?.startsWith("http") ? divider.mediaLink : `https://${divider.mediaLink || divider.textLink}`
-                                        } 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-500 hover:bg-blue-600 text-white text-xs transition-colors"
-                                        title="Visit Link"
-                                        onClick={(e) => e.stopPropagation()}
-                                      >
-                                        <i className="fas fa-link text-[8px]"></i>
-                                      </a>
-                                      <span className="text-xs text-gray-600 dark:text-gray-400">Link</span>
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
                           </div>
                         );
                       })}
