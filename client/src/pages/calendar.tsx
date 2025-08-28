@@ -33,6 +33,7 @@ export default function CalendarPage() {
   const [selectedProjectId, setSelectedProjectId] = useState('');
   const [selectedEvergreenBoxId, setSelectedEvergreenBoxId] = useState('');
   const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([]);
+  const [priorityCells, setPriorityCells] = useState<Set<string>>(new Set());
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -55,6 +56,16 @@ export default function CalendarPage() {
   const { data: customDividersData = [] } = useQuery<any[]>({
     queryKey: ["/api/custom-dividers"]
   });
+
+  // Function to get releases for a specific day
+  const getReleasesForDay = (day: number) => {
+    const currentDate = new Date(selectedYear, selectedMonth, day);
+    return releases.filter(release => {
+      const startDate = new Date(release.startDate);
+      const endDate = new Date(release.endDate);
+      return currentDate >= startDate && currentDate <= endDate;
+    });
+  };
 
   // Load custom dividers into state when data changes
   useEffect(() => {
@@ -82,15 +93,9 @@ export default function CalendarPage() {
   const saveCustomDividerMutation = useMutation({
     mutationFn: async (data: any) => {
       if (data.id) {
-        return apiRequest(`/api/custom-dividers/${data.id}`, {
-          method: 'PUT',
-          body: JSON.stringify(data)
-        });
+        return apiRequest(`/api/custom-dividers/${data.id}`, 'PUT', data);
       } else {
-        return apiRequest('/api/custom-dividers', {
-          method: 'POST',
-          body: JSON.stringify(data)
-        });
+        return apiRequest('/api/custom-dividers', 'POST', data);
       }
     },
     onSuccess: () => {
@@ -233,26 +238,86 @@ export default function CalendarPage() {
               
               const dateKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
               const dayDividers = customDividers.get(dateKey) || [];
+              const releasesForDay = getReleasesForDay(day);
+              const isHighPriority = priorityCells.has(dateKey);
 
               return (
                 <div
                   key={day}
                   className={`min-h-60 p-3 border-2 transition-colors flex flex-col ${
-                    isToday 
-                      ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-400' 
-                      : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    isHighPriority 
+                      ? 'border-red-400 bg-red-50 dark:bg-red-900/20' 
+                      : isToday 
+                        ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-400' 
+                        : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700'
                   }`}
-                  onClick={() => {
-                    setShowCustomDividerModal({ day, month: selectedMonth, year: selectedYear });
-                  }}
                 >
-                  {/* Day Number */}
+                  {/* Day Number and Plus Button */}
                   <div className="flex items-center justify-between mb-2">
                     <span className={`text-sm font-medium ${
-                      isToday ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'
+                      isHighPriority 
+                        ? 'text-red-600 dark:text-red-400' 
+                        : isToday 
+                          ? 'text-blue-600 dark:text-blue-400' 
+                          : 'text-gray-700 dark:text-gray-300'
                     }`}>
                       {day}
                     </span>
+                    <div className="flex items-center space-x-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-6 h-6 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowCustomDividerModal({ day, month: selectedMonth, year: selectedYear });
+                        }}
+                      >
+                        <i className="fas fa-plus text-xs"></i>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={`w-6 h-6 p-0 ${
+                          isHighPriority 
+                            ? 'text-red-500 hover:text-red-700' 
+                            : 'text-gray-400 hover:text-red-500'
+                        }`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const newPriorityCells = new Set(priorityCells);
+                          if (isHighPriority) {
+                            newPriorityCells.delete(dateKey);
+                          } else {
+                            newPriorityCells.add(dateKey);
+                          }
+                          setPriorityCells(newPriorityCells);
+                        }}
+                        title={isHighPriority ? "Remove high priority" : "Mark as high priority"}
+                      >
+                        <Star className={`w-3 h-3 ${isHighPriority ? 'fill-current' : ''}`} />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Project/Release Dividers */}
+                  <div className="space-y-1 mb-2">
+                    {releasesForDay.map(release => {
+                      const group = releaseGroups.find(g => g.id === release.groupId);
+                      return (
+                        <div
+                          key={release.id}
+                          className="text-xs font-medium px-2 py-2 rounded text-white opacity-90 border-l-4"
+                          style={{ 
+                            backgroundColor: group?.color || '#6B7280',
+                            borderLeftColor: group?.color ? `${group.color}CC` : '#6B7280CC'
+                          }}
+                        >
+                          <i className={`${release.icon || 'fas fa-calendar'} mr-1`}></i>
+                          {release.name}
+                        </div>
+                      );
+                    })}
                   </div>
 
                   {/* Custom Dividers */}
