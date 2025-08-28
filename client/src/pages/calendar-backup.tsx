@@ -18,6 +18,7 @@ interface CalendarTask {
   taskUrl?: string | null;
   assignedTo: string;
   releaseId: string;
+  evergreenBoxId?: string | null;
   releaseName?: string;
   releaseGroup?: string;
   releaseColor?: string;
@@ -405,7 +406,7 @@ export default function CalendarPage() {
   }, [allTasks]);
 
   // Use useMemo to prevent re-computation and ensure stable task grouping
-  const { tasks, scheduledTasks, unscheduledTasks, tasksByRelease } = useMemo(() => {
+  const { tasks, scheduledTasks, unscheduledTasks, tasksByRelease, tasksByEvergreenBox } = useMemo(() => {
     console.log('Processing tasks - Raw count:', allTasks.length);
     
     // Deduplicate tasks by ID first
@@ -415,8 +416,9 @@ export default function CalendarPage() {
     });
     const deduplicatedTasks = Array.from(uniqueTasksMap.values());
     console.log('After deduplication:', deduplicatedTasks.length);
+
     
-    // Transform tasks - include completion status
+    // Transform tasks - include completion status and evergreen box ID
     const processedTasks: CalendarTask[] = deduplicatedTasks.map(task => ({
       id: task.id,
       taskTitle: task.evergreenBoxId ? `${task.assignedTo} > ${task.taskTitle}` : task.taskTitle,
@@ -434,7 +436,8 @@ export default function CalendarPage() {
       releaseIcon: releases.find(r => r.id === task.releaseId)?.icon,
       priority: task.priority,
       scheduledDate: task.scheduledDate,
-      completed: task.completed || false // Add completion status, handle null
+      completed: task.completed || false, // Add completion status, handle null
+      evergreenBoxId: task.evergreenBoxId // Preserve evergreen box ID
     }));
     
     // Only show scheduled tasks that are actually completed in Team Checklist
@@ -451,20 +454,27 @@ export default function CalendarPage() {
     const unscheduled = processedTasks.filter(task => !task.scheduledDate);
     console.log('Scheduled:', scheduled.length, 'Unscheduled:', unscheduled.length);
 
-    // Group COMPLETED unscheduled tasks by release with strict deduplication
-    // The sidebar should ONLY show tasks that are completed in Team Checklist AND unscheduled
-    const completedUnscheduledTasks = unscheduled.filter(task => {
+    // Group tasks for sidebar - show completed tasks that can be scheduled
+    const availableUnscheduledTasks = unscheduled.filter(task => {
       const originalTask = deduplicatedTasks.find(t => t.id === task.id);
-      return originalTask?.completed === true;
+      const isCompleted = originalTask?.completed === true;
+      const isEvergreenTask = !!task.evergreenBoxId;
+      return isCompleted || isEvergreenTask;
     });
     
-    const groupedTasks = completedUnscheduledTasks.reduce((acc, task) => {
-      const releaseId = task.releaseId || 'evergreen';
+    // Separate project tasks and evergreen tasks
+    const projectTasks = availableUnscheduledTasks.filter(task => 
+      task.releaseId && task.releaseId !== 'general' && !task.evergreenBoxId
+    );
+    const evergreenTasks = availableUnscheduledTasks.filter(task => !!task.evergreenBoxId);
+    
+    // Group project tasks by release
+    const tasksByRelease = projectTasks.reduce((acc, task) => {
+      const releaseId = task.releaseId;
       if (!acc[releaseId]) {
         acc[releaseId] = { tasks: [], seenIds: new Set<string>() };
       }
       
-      // Only add if not already seen
       if (!acc[releaseId].seenIds.has(task.id)) {
         acc[releaseId].tasks.push(task);
         acc[releaseId].seenIds.add(task.id);
@@ -473,18 +483,40 @@ export default function CalendarPage() {
       return acc;
     }, {} as Record<string, { tasks: CalendarTask[], seenIds: Set<string> }>);
 
-    // Clean up the structure for return
-    const cleanGroupedTasks: Record<string, { tasks: CalendarTask[] }> = {};
-    Object.entries(groupedTasks).forEach(([releaseId, data]) => {
-      cleanGroupedTasks[releaseId] = { tasks: data.tasks };
+    // Group evergreen tasks by evergreen box
+    const tasksByEvergreenBox = evergreenTasks.reduce((acc, task) => {
+      const boxId = task.evergreenBoxId!;
+      if (!acc[boxId]) {
+        acc[boxId] = { tasks: [], seenIds: new Set<string>() };
+      }
+      
+      if (!acc[boxId].seenIds.has(task.id)) {
+        acc[boxId].tasks.push(task);
+        acc[boxId].seenIds.add(task.id);
+      }
+      
+      return acc;
+    }, {} as Record<string, { tasks: CalendarTask[], seenIds: Set<string> }>);
+
+    // Clean up the structures for return
+    const cleanTasksByRelease: Record<string, { tasks: CalendarTask[] }> = {};
+    Object.entries(tasksByRelease).forEach(([releaseId, data]) => {
+      cleanTasksByRelease[releaseId] = { tasks: data.tasks };
       console.log(`Release ${releaseId}: ${data.tasks.length} unique tasks`);
+    });
+
+    const cleanTasksByEvergreenBox: Record<string, { tasks: CalendarTask[] }> = {};
+    Object.entries(tasksByEvergreenBox).forEach(([boxId, data]) => {
+      cleanTasksByEvergreenBox[boxId] = { tasks: data.tasks };
+      console.log(`Evergreen ${boxId}: ${data.tasks.length} unique tasks`);
     });
 
     return {
       tasks: processedTasks,
       scheduledTasks: scheduled,
       unscheduledTasks: unscheduled,
-      tasksByRelease: cleanGroupedTasks
+      tasksByRelease: cleanTasksByRelease,
+      tasksByEvergreenBox: cleanTasksByEvergreenBox
     };
   }, [allTasks, releases, releaseGroups]);
 
@@ -539,11 +571,11 @@ export default function CalendarPage() {
     }
   };
 
-  // Get tasks for a specific day - only show tasks that are both scheduled AND currently completed
+  // Get tasks for a specific day - show ALL scheduled tasks regardless of completion status
   const getTasksForDay = (day: number) => {
     const dateString = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     
-    // Get all tasks that have a scheduled date for this day
+    // Get all tasks that have a scheduled date for this day (regardless of completion)
     const dayTasks = tasks.filter(task => {
       if (!task.scheduledDate) return false;
       const taskDate = new Date(task.scheduledDate);
@@ -551,11 +583,8 @@ export default function CalendarPage() {
       const isSameDay = taskDate.toDateString() === checkDate.toDateString();
       
       if (isSameDay) {
-        // Double-check completion status from original task data
-        const originalTask = allTasks.find(t => t.id === task.id);
-        const isCurrentlyCompleted = originalTask?.completed === true;
-        console.log(`Task "${task.taskTitle}" for day ${day}: completed=${isCurrentlyCompleted}, originalCompleted=${originalTask?.completed}`);
-        return isCurrentlyCompleted;
+        console.log(`Found scheduled task "${task.taskTitle}" for day ${day}, evergreenBoxId: ${task.evergreenBoxId}`);
+        return true; // Show all scheduled tasks
       }
       
       return false;
@@ -617,160 +646,145 @@ export default function CalendarPage() {
               </div>
               <div className="mb-6">
                 <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
-                  {Object.values(tasksByRelease).reduce((total, release) => total + release.tasks.length, 0)} completed & unscheduled
+                  {Object.values(tasksByRelease).reduce((total, release) => total + release.tasks.length, 0) + 
+                   Object.values(tasksByEvergreenBox).reduce((total, box) => total + box.tasks.length, 0)} completed & unscheduled
                 </Badge>
               </div>
 
-              <div className="space-y-3">
-                {Object.entries(tasksByRelease).map(([releaseId, releaseData]) => {
-                  if (!releaseData?.tasks?.length) {
-                    return null;
-                  }
+              <div className="space-y-6">
+                {/* Projects Section */}
+                {Object.keys(tasksByRelease).length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b pb-2 mb-4">Projects</h3>
+                    <div className="space-y-3">
+                      {Object.entries(tasksByRelease).map(([releaseId, releaseData]) => {
+                        if (!releaseData?.tasks?.length) {
+                          return null;
+                        }
+                        
+                        const taskList = releaseData.tasks;
+                        const release = releases.find(r => r.id === releaseId);
+                        const group = release ? releaseGroups.find(g => g.id === release.groupId) : null;
+                        const groupColor = group?.color || '#6b7280';
+                        const accentColor = releaseAccentColors.get(releaseId) || groupColor;
                   
-                  const taskList = releaseData.tasks;
-                  const release = releases.find(r => r.id === releaseId);
-                  
-                  // Verify no duplicates exist
-                  const titleCounts = taskList.reduce((acc, task) => {
-                    acc[task.taskTitle] = (acc[task.taskTitle] || 0) + 1;
-                    return acc;
-                  }, {} as Record<string, number>);
-                  const duplicates = Object.entries(titleCounts).filter(([title, count]) => count > 1);
-                  if (duplicates.length > 0) {
-                    console.error(`❌ DUPLICATES FOUND in release ${release?.name || releaseId}:`, duplicates);
-                  } else {
-                    console.log(`✅ No duplicates in release ${release?.name || releaseId} (${taskList.length} unique tasks)`);
-                  }
-                  const group = release ? releaseGroups.find(g => g.id === release.groupId) : null;
-                  
-                  // Define accent colors for special groups
-                  let accentColor = '#6B7280'; // Default gray
-                  if (releaseId === 'evergreen') {
-                    accentColor = '#10B981'; // Green for evergreen
-                  } else if (releaseId === 'general') {
-                    // Don't show general tasks in calendar
-                    return null;
-                  } else if (group) {
-                    accentColor = group.color || '#6B7280';
-                  }
-                  
-                  const groupColor = group?.color || '#6b7280';
-                  
-                  return (
-                    <div key={releaseId} className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
-                      <div 
-                        className="p-3 border-b border-gray-200 dark:border-gray-700 text-white relative"
-                        style={{ 
-                          backgroundColor: groupColor,
-                          borderLeft: `4px solid ${accentColor}`
-                        }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <i className={`${release?.icon || 'fas fa-calendar'} text-sm`}></i>
-                            <span className="text-sm font-medium">
-                              {release ? release.name : (releaseId === 'evergreen' ? 'Evergreen' : 'General Tasks')}
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <span className="text-xs bg-black bg-opacity-20 px-2 py-1 rounded">
-                              {taskList.length}
-                            </span>
-                            <button
-                              className="w-4 h-4 rounded border border-gray-300 hover:scale-110 transition-transform bg-white flex items-center justify-center"
-                              onClick={() => setEditingReleaseAccent(release?.id || releaseId)}
+                        return (
+                          <div key={releaseId} className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
+                            <div 
+                              className="p-3 border-b border-gray-200 dark:border-gray-700 text-white relative"
+                              style={{ 
+                                backgroundColor: groupColor,
+                                borderLeft: `4px solid ${accentColor}`
+                              }}
                             >
-                              <i className="fas fa-wrench text-xs text-gray-600"></i>
-                            </button>
-                            {editingReleaseAccent === (release?.id || releaseId) && (
-                              <>
-                                <div 
-                                  className="fixed inset-0 bg-black bg-opacity-50 z-40"
-                                  onClick={() => setEditingReleaseAccent(null)}
-                                />
-                                <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 p-4 rounded shadow-lg border z-50 min-w-[250px]">
-                                  <div className="flex items-center justify-between mb-3">
-                                    <h3 className="text-sm font-medium text-gray-900 dark:text-white">Choose Accent Color</h3>
-                                    <button
-                                      className="w-6 h-6 rounded border border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center"
-                                      onClick={() => setEditingReleaseAccent(null)}
-                                    >
-                                      <i className="fas fa-times text-xs text-gray-600"></i>
-                                    </button>
-                                  </div>
-                                  <div className="grid grid-cols-4 gap-2 mb-3">
-                                    {['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#F97316', '#6B7280', '#EC4899'].map(color => (
-                                      <button
-                                        key={color}
-                                        className={`w-10 h-10 rounded border-2 hover:scale-110 transition-transform ${
-                                          releaseAccentColors.get(release?.id || releaseId) === color 
-                                            ? 'border-gray-800 dark:border-white' 
-                                            : 'border-gray-300'
-                                        }`}
-                                        style={{ backgroundColor: color }}
-                                        onClick={() => {
-                                          const newAccentColors = new Map(releaseAccentColors);
-                                          const currentReleaseId = release?.id || releaseId;
-                                          newAccentColors.set(currentReleaseId, color);
-                                          setReleaseAccentColors(newAccentColors);
-                                          setEditingReleaseAccent(null);
-                                        }}
-                                      />
-                                    ))}
-                                  </div>
-                                  <div className="flex items-center space-x-2 border-t pt-3">
-                                    <button
-                                      className="w-8 h-8 rounded border border-gray-300 hover:scale-110 transition-transform bg-white flex items-center justify-center"
-                                      onClick={() => {
-                                        const colorInput = document.createElement('input');
-                                        colorInput.type = 'color';
-                                        colorInput.value = releaseAccentColors.get(release?.id || releaseId) || '#3B82F6';
-                                        colorInput.onchange = (e) => {
-                                          const newAccentColors = new Map(releaseAccentColors);
-                                          newAccentColors.set(release?.id || releaseId, (e.target as HTMLInputElement).value);
-                                          setReleaseAccentColors(newAccentColors);
-                                          setEditingReleaseAccent(null);
-                                        };
-                                        colorInput.click();
-                                      }}
-                                    >
-                                      <i className="fas fa-paint-brush text-xs text-gray-600"></i>
-                                    </button>
-                                    <span className="text-xs text-gray-600 dark:text-gray-300">Custom Color</span>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                  <i className={`${release?.icon || 'fas fa-calendar'} text-sm`}></i>
+                                  <span className="text-sm font-medium">
+                                    {release?.name || 'Unknown Release'}
+                                  </span>
+                                </div>
+                                <span className="text-xs bg-black bg-opacity-20 px-2 py-1 rounded">
+                                  {taskList.length}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="p-2 space-y-2">
+                              {taskList.map(task => (
+                                <div
+                                  key={task.id}
+                                  draggable
+                                  onDragStart={(e) => {
+                                    console.log('onDragStart called for:', task.taskTitle);
+                                    handleDragStart(task);
+                                    e.dataTransfer.effectAllowed = 'move';
+                                  }}
+                                  onDragEnd={(e) => {
+                                    console.log('onDragEnd called');
+                                    setDraggedTask(null);
+                                  }}
+                                  className="p-3 bg-gray-50 dark:bg-gray-700 rounded text-xs cursor-move hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors min-h-[3rem] flex items-center"
+                                  title={`Drag to schedule: ${task.taskTitle}`}
+                                >
+                                  <div className="font-medium text-gray-900 dark:text-white leading-tight break-words">
+                                    {task.taskTitle}
                                   </div>
                                 </div>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="p-2 space-y-2">
-                        {taskList.map(task => (
-                          <div
-                            key={task.id}
-                            draggable
-                            onDragStart={(e) => {
-                              console.log('onDragStart called for:', task.taskTitle);
-                              handleDragStart(task);
-                              e.dataTransfer.effectAllowed = 'move';
-                            }}
-                            onDragEnd={(e) => {
-                              console.log('onDragEnd called');
-                              setDraggedTask(null);
-                            }}
-                            className="p-3 bg-gray-50 dark:bg-gray-700 rounded text-xs cursor-move hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors min-h-[3rem] flex items-center"
-                            title={`Drag to schedule: ${task.taskTitle}`}
-                          >
-                            <div className="font-medium text-gray-900 dark:text-white leading-tight break-words">
-                              {task.taskTitle}
+                              ))}
                             </div>
                           </div>
-                        ))}
-                      </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+                )}
+
+                {/* Evergreen Tasks Section */}
+                {Object.keys(tasksByEvergreenBox).length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b pb-2 mb-4">Evergreen Tasks</h3>
+                    <div className="space-y-3">
+                      {Object.entries(tasksByEvergreenBox).map(([boxId, boxData]) => {
+                        if (!boxData?.tasks?.length) {
+                          return null;
+                        }
+                        
+                        const taskList = boxData.tasks;
+                        const evergreenBox = evergreenBoxes.find(box => box.id === boxId);
+                        const group = evergreenBox ? releaseGroups.find(g => g.id === evergreenBox.groupId) : null;
+                        const groupColor = group?.color || '#10b981'; // Default green for evergreen
+                        const accentColor = releaseAccentColors.get(boxId) || '#10b981';
+                  
+                        return (
+                          <div key={boxId} className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
+                            <div 
+                              className="p-3 border-b border-gray-200 dark:border-gray-700 text-white relative"
+                              style={{ 
+                                backgroundColor: groupColor,
+                                borderLeft: `4px solid ${accentColor}`
+                              }}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                  <i className="fas fa-leaf text-sm"></i>
+                                  <span className="text-sm font-medium">
+                                    {evergreenBox?.title || 'Unknown Evergreen Box'}
+                                  </span>
+                                </div>
+                                <span className="text-xs bg-black bg-opacity-20 px-2 py-1 rounded">
+                                  {taskList.length}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="p-2 space-y-2">
+                              {taskList.map(task => (
+                                <div
+                                  key={task.id}
+                                  draggable
+                                  onDragStart={(e) => {
+                                    console.log('onDragStart called for:', task.taskTitle);
+                                    handleDragStart(task);
+                                    e.dataTransfer.effectAllowed = 'move';
+                                  }}
+                                  onDragEnd={(e) => {
+                                    console.log('onDragEnd called');
+                                    setDraggedTask(null);
+                                  }}
+                                  className="p-3 bg-gray-50 dark:bg-gray-700 rounded text-xs cursor-move hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors min-h-[3rem] flex items-center"
+                                  title={`Drag to schedule: ${task.taskTitle}`}
+                                >
+                                  <div className="font-medium text-gray-900 dark:text-white leading-tight break-words">
+                                    {task.taskTitle}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
               {unscheduledTasks.length === 0 && (
                 <div className="text-center py-8">
@@ -935,7 +949,7 @@ export default function CalendarPage() {
 
                     {/* Custom dividers with no project assignment */}
                     {customDividers.get(dateKey)
-                      ?.filter(divider => !divider.releaseId)
+                      ?.filter(divider => !divider.releaseId && !divider.evergreenBoxId)
                       ?.map((divider, index) => {
                         const originalIndex = customDividers.get(dateKey)?.findIndex(d => d === divider) || 0;
                         return (
@@ -1050,7 +1064,7 @@ export default function CalendarPage() {
                     <div className="space-y-2">
                       {releasesForDay.map(release => {
                         const group = releaseGroups.find(g => g.id === release.groupId);
-                        const releaseTasks = tasksForDay[release.id]?.tasks || [];
+                        const releaseTasks = (tasksForDay[release.id]?.tasks || []).filter(task => !task.evergreenBoxId);
                         
                         return (
                           <div key={release.id} className="space-y-1">
@@ -1258,14 +1272,32 @@ export default function CalendarPage() {
                         );
                       })}
                       
-                      {/* Custom dividers with evergreen box assignment */}
+
+                      
+                      {/* Evergreen boxes displayed EXACTLY like project releases */}
                       {evergreenBoxes.map(box => {
-                        const boxDividers = customDividers.get(dateKey)?.filter(divider => divider.evergreenBoxId === box.id) || [];
-                        if (boxDividers.length === 0) return null;
+                        const boxTasks = Object.entries(tasksForDay)
+                          .flatMap(([, { tasks }]) => tasks.filter(task => task.evergreenBoxId === box.id));
+                        const boxCustomDividers = customDividers.get(dateKey)?.filter(divider => divider.evergreenBoxId === box.id) || [];
+                        
+                        if (boxTasks.length === 0 && boxCustomDividers.length === 0) return null;
                         
                         return (
-                          <div key={`evergreen-${box.id}`} className="space-y-1">
-                            {boxDividers.map((divider, index) => {
+                          <div key={box.id} className="space-y-1">
+                            {/* Evergreen box main divider - EXACT SAME AS RELEASE DIVIDER */}
+                            <div 
+                              className="text-xs font-medium px-2 py-2 rounded text-white opacity-90 border-l-4"
+                              style={{ 
+                                backgroundColor: '#3b82f6',
+                                borderLeftColor: '#1d4ed8'
+                              }}
+                            >
+                              <i className={`${box.icon || 'fas fa-calendar'} mr-1`}></i>
+                              {box.title}
+                            </div>
+                            
+                            {/* Custom dividers assigned to this evergreen box - EXACT SAME AS PROJECT CUSTOM DIVIDERS */}
+                            {boxCustomDividers.map((divider, index) => {
                               const originalIndex = customDividers.get(dateKey)?.findIndex(d => d === divider) || 0;
                               return (
                                 <div 
@@ -1281,33 +1313,14 @@ export default function CalendarPage() {
                                   className="text-xs font-medium px-2 py-1 rounded opacity-90 mb-1 flex items-center justify-between group cursor-move hover:opacity-100 transition-colors ml-2 border-2"
                                   style={{ 
                                     backgroundColor: 'white',
-                                    color: '#6b7280',
-                                    borderColor: '#6b7280'
+                                    color: '#3b82f6',
+                                    borderColor: '#3b82f6'
                                   }}
                                 >
                                   <div className="flex flex-col">
-                                    {divider.completed && (
-                                      <div className="flex items-center justify-center mb-1 bg-black bg-opacity-70 rounded px-2 py-1">
-                                        <i className="fas fa-check-circle text-green-400 text-sm mr-1"></i>
-                                        <span className="text-xs text-green-400">Completed</span>
-                                      </div>
-                                    )}
-                                    {divider.id && dividerTaskStatuses.get(divider.id)?.paused && (
-                                      <div className="flex items-center justify-center mb-1 bg-black bg-opacity-70 rounded px-2 py-1">
-                                        <i className="fas fa-pause-circle text-orange-400 text-sm mr-1"></i>
-                                        <span className="text-xs text-orange-400">Paused</span>
-                                      </div>
-                                    )}
-                                    {divider.id && dividerTaskStatuses.get(divider.id)?.underReview && (
-                                      <div className="flex items-center justify-center mb-1 bg-black bg-opacity-70 rounded px-2 py-1">
-                                        <i className="fas fa-eye text-blue-400 text-sm mr-1"></i>
-                                        <span className="text-xs text-blue-400">Under Review</span>
-                                      </div>
-                                    )}
                                     <div className="flex items-center mb-1">
-                                      <i className={`${box.icon || 'fas fa-calendar'} mr-1`}></i>
-                                      <span className="mr-2 text-gray-500">{box.title}:</span>
-                                      <span>{divider.name}</span>
+                                      <i className={`${divider.icon} mr-1`}></i>
+                                      {divider.name}
                                     </div>
                                     {(divider.mediaLink || divider.textLink) && (
                                       <div className="flex flex-col space-y-1">
@@ -1324,7 +1337,7 @@ export default function CalendarPage() {
                                             }}
                                             className="text-xs underline hover:no-underline opacity-80 hover:opacity-100 flex items-center"
                                             title="Open Media Link"
-                                            style={{ color: '#6b7280' }}
+                                            style={{ color: '#3b82f6' }}
                                           >
                                             <i className="fas fa-image mr-1"></i>
                                             Media
@@ -1343,70 +1356,54 @@ export default function CalendarPage() {
                                             }}
                                             className="text-xs underline hover:no-underline opacity-80 hover:opacity-100 flex items-center"
                                             title="Open Text Link"
-                                            style={{ color: '#6b7280' }}
+                                            style={{ color: '#3b82f6' }}
                                           >
                                             <i className="fas fa-link mr-1"></i>
-                                            Link
+                                            Text
                                           </button>
                                         )}
                                       </div>
                                     )}
                                   </div>
-                                  <div className="flex items-center gap-1">
+                                  <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button
-                                      className="w-6 h-6 rounded border border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center"
+                                      className="w-4 h-4 rounded border hover:bg-gray-100 flex items-center justify-center mr-1"
+                                      style={{ borderColor: '#3b82f6' }}
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        setEditingDivider({ divider, dateKey });
+                                        setEditingDivider({ dateKey, index: originalIndex, divider });
                                       }}
                                       title="Edit divider"
                                     >
-                                      <i className="fas fa-edit text-xs" style={{ color: '#6b7280' }}></i>
+                                      <i className="fas fa-edit text-xs" style={{ color: '#3b82f6' }}></i>
                                     </button>
                                     <button
-                                      className="w-6 h-6 rounded border border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center"
+                                      className="w-4 h-4 rounded border hover:bg-gray-100 flex items-center justify-center"
+                                      style={{ borderColor: '#3b82f6' }}
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         setDeleteConfirmModal({ dateKey, index: originalIndex, divider });
                                       }}
                                       title="Delete divider"
                                     >
-                                      <i className="fas fa-times text-xs" style={{ color: '#6b7280' }}></i>
+                                      <i className="fas fa-times text-xs" style={{ color: '#3b82f6' }}></i>
                                     </button>
                                   </div>
                                 </div>
                               );
                             })}
                             
-                          </div>
-                        );
-                      })}
-                      
-                      {/* Evergreen tasks grouped by box */}
-                      {evergreenBoxes.map(box => {
-                        const boxTasks = Object.entries(tasksForDay)
-                          .filter(([releaseId]) => releaseId === 'evergreen' || !releases.find(r => r.id === releaseId))
-                          .flatMap(([, { tasks }]) => tasks.filter(task => task.evergreenBoxId === box.id));
-                        
-                        if (boxTasks.length === 0) return null;
-                        
-                        return (
-                          <div key={`tasks-${box.id}`} className="space-y-1">
-                            <div className="text-xs font-medium px-2 py-2 rounded text-white bg-gray-500 opacity-90">
-                              <i className={`${box.icon || 'fas fa-calendar'} mr-1`}></i>
-                              {box.title}
-                            </div>
+                            {/* Tasks under this evergreen box - EXACT SAME AS PROJECT TASKS */}
                             {boxTasks.map(task => (
                               <div
                                 key={task.id}
-                                className="text-xs p-2 bg-gray-100 dark:bg-gray-600 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors ml-2 min-h-[2.5rem] flex flex-col space-y-1"
-                                title={`${task.taskTitle} - Double-click to remove`}
                                 draggable
+                                className="text-xs p-2 bg-gray-100 dark:bg-gray-600 rounded cursor-move hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors ml-2 min-h-[2.5rem] flex flex-col space-y-1"
+                                title={`${task.taskTitle} - Drag to move or double-click to remove`}
                                 onDragStart={(e) => {
+                                  e.stopPropagation();
                                   setDraggedTask(task);
-                                  e.dataTransfer.effectAllowed = 'move';
                                 }}
-                                onDragEnd={() => setDraggedTask(null)}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   // Single click does nothing - prevents accidental removal
@@ -1468,7 +1465,8 @@ export default function CalendarPage() {
                               </div>
                             ))}
                           </div>
-                        ))}
+                        );
+                      })}
                     </div>
 
                     {/* Status text at bottom of cell */}

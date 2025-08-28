@@ -406,7 +406,7 @@ export default function CalendarPage() {
   }, [allTasks]);
 
   // Use useMemo to prevent re-computation and ensure stable task grouping
-  const { tasks, scheduledTasks, unscheduledTasks, tasksByRelease } = useMemo(() => {
+  const { tasks, scheduledTasks, unscheduledTasks, tasksByRelease, tasksByEvergreenBox } = useMemo(() => {
     console.log('Processing tasks - Raw count:', allTasks.length);
     
     // Deduplicate tasks by ID first
@@ -454,8 +454,7 @@ export default function CalendarPage() {
     const unscheduled = processedTasks.filter(task => !task.scheduledDate);
     console.log('Scheduled:', scheduled.length, 'Unscheduled:', unscheduled.length);
 
-    // Group unscheduled tasks by release - include completed tasks OR evergreen box tasks
-    // The sidebar should show: completed tasks AND evergreen box tasks (regardless of completion)
+    // Group tasks for sidebar - show completed tasks that can be scheduled
     const availableUnscheduledTasks = unscheduled.filter(task => {
       const originalTask = deduplicatedTasks.find(t => t.id === task.id);
       const isCompleted = originalTask?.completed === true;
@@ -463,13 +462,19 @@ export default function CalendarPage() {
       return isCompleted || isEvergreenTask;
     });
     
-    const groupedTasks = availableUnscheduledTasks.reduce((acc, task) => {
-      const releaseId = task.releaseId || 'evergreen';
+    // Separate project tasks and evergreen tasks
+    const projectTasks = availableUnscheduledTasks.filter(task => 
+      task.releaseId && task.releaseId !== 'general' && !task.evergreenBoxId
+    );
+    const evergreenTasks = availableUnscheduledTasks.filter(task => !!task.evergreenBoxId);
+    
+    // Group project tasks by release
+    const tasksByRelease = projectTasks.reduce((acc, task) => {
+      const releaseId = task.releaseId;
       if (!acc[releaseId]) {
         acc[releaseId] = { tasks: [], seenIds: new Set<string>() };
       }
       
-      // Only add if not already seen
       if (!acc[releaseId].seenIds.has(task.id)) {
         acc[releaseId].tasks.push(task);
         acc[releaseId].seenIds.add(task.id);
@@ -478,18 +483,40 @@ export default function CalendarPage() {
       return acc;
     }, {} as Record<string, { tasks: CalendarTask[], seenIds: Set<string> }>);
 
-    // Clean up the structure for return
-    const cleanGroupedTasks: Record<string, { tasks: CalendarTask[] }> = {};
-    Object.entries(groupedTasks).forEach(([releaseId, data]) => {
-      cleanGroupedTasks[releaseId] = { tasks: data.tasks };
+    // Group evergreen tasks by evergreen box
+    const tasksByEvergreenBox = evergreenTasks.reduce((acc, task) => {
+      const boxId = task.evergreenBoxId!;
+      if (!acc[boxId]) {
+        acc[boxId] = { tasks: [], seenIds: new Set<string>() };
+      }
+      
+      if (!acc[boxId].seenIds.has(task.id)) {
+        acc[boxId].tasks.push(task);
+        acc[boxId].seenIds.add(task.id);
+      }
+      
+      return acc;
+    }, {} as Record<string, { tasks: CalendarTask[], seenIds: Set<string> }>);
+
+    // Clean up the structures for return
+    const cleanTasksByRelease: Record<string, { tasks: CalendarTask[] }> = {};
+    Object.entries(tasksByRelease).forEach(([releaseId, data]) => {
+      cleanTasksByRelease[releaseId] = { tasks: data.tasks };
       console.log(`Release ${releaseId}: ${data.tasks.length} unique tasks`);
+    });
+
+    const cleanTasksByEvergreenBox: Record<string, { tasks: CalendarTask[] }> = {};
+    Object.entries(tasksByEvergreenBox).forEach(([boxId, data]) => {
+      cleanTasksByEvergreenBox[boxId] = { tasks: data.tasks };
+      console.log(`Evergreen ${boxId}: ${data.tasks.length} unique tasks`);
     });
 
     return {
       tasks: processedTasks,
       scheduledTasks: scheduled,
       unscheduledTasks: unscheduled,
-      tasksByRelease: cleanGroupedTasks
+      tasksByRelease: cleanTasksByRelease,
+      tasksByEvergreenBox: cleanTasksByEvergreenBox
     };
   }, [allTasks, releases, releaseGroups]);
 
@@ -590,7 +617,7 @@ export default function CalendarPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="flex h-screen">
-        {/* Left Sidebar - Completed Tasks */}
+        {/* Left Sidebar - Available Tasks */}
         {sidebarVisible && (
           <div 
             className="w-1/6 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto"
@@ -619,167 +646,137 @@ export default function CalendarPage() {
               </div>
               <div className="mb-6">
                 <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
-                  {Object.values(tasksByRelease).reduce((total, release) => total + release.tasks.length, 0)} completed & unscheduled
+                  {Object.values(tasksByRelease).reduce((total, release) => total + release.tasks.length, 0) + 
+                   Object.values(tasksByEvergreenBox).reduce((total, box) => total + box.tasks.length, 0)} completed & unscheduled
                 </Badge>
               </div>
 
-              <div className="space-y-3">
-                {Object.entries(tasksByRelease).map(([releaseId, releaseData]) => {
-                  if (!releaseData?.tasks?.length) {
-                    return null;
-                  }
+              <div className="space-y-6">
+                {/* Projects Section */}
+                {Object.keys(tasksByRelease).length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b pb-2 mb-4">Projects</h3>
+                    <div className="space-y-3">
+                      {Object.entries(tasksByRelease).map(([releaseId, releaseData]) => {
+                        if (!releaseData?.tasks?.length) {
+                          return null;
+                        }
+                        
+                        const taskList = releaseData.tasks;
+                        const release = releases.find(r => r.id === releaseId);
+                        const group = release ? releaseGroups.find(g => g.id === release.groupId) : null;
+                        const groupColor = group?.color || '#6b7280';
                   
-                  const taskList = releaseData.tasks;
-                  const release = releases.find(r => r.id === releaseId);
-                  
-                  // Verify no duplicates exist
-                  const titleCounts = taskList.reduce((acc, task) => {
-                    acc[task.taskTitle] = (acc[task.taskTitle] || 0) + 1;
-                    return acc;
-                  }, {} as Record<string, number>);
-                  const duplicates = Object.entries(titleCounts).filter(([title, count]) => count > 1);
-                  if (duplicates.length > 0) {
-                    console.error(`❌ DUPLICATES FOUND in release ${release?.name || releaseId}:`, duplicates);
-                  } else {
-                    console.log(`✅ No duplicates in release ${release?.name || releaseId} (${taskList.length} unique tasks)`);
-                  }
-                  const group = release ? releaseGroups.find(g => g.id === release.groupId) : null;
-                  
-                  // Define accent colors for special groups
-                  let accentColor = '#6B7280'; // Default gray
-                  if (releaseId === 'evergreen') {
-                    accentColor = '#10B981'; // Green for evergreen
-                  } else if (releaseId === 'general') {
-                    // Don't show general tasks in calendar
-                    return null;
-                  } else if (group) {
-                    accentColor = group.color || '#6B7280';
-                  }
-                  
-                  const groupColor = group?.color || '#6b7280';
-                  
-                  return (
-                    <div key={releaseId} className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
-                      <div 
-                        className="p-3 border-b border-gray-200 dark:border-gray-700 text-white relative"
-                        style={{ 
-                          backgroundColor: groupColor,
-                          borderLeft: `4px solid ${accentColor}`
-                        }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <i className={`${release?.icon || 'fas fa-calendar'} text-sm`}></i>
-                            <span className="text-sm font-medium">
-                              {release ? release.name : (releaseId === 'evergreen' ? 'Evergreen' : 'General Tasks')}
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <span className="text-xs bg-black bg-opacity-20 px-2 py-1 rounded">
-                              {taskList.length}
-                            </span>
-                            <button
-                              className="w-4 h-4 rounded border border-gray-300 hover:scale-110 transition-transform bg-white flex items-center justify-center"
-                              onClick={() => setEditingReleaseAccent(release?.id || releaseId)}
+                        return (
+                          <div key={releaseId} className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
+                            <div 
+                              className="p-3 border-b border-gray-200 dark:border-gray-700 text-white relative"
+                              style={{ backgroundColor: groupColor }}
                             >
-                              <i className="fas fa-wrench text-xs text-gray-600"></i>
-                            </button>
-                            {editingReleaseAccent === (release?.id || releaseId) && (
-                              <>
-                                <div 
-                                  className="fixed inset-0 bg-black bg-opacity-50 z-40"
-                                  onClick={() => setEditingReleaseAccent(null)}
-                                />
-                                <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 p-4 rounded shadow-lg border z-50 min-w-[250px]">
-                                  <div className="flex items-center justify-between mb-3">
-                                    <h3 className="text-sm font-medium text-gray-900 dark:text-white">Choose Accent Color</h3>
-                                    <button
-                                      className="w-6 h-6 rounded border border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center"
-                                      onClick={() => setEditingReleaseAccent(null)}
-                                    >
-                                      <i className="fas fa-times text-xs text-gray-600"></i>
-                                    </button>
-                                  </div>
-                                  <div className="grid grid-cols-4 gap-2 mb-3">
-                                    {['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#F97316', '#6B7280', '#EC4899'].map(color => (
-                                      <button
-                                        key={color}
-                                        className={`w-10 h-10 rounded border-2 hover:scale-110 transition-transform ${
-                                          releaseAccentColors.get(release?.id || releaseId) === color 
-                                            ? 'border-gray-800 dark:border-white' 
-                                            : 'border-gray-300'
-                                        }`}
-                                        style={{ backgroundColor: color }}
-                                        onClick={() => {
-                                          const newAccentColors = new Map(releaseAccentColors);
-                                          const currentReleaseId = release?.id || releaseId;
-                                          newAccentColors.set(currentReleaseId, color);
-                                          setReleaseAccentColors(newAccentColors);
-                                          setEditingReleaseAccent(null);
-                                        }}
-                                      />
-                                    ))}
-                                  </div>
-                                  <div className="flex items-center space-x-2 border-t pt-3">
-                                    <button
-                                      className="w-8 h-8 rounded border border-gray-300 hover:scale-110 transition-transform bg-white flex items-center justify-center"
-                                      onClick={() => {
-                                        const colorInput = document.createElement('input');
-                                        colorInput.type = 'color';
-                                        colorInput.value = releaseAccentColors.get(release?.id || releaseId) || '#3B82F6';
-                                        colorInput.onchange = (e) => {
-                                          const newAccentColors = new Map(releaseAccentColors);
-                                          newAccentColors.set(release?.id || releaseId, (e.target as HTMLInputElement).value);
-                                          setReleaseAccentColors(newAccentColors);
-                                          setEditingReleaseAccent(null);
-                                        };
-                                        colorInput.click();
-                                      }}
-                                    >
-                                      <i className="fas fa-paint-brush text-xs text-gray-600"></i>
-                                    </button>
-                                    <span className="text-xs text-gray-600 dark:text-gray-300">Custom Color</span>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                  <i className={`${release?.icon || 'fas fa-calendar'} text-sm`}></i>
+                                  <span className="text-sm font-medium">
+                                    {release?.name || 'Unknown Release'}
+                                  </span>
+                                </div>
+                                <span className="text-xs bg-black bg-opacity-20 px-2 py-1 rounded">
+                                  {taskList.length}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="p-2 space-y-2">
+                              {taskList.map(task => (
+                                <div
+                                  key={task.id}
+                                  draggable
+                                  onDragStart={(e) => {
+                                    handleDragStart(task);
+                                    e.dataTransfer.effectAllowed = 'move';
+                                  }}
+                                  onDragEnd={() => setDraggedTask(null)}
+                                  className="p-3 bg-gray-50 dark:bg-gray-700 rounded text-xs cursor-move hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors min-h-[3rem] flex items-center"
+                                  title={`Drag to schedule: ${task.taskTitle}`}
+                                >
+                                  <div className="font-medium text-gray-900 dark:text-white leading-tight break-words">
+                                    {task.taskTitle}
                                   </div>
                                 </div>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="p-2 space-y-2">
-                        {taskList.map(task => (
-                          <div
-                            key={task.id}
-                            draggable
-                            onDragStart={(e) => {
-                              console.log('onDragStart called for:', task.taskTitle);
-                              handleDragStart(task);
-                              e.dataTransfer.effectAllowed = 'move';
-                            }}
-                            onDragEnd={(e) => {
-                              console.log('onDragEnd called');
-                              setDraggedTask(null);
-                            }}
-                            className="p-3 bg-gray-50 dark:bg-gray-700 rounded text-xs cursor-move hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors min-h-[3rem] flex items-center"
-                            title={`Drag to schedule: ${task.taskTitle}`}
-                          >
-                            <div className="font-medium text-gray-900 dark:text-white leading-tight break-words">
-                              {task.taskTitle}
+                              ))}
                             </div>
                           </div>
-                        ))}
-                      </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+                )}
 
-              {unscheduledTasks.length === 0 && (
-                <div className="text-center py-8">
-                  <CalendarIcon className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                  <p className="text-gray-500">No completed tasks to schedule yet.</p>
-                </div>
-              )}
+                {/* Evergreen Tasks Section */}
+                {Object.keys(tasksByEvergreenBox).length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b pb-2 mb-4">Evergreen Tasks</h3>
+                    <div className="space-y-3">
+                      {Object.entries(tasksByEvergreenBox).map(([boxId, boxData]) => {
+                        if (!boxData?.tasks?.length) {
+                          return null;
+                        }
+                        
+                        const taskList = boxData.tasks;
+                        const evergreenBox = evergreenBoxes.find(box => box.id === boxId);
+                        const group = evergreenBox ? releaseGroups.find(g => g.id === evergreenBox.groupId) : null;
+                        const groupColor = group?.color || '#10b981';
+                  
+                        return (
+                          <div key={boxId} className="border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
+                            <div 
+                              className="p-3 border-b border-gray-200 dark:border-gray-700 text-white relative"
+                              style={{ backgroundColor: groupColor }}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                  <i className="fas fa-leaf text-sm"></i>
+                                  <span className="text-sm font-medium">
+                                    {evergreenBox?.title || 'Unknown Evergreen Box'}
+                                  </span>
+                                </div>
+                                <span className="text-xs bg-black bg-opacity-20 px-2 py-1 rounded">
+                                  {taskList.length}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="p-2 space-y-2">
+                              {taskList.map(task => (
+                                <div
+                                  key={task.id}
+                                  draggable
+                                  onDragStart={(e) => {
+                                    handleDragStart(task);
+                                    e.dataTransfer.effectAllowed = 'move';
+                                  }}
+                                  onDragEnd={() => setDraggedTask(null)}
+                                  className="p-3 bg-gray-50 dark:bg-gray-700 rounded text-xs cursor-move hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors min-h-[3rem] flex items-center"
+                                  title={`Drag to schedule: ${task.taskTitle}`}
+                                >
+                                  <div className="font-medium text-gray-900 dark:text-white leading-tight break-words">
+                                    {task.taskTitle}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {(Object.keys(tasksByRelease).length === 0 && Object.keys(tasksByEvergreenBox).length === 0) && (
+                  <div className="text-center py-8">
+                    <CalendarIcon className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                    <p className="text-gray-500">No completed tasks to schedule yet.</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
