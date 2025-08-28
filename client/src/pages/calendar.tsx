@@ -1193,6 +1193,70 @@ export default function CalendarPage() {
                                   </div>
                                 );
                               })}
+                            
+                            {/* Project tasks under this release */}
+                            {releaseTasks.map(task => (
+                              <div
+                                key={task.id}
+                                draggable
+                                className="text-xs p-2 bg-gray-100 dark:bg-gray-600 rounded cursor-move hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors ml-2 min-h-[2.5rem] flex flex-col space-y-1"
+                                title={`${task.taskTitle} - Drag to move or double-click to remove`}
+                                onDragStart={(e) => {
+                                  e.stopPropagation();
+                                  setDraggedTask(task);
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                }}
+                                onDoubleClick={(e) => {
+                                  e.stopPropagation();
+                                  handleTaskClick(task, 'remove');
+                                }}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="break-words flex-1">{task.taskTitle}</div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="w-4 h-4 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 ml-1"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setShowSocialMediaModal(task.id);
+                                    }}
+                                  >
+                                    <i className="fas fa-plus text-xs"></i>
+                                  </Button>
+                                </div>
+                                {/* Social Media Icons */}
+                                {taskSocialMedia.get(task.id) && (
+                                  <div className="flex flex-wrap gap-1 mt-1 max-w-[120px]">
+                                    {taskSocialMedia.get(task.id)?.map((platform, index) => (
+                                      <SocialMediaIcon key={index} platform={platform} />
+                                    ))}
+                                  </div>
+                                )}
+                                {/* Links */}
+                                {(taskSocialMediaUrls.get(task.id) || task.taskUrl) && (
+                                  <div className="flex items-center gap-1 mt-1">
+                                    <a 
+                                      href={
+                                        taskSocialMediaUrls.get(task.id)
+                                          ? (taskSocialMediaUrls.get(task.id)?.startsWith("http") ? taskSocialMediaUrls.get(task.id) : `https://${taskSocialMediaUrls.get(task.id)}`)
+                                          : task.taskUrl?.startsWith("http") ? task.taskUrl : `https://${task.taskUrl}`
+                                      } 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-500 hover:bg-blue-600 text-white text-xs transition-colors"
+                                      title="Visit Link"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <i className="fas fa-link text-[8px]"></i>
+                                    </a>
+                                    <span className="text-xs text-gray-600 dark:text-gray-400">Link</span>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
                           </div>
                         );
                       })}
