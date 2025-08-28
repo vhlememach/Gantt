@@ -632,7 +632,7 @@ export default function CalendarPage() {
             <div className="p-6">
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  Available Tasks
+                  Task Holding Area
                 </h2>
                 <Button
                   variant="outline"
@@ -647,8 +647,9 @@ export default function CalendarPage() {
               <div className="mb-6">
                 <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
                   {Object.values(tasksByRelease).reduce((total, release) => total + release.tasks.length, 0) + 
-                   Object.values(tasksByEvergreenBox).reduce((total, box) => total + box.tasks.length, 0)} completed & unscheduled
+                   Object.values(tasksByEvergreenBox).reduce((total, box) => total + box.tasks.length, 0)} tasks ready to schedule
                 </Badge>
+                <p className="text-xs text-gray-500 mt-2">Drag tasks here to hold while navigating to different months</p>
               </div>
 
               <div className="space-y-6">
@@ -773,7 +774,8 @@ export default function CalendarPage() {
                 {(Object.keys(tasksByRelease).length === 0 && Object.keys(tasksByEvergreenBox).length === 0) && (
                   <div className="text-center py-8">
                     <CalendarIcon className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                    <p className="text-gray-500">No completed tasks to schedule yet.</p>
+                    <p className="text-gray-500">No tasks in holding area.</p>
+                    <p className="text-xs text-gray-400 mt-2">Drag tasks from calendar here to move them to different dates</p>
                   </div>
                 )}
               </div>
