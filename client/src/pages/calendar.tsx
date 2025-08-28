@@ -440,7 +440,7 @@ export default function CalendarPage() {
       evergreenBoxId: task.evergreenBoxId // Preserve evergreen box ID
     }));
     
-    // Only show scheduled tasks that are actually completed in Team Checklist
+    // Show ALL scheduled tasks on the calendar (both completed and uncompleted)
     const scheduled = processedTasks.filter(task => {
       if (!task.scheduledDate) return false;
       // Find the current completion status from the original task data
@@ -449,7 +449,7 @@ export default function CalendarPage() {
       if (task.scheduledDate) {
         console.log(`Task "${task.taskTitle}" (${task.id}): scheduled=${!!task.scheduledDate}, completed=${isCompleted}, originalCompleted=${originalTask?.completed}`);
       }
-      return isCompleted;
+      return true; // Show all scheduled tasks
     });
     const unscheduled = processedTasks.filter(task => !task.scheduledDate);
     console.log('Scheduled:', scheduled.length, 'Unscheduled:', unscheduled.length);
