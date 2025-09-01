@@ -983,7 +983,7 @@ export default function CalendarPage() {
                                 <i className={`${divider.icon} mr-1`}></i>
                                 {divider.name}
                               </div>
-                              {(divider.mediaLink || divider.textLink) && (
+                              {(divider.mediaLink || divider.textLink || divider.finalPost) && (
                                 <div className="flex flex-col space-y-1">
                                   {divider.mediaLink && (
                                     <button
@@ -1019,6 +1019,23 @@ export default function CalendarPage() {
                                     >
                                       <i className="fas fa-link mr-1"></i>
                                       Text
+                                    </button>
+                                  )}
+                                  {divider.finalPost && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigator.clipboard.writeText(divider.finalPost);
+                                        toast({
+                                          title: "Copied to clipboard",
+                                          description: "Final post content copied to clipboard",
+                                        });
+                                      }}
+                                      className="text-xs underline hover:no-underline opacity-80 hover:opacity-100 flex items-center"
+                                      title="Copy final post to clipboard"
+                                    >
+                                      <i className="fas fa-copy mr-1"></i>
+                                      Final Post
                                     </button>
                                   )}
                                 </div>
@@ -1116,7 +1133,7 @@ export default function CalendarPage() {
                                         <i className={`${divider.icon} mr-1`}></i>
                                         {divider.name}
                                       </div>
-                                      {(divider.mediaLink || divider.textLink) && (
+                                      {(divider.mediaLink || divider.textLink || divider.finalPost) && (
                                         <div className="flex flex-col space-y-1">
                                           {divider.mediaLink && (
                                             <button
@@ -1154,6 +1171,24 @@ export default function CalendarPage() {
                                             >
                                               <i className="fas fa-link mr-1"></i>
                                               Text
+                                            </button>
+                                          )}
+                                          {divider.finalPost && (
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                navigator.clipboard.writeText(divider.finalPost);
+                                                toast({
+                                                  title: "Copied to clipboard",
+                                                  description: "Final post content copied to clipboard",
+                                                });
+                                              }}
+                                              className="text-xs underline hover:no-underline opacity-80 hover:opacity-100 flex items-center"
+                                              title="Copy final post to clipboard"
+                                              style={{ color: group?.color || '#6b7280' }}
+                                            >
+                                              <i className="fas fa-copy mr-1"></i>
+                                              Final Post
                                             </button>
                                           )}
                                         </div>
@@ -1331,7 +1366,7 @@ export default function CalendarPage() {
                                       <i className={`${divider.icon} mr-1`}></i>
                                       {divider.name}
                                     </div>
-                                    {(divider.mediaLink || divider.textLink) && (
+                                    {(divider.mediaLink || divider.textLink || divider.finalPost) && (
                                       <div className="flex flex-col space-y-1">
                                         {divider.mediaLink && (
                                           <button
@@ -1369,6 +1404,24 @@ export default function CalendarPage() {
                                           >
                                             <i className="fas fa-link mr-1"></i>
                                             Text
+                                          </button>
+                                        )}
+                                        {divider.finalPost && (
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              navigator.clipboard.writeText(divider.finalPost);
+                                              toast({
+                                                title: "Copied to clipboard",
+                                                description: "Final post content copied to clipboard",
+                                              });
+                                            }}
+                                            className="text-xs underline hover:no-underline opacity-80 hover:opacity-100 flex items-center"
+                                            title="Copy final post to clipboard"
+                                            style={{ color: '#3b82f6' }}
+                                          >
+                                            <i className="fas fa-copy mr-1"></i>
+                                            Final Post
                                           </button>
                                         )}
                                       </div>
