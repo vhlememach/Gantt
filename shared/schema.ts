@@ -91,6 +91,7 @@ export const customDividers = pgTable("custom_dividers", {
   icon: text("icon").notNull(),
   mediaLink: text("media_link"),
   textLink: text("text_link"),
+  finalPost: text("final_post"),
   dateKey: text("date_key").notNull(), // YYYY-MM-DD format
   releaseId: varchar("release_id").references(() => releases.id, { onDelete: "cascade" }),
   evergreenBoxId: varchar("evergreen_box_id").references(() => evergreenBoxes.id, { onDelete: "cascade" }),

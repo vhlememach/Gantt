@@ -85,6 +85,7 @@ export default function CalendarPage() {
   const [dividerName, setDividerName] = useState('');
   const [dividerMediaLink, setDividerMediaLink] = useState('');
   const [dividerTextLink, setDividerTextLink] = useState('');
+  const [dividerFinalPost, setDividerFinalPost] = useState('');
   const [selectedProjectId, setSelectedProjectId] = useState('');
   const [selectedEvergreenBoxId, setSelectedEvergreenBoxId] = useState('');
   const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([]);
@@ -118,6 +119,7 @@ export default function CalendarPage() {
         icon: divider.icon,
         mediaLink: divider.mediaLink,
         textLink: divider.textLink,
+        finalPost: divider.finalPost,
         releaseId: divider.releaseId,
         evergreenBoxId: divider.evergreenBoxId,
         assignedMembers: divider.assignedMembers || [],
@@ -1672,6 +1674,22 @@ export default function CalendarPage() {
                   placeholder="Enter text link URL (e.g., document, article)"
                 />
               </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Final Post/Tweet (Optional)
+                </label>
+                <textarea
+                  value={editingDivider ? editingDivider.divider.finalPost || '' : dividerFinalPost}
+                  onChange={(e) => editingDivider ? 
+                    setEditingDivider({...editingDivider, divider: {...editingDivider.divider, finalPost: e.target.value}}) : 
+                    setDividerFinalPost(e.target.value)
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+                  placeholder="Enter final post or tweet content"
+                  rows={3}
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Assign to Team Members (Optional)
@@ -1751,6 +1769,7 @@ export default function CalendarPage() {
                   setDividerName('');
                   setDividerMediaLink('');
                   setDividerTextLink('');
+                  setDividerFinalPost('');
                   setSelectedProjectId('');
                   setSelectedTeamMembers([]);
                   setSelectedColor('#3B82F6');
@@ -1766,6 +1785,7 @@ export default function CalendarPage() {
                   const icon = editingDivider ? editingDivider.divider.icon : selectedIcon;
                   const mediaLink = editingDivider ? editingDivider.divider.mediaLink : dividerMediaLink;
                   const textLink = editingDivider ? editingDivider.divider.textLink : dividerTextLink;
+                  const finalPost = editingDivider ? editingDivider.divider.finalPost : dividerFinalPost;
                   const projectId = editingDivider ? editingDivider.divider.releaseId : selectedProjectId;
                   const evergreenBoxId = editingDivider ? editingDivider.divider.evergreenBoxId : selectedEvergreenBoxId;
                   const teamMembers = editingDivider ? editingDivider.divider.assignedMembers : selectedTeamMembers;
@@ -1780,6 +1800,7 @@ export default function CalendarPage() {
                       icon,
                       mediaLink: mediaLink || null,
                       textLink: textLink || null,
+                      finalPost: finalPost || null,
                       releaseId: projectId || null,
                       evergreenBoxId: evergreenBoxId || null,
                       assignedMembers: teamMembers || [],
@@ -1798,6 +1819,7 @@ export default function CalendarPage() {
                       icon,
                       mediaLink: mediaLink || null,
                       textLink: textLink || null,
+                      finalPost: finalPost || null,
                       dateKey,
                       releaseId: projectId || null,
                       evergreenBoxId: evergreenBoxId || null,
@@ -1812,6 +1834,7 @@ export default function CalendarPage() {
                   setDividerName('');
                   setDividerMediaLink('');
                   setDividerTextLink('');
+                  setDividerFinalPost('');
                   setSelectedProjectId('');
                   setSelectedEvergreenBoxId('');
                   setSelectedTeamMembers([]);
