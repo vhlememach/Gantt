@@ -1025,16 +1025,17 @@ export default function CalendarPage() {
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        navigator.clipboard.writeText(divider.finalPost);
-                                        toast({
-                                          title: "Copied to clipboard",
-                                          description: "Final post content copied to clipboard",
-                                        });
+                                        if (divider.finalPost) {
+                                          const url = divider.finalPost.startsWith('http://') || divider.finalPost.startsWith('https://') 
+                                            ? divider.finalPost 
+                                            : `https://${divider.finalPost}`;
+                                          window.open(url, '_blank');
+                                        }
                                       }}
                                       className="text-xs underline hover:no-underline opacity-80 hover:opacity-100 flex items-center"
-                                      title="Copy final post to clipboard"
+                                      title="Open final post link"
                                     >
-                                      <i className="fas fa-copy mr-1"></i>
+                                      <i className="fas fa-external-link-alt mr-1"></i>
                                       Final Post
                                     </button>
                                   )}
@@ -1177,17 +1178,18 @@ export default function CalendarPage() {
                                             <button
                                               onClick={(e) => {
                                                 e.stopPropagation();
-                                                navigator.clipboard.writeText(divider.finalPost);
-                                                toast({
-                                                  title: "Copied to clipboard",
-                                                  description: "Final post content copied to clipboard",
-                                                });
+                                                if (divider.finalPost) {
+                                                  const url = divider.finalPost.startsWith('http://') || divider.finalPost.startsWith('https://') 
+                                                    ? divider.finalPost 
+                                                    : `https://${divider.finalPost}`;
+                                                  window.open(url, '_blank');
+                                                }
                                               }}
                                               className="text-xs underline hover:no-underline opacity-80 hover:opacity-100 flex items-center"
-                                              title="Copy final post to clipboard"
+                                              title="Open final post link"
                                               style={{ color: group?.color || '#6b7280' }}
                                             >
-                                              <i className="fas fa-copy mr-1"></i>
+                                              <i className="fas fa-external-link-alt mr-1"></i>
                                               Final Post
                                             </button>
                                           )}
@@ -1410,17 +1412,18 @@ export default function CalendarPage() {
                                           <button
                                             onClick={(e) => {
                                               e.stopPropagation();
-                                              navigator.clipboard.writeText(divider.finalPost);
-                                              toast({
-                                                title: "Copied to clipboard",
-                                                description: "Final post content copied to clipboard",
-                                              });
+                                              if (divider.finalPost) {
+                                                const url = divider.finalPost.startsWith('http://') || divider.finalPost.startsWith('https://') 
+                                                  ? divider.finalPost 
+                                                  : `https://${divider.finalPost}`;
+                                                window.open(url, '_blank');
+                                              }
                                             }}
                                             className="text-xs underline hover:no-underline opacity-80 hover:opacity-100 flex items-center"
-                                            title="Copy final post to clipboard"
+                                            title="Open final post link"
                                             style={{ color: '#3b82f6' }}
                                           >
-                                            <i className="fas fa-copy mr-1"></i>
+                                            <i className="fas fa-external-link-alt mr-1"></i>
                                             Final Post
                                           </button>
                                         )}
@@ -1730,17 +1733,17 @@ export default function CalendarPage() {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Final Post/Tweet (Optional)
+                  Final Post/Tweet URL (Optional)
                 </label>
-                <textarea
+                <input
+                  type="url"
                   value={editingDivider ? editingDivider.divider.finalPost || '' : dividerFinalPost}
                   onChange={(e) => editingDivider ? 
                     setEditingDivider({...editingDivider, divider: {...editingDivider.divider, finalPost: e.target.value}}) : 
                     setDividerFinalPost(e.target.value)
                   }
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white bg-white dark:bg-gray-700"
-                  placeholder="Enter final post or tweet content"
-                  rows={3}
+                  placeholder="Enter final post or tweet URL"
                 />
               </div>
               <div>
