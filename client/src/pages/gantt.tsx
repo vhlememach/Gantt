@@ -266,6 +266,7 @@ export default function GanttPage() {
                       icon: divider.icon,
                       mediaLink: divider.mediaLink || null,
                       textLink: divider.textLink || null,
+                      finalPost: divider.finalPost || null,
                       dateKey: divider.dateKey,
                       releaseId: newReleaseId,
                       evergreenBoxId: newEvergreenBoxId,
