@@ -1,9 +1,14 @@
 {
   "version": 2,
+  "functions": {
+    "api/index.js": {
+      "runtime": "@vercel/node@3.2.9"
+    }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/api/[...route]"
+      "destination": "/api/index"
     }
   ]
 }
