@@ -36,25 +36,24 @@ app.use((req, res, next) => {
   next();
 });
 
-// Initialize the app
-async function initializeApp() {
+(async () => {
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
+
     res.status(status).json({ message });
-    if (process.env.NODE_ENV === "development") {
-      throw err;
-    }
+    throw err;
   });
 
-  // Setup static serving for production
-  if (process.env.NODE_ENV === "production" || process.env.VERCEL === "1") {
-    serveStatic(app);
-  } else {
-    // Setup vite for development
+  // importantly only setup vite in development and after
+  // setting up all the other routes so the catch-all route
+  // doesn't interfere with the other routes
+  if (app.get("env") === "development") {
     await setupVite(app, server);
+  } else {
+    serveStatic(app);
   }
 
   // Only start a local server when not running on Vercel
@@ -68,19 +67,6 @@ async function initializeApp() {
       log(`serving on port ${port}`);
     });
   }
-
-  return app;
-}
-
-// Initialize routes immediately for serverless or start server for development
-if (process.env.VERCEL === "1") {
-  // For Vercel serverless, initialize synchronously
-  (async () => {
-    await initializeApp();
-  })();
-} else {
-  // For development
-  initializeApp();
-}
+})();
 
 export default app;
